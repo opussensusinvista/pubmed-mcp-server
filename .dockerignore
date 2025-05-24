@@ -1,0 +1,47 @@
+# Git files
+.git
+.gitignore
+
+# Node modules
+node_modules
+
+# Build output
+dist
+
+# Logs
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (should be mounted or injected, not built-in)
+.env*
+env.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Backup files
+backups/
+
+# Documentation (unless needed in the image)
+docs/
+
+# Scripts (unless needed in the image)
+scripts/
+
+# Test files (if any)
+test/
+tests/
+*.test.ts
+*.spec.ts
