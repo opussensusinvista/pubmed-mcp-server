@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.14] - 2025-05-24
+
+### Changed
+
+- **Tool `generatePubMedChart`**:
+  - Updated input schema (`src/mcp-server/tools/generatePubMedChart/logic.ts`) with more detailed and descriptive fields for `chartType`, `title`, `width`, `height`, `dataValues`, `outputFormat`, `xField`, `yField`, `xFieldType`, `yFieldType`, `colorField`, `colorFieldType`, `seriesField`, `seriesFieldType`, `sizeField`, and `sizeFieldType`.
+  - Enhanced the tool's main description in `src/mcp-server/tools/generatePubMedChart/registration.ts` to better reflect its capabilities and parameters.
+- **Examples**:
+  - Updated example SVG files (`examples/generate_pubmed_chart_example_bar.svg`, `examples/generate_pubmed_chart_example_line.svg`, `examples/generate_pubmed_chart_example_scatter.svg`) to reflect schema changes and showcase more complex chart configurations.
+- **Documentation**:
+  - Updated `README.md` version badge to `1.0.14`.
+  - Updated `docs/tree.md` generation timestamp.
+- **Build**:
+  - Bumped project version to `1.0.14` in `package.json`.
+
 ## [1.0.13] - 2025-05-24
 
 ### Added
