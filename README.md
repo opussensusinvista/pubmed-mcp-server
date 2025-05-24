@@ -3,7 +3,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol SDK](https://img.shields.io/badge/MCP%20SDK-1.12.0-green.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![MCP Spec Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-lightgrey.svg)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)
-[![Version](https://img.shields.io/badge/Version-1.0.6-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.0.7-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Development-yellow.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -21,6 +21,7 @@ This server equips your AI with specialized tools to interact with PubMed:
 | `search_pubmed_articles`         | Searches PubMed for articles based on your query.                                       | - Filter by max results, sort order, date range, publication types.<br/>- Uses NCBI ESearch for PMIDs.<br/>- Optionally fetches brief summaries (title, authors, source, dates) via ESummary.                                                           | JSON object: <br/>- Original search parameters<br/>- ESearch term used<br/>- Result counts<br/>- List of PMIDs<br/>- Optional article summaries<br/>- E-utility URLs used |
 | `fetch_pubmed_content`           | Retrieves detailed information for a list of specified PubMed PMIDs.                    | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Uses NCBI EFetch. | JSON object: <br/>- Requested PMIDs<br/>- Array of article data (parsed/raw based on `detailLevel`)<br/>- PMIDs not found<br/>- EFetch URL used                           |
 | `get_pubmed_article_connections` | Finds related articles (cited by, similar, references) or formats citations for a PMID. | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results.                                                                                                             | JSON object: <br/>- Source PMID<br/>- Relationship type<br/>- List of related PMIDs or formatted citations<br/>- E-utility URLs used                                      |
+| `pubmed_research_agent`          | Generates a standardized JSON research plan outline from component details.             | - Accepts granular inputs for all research phases.<br/>- Optionally embeds instructive prompts for agent execution.<br/>- Structures rough ideas into a formal, machine-readable plan for further processing.                                                 | JSON object: <br/>- Structured research plan with sections for introduction, methods, analysis, dissemination, etc.<br/>- Optionally includes detailed agent prompts.          |
 
 ---
 

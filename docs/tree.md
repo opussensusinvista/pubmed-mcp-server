@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 08:18:04
+Generated on: 2025-05-24 10:44:11
 
 ```
 pubmed-mcp-server
@@ -13,6 +13,8 @@ pubmed-mcp-server
 │   │   └── typedoc-reference.md
 │   ├── project-spec.md
 │   └── tree.md
+├── examples
+│   └── research_agent_example.json
 ├── scripts
 │   ├── clean.ts
 │   ├── fetch-openapi-spec.ts
@@ -38,6 +40,15 @@ pubmed-mcp-server
 │   │   │   │   │   ├── elinkHandler.ts
 │   │   │   │   │   ├── index.ts
 │   │   │   │   │   └── types.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── pubmedResearchAgent
+│   │   │   │   ├── logic
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── inputSchema.ts
+│   │   │   │   │   ├── outputTypes.ts
+│   │   │   │   │   └── planOrchestrator.ts
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts

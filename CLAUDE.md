@@ -207,7 +207,7 @@ import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 
 export async function yourToolLogic(
   input: YourToolInput,
-  parentRequestContext: RequestContext
+  parentRequestContext: RequestContext,
 ): Promise<CallToolResult> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
@@ -217,7 +217,7 @@ export async function yourToolLogic(
 
   logger.info(
     `Executing 'yourToolName'. Query: ${input.query}`,
-    operationContext
+    operationContext,
   );
 
   try {
@@ -229,7 +229,7 @@ export async function yourToolLogic(
         id: `item-${i + 1}`,
         title: `Result for ${input.query} #${i + 1}`,
         isActive: input.filterActive,
-      })
+      }),
     );
 
     const output = {
@@ -247,7 +247,7 @@ export async function yourToolLogic(
     logger.error(
       "Execution failed for 'yourToolName'",
       error,
-      operationContext
+      operationContext,
     );
     const mcpError =
       error instanceof McpError
@@ -258,7 +258,7 @@ export async function yourToolLogic(
             {
               originalErrorName: error.name,
               requestId: operationContext.requestId,
-            }
+            },
           );
     return {
       content: [
@@ -317,7 +317,7 @@ export function registerYourTool(server: McpServer): void {
             mcpToolContext: mcpProvidedContext, // Context from MCP SDK during call
           });
         return yourToolLogic(validatedInput, handlerRequestContext);
-      }
+      },
     );
     logger.notice(`Tool 'your_tool_name' registered.`, regContext);
   } catch (error) {
@@ -327,14 +327,14 @@ export function registerYourTool(server: McpServer): void {
         `Failed to register 'your_tool_name'`,
         {
           /* details */
-        }
+        },
       ),
       {
         operation,
         context: regContext,
         errorCode: BaseErrorCode.INITIALIZATION_FAILED,
         critical: true,
-      }
+      },
     );
   }
 }
@@ -356,7 +356,7 @@ import { registerYourTool } from "./tools/yourToolName/index.js"; // Import new 
 // ...
 export async function createMcpServerInstance(
   options: McpServerOptions,
-  serverInitContext: RequestContext
+  serverInitContext: RequestContext,
 ): Promise<McpServer> {
   // ...
   const server = new McpServer(options);

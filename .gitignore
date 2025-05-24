@@ -38,8 +38,6 @@ Thumbs.db
 # Demo and Example Directories
 demo/
 demos/
-example/
-examples/
 samples/
 .sample-env
 sample.*

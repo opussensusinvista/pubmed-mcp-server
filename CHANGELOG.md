@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.7] - 2025-05-24
+
+### Added
+
+- **New Tool**: Implemented `pubmed_research_agent` tool (`src/mcp-server/tools/pubmedResearchAgent/`) for generating standardized JSON research plan outlines.
+- **Examples**: Added `examples/research_agent_example.json` to demonstrate the usage of the new `pubmed_research_agent` tool.
+
+### Changed
+
+- **Server**: Registered the new `pubmed_research_agent` tool in `src/mcp-server/server.ts`.
+- **Documentation**:
+  - Updated `README.md` to include `pubmed_research_agent` in the tools table.
+  - Updated `docs/tree.md` to reflect the new tool and example files.
+- **Build**:
+  - Updated `.gitignore` to no longer ignore the `examples/` directory.
+  - Bumped project version from `1.0.6` to `1.0.7` in `package.json` and `README.md`.
+
 ## [1.0.6] - 2025-05-24
 
 ### Changed
