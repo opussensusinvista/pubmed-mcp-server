@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.9] - 2025-05-24
+
+### Changed
+
+- **Tool `fetch_pubmed_content`**:
+  - Enhanced to support fetching content using NCBI ESearch history via `queryKey` and `webEnv` parameters.
+  - Added support for pagination using `retstart` and `retmax` parameters when ESearch history is used.
+  - Updated `FetchPubMedContentInputSchema` in `src/mcp-server/tools/fetchPubMedContent/logic.ts` with new optional fields for history and pagination, and added a `superRefine` block for complex inter-field validation (e.g., `queryKey` requires `webEnv`, `pmids` and history params are mutually exclusive).
+  - Updated the tool's description in `src/mcp-server/tools/fetchPubMedContent/registration.ts` to reflect new capabilities.
+  - Adjusted Zod schema access in `registration.ts` to `FetchPubMedContentInputSchema._def.schema.shape` due to the use of `superRefine`.
+- **NCBI Service**:
+  - Made the `db` parameter optional in `NcbiRequestParams` (`src/services/NCBI/ncbiConstants.ts`) to allow more flexible E-utility calls (e.g., EInfo without a specific database).
+- **Documentation**:
+  - Updated `README.md`:
+    - Changed version badge and example `NCBI_TOOL_IDENTIFIER` to `1.0.9`.
+    - Updated the description for the `fetch_pubmed_content` tool in the capabilities table to include history and pagination features.
+  - Updated directory tree in `.clinerules` and `CLAUDE.md`.
+- **Build**: Bumped project version from `1.0.8` to `1.0.9` in `package.json`.
+
 ## [1.0.8] - 2025-05-24
 
 ### Changed

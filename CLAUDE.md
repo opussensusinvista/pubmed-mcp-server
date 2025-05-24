@@ -468,44 +468,93 @@ Refer to `src/mcp-server/tools/` and `src/mcp-server/resources/` for implementat
 
 ```plaintext
 # pubmed-mcp-server - Directory Structure
-# Generated on: YYYY-MM-DD HH:MM:SS (Update with `npm run tree` periodically)
+# Generated on: 2025-05-24 04:10:14 (Update with `npm run tree` periodically)
 # Refer to docs/tree.md for the latest version.
 
 src
 ├── config
 │   └── index.ts
+├── index.ts
 ├── mcp-server
 │   ├── resources
 │   │   └── echoResource
 │   │       ├── echoResourceLogic.ts
 │   │       ├── index.ts
 │   │       └── registration.ts
+│   ├── server.ts
 │   ├── tools
 │   │   ├── fetchPubMedContent
 │   │   │   ├── index.ts
 │   │   │   ├── logic.ts
 │   │   │   └── registration.ts
-# ... (other tools and resources) ...
-│   ├── transports
-│   │   ├── authentication
-│   │   │   └── authMiddleware.ts
-│   │   ├── httpTransport.ts
-│   │   └── stdioTransport.ts
-│   └── server.ts
+│   │   ├── getPubMedArticleConnections
+│   │   │   ├── index.ts
+│   │   │   ├── logic
+│   │   │   │   ├── citationFormatter.ts
+│   │   │   │   ├── elinkHandler.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── logic.ts
+│   │   │   └── registration.ts
+│   │   ├── pubmedResearchAgent
+│   │   │   ├── index.ts
+│   │   │   ├── logic
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── inputSchema.ts
+│   │   │   │   ├── outputTypes.ts
+│   │   │   │   └── planOrchestrator.ts
+│   │   │   ├── logic.ts
+│   │   │   └── registration.ts
+│   │   └── searchPubMedArticles
+│   │       ├── index.ts
+│   │       ├── logic.ts
+│   │       └── registration.ts
+│   └── transports
+│       ├── authentication
+│       │   └── authMiddleware.ts
+│       ├── httpTransport.ts
+│       └── stdioTransport.ts
 ├── services
-│   ├── NCBI
-│   │   ├── ncbiConstants.ts
-│   │   ├── ncbiCoreApiClient.ts
-│   │   ├── ncbiRequestQueueManager.ts
-│   │   ├── ncbiResponseHandler.ts
-│   │   └── ncbiService.ts
-# ... (other services) ...
+│   ├── index.ts
+│   ├── llm-providers
+│   │   ├── index.ts
+│   │   ├── llmFactory.ts
+│   │   └── openRouter
+│   │       ├── index.ts
+│   │       └── openRouterProvider.ts
+│   └── NCBI
+│       ├── ncbiConstants.ts
+│       ├── ncbiCoreApiClient.ts
+│       ├── ncbiRequestQueueManager.ts
+│       ├── ncbiResponseHandler.ts
+│       └── ncbiService.ts
 ├── types-global
 │   ├── errors.ts
 │   └── pubmedXml.ts
-├── utils
-# ... (utility modules) ...
-└── index.ts
+└── utils
+    ├── index.ts
+    ├── internal
+    │   ├── errorHandler.ts
+    │   ├── index.ts
+    │   ├── logger.ts
+    │   └── requestContext.ts
+    ├── metrics
+    │   ├── index.ts
+    │   └── tokenCounter.ts
+    ├── parsing
+    │   ├── dateParser.ts
+    │   ├── index.ts
+    │   ├── jsonParser.ts
+    │   └── ncbi-parsing
+    │       ├── eSummaryResultParser.ts
+    │       ├── index.ts
+    │       ├── pubmedArticleStructureParser.ts
+    │       └── xmlGenericHelpers.ts
+    └── security
+        ├── idGenerator.ts
+        ├── index.ts
+        ├── rateLimiter.ts
+        └── sanitization.ts
 ```
 
 This guide is authoritative. Deviations require explicit approval. Keep this document synchronized with code evolution.
