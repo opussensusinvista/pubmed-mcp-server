@@ -19,7 +19,8 @@ import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
 // import { registerEchoResource } from "./resources/echoResource/index.js"; // To be removed after resource implementations.
 import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
-import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js"; // Added import
+import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
+import { registerPubMedResearchAgentTool } from "./tools/pubmedResearchAgent/index.js"; // Added import
 import { registerSearchPubMedArticlesTool } from "./tools/searchPubMedArticles/index.js";
 import { startHttpTransport } from "./transports/httpTransport.js";
 import { connectStdioTransport } from "./transports/stdioTransport.js";
@@ -75,6 +76,7 @@ async function createMcpServerInstance(): Promise<McpServer> {
     // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
     await registerFetchPubMedContentTool(server);
     await registerGetPubMedArticleConnectionsTool(server);
+    await registerPubMedResearchAgentTool(server); // Added new tool registration
     await registerSearchPubMedArticlesTool(server);
     // Add other tool/resource registrations here
     logger.info("Resources and tools registered successfully", context);
