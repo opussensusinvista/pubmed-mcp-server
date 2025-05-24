@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2025-05-23
+
+### Major Changes - Project Transformation to PubMed MCP Server
+
+This version marks a significant transformation of the `mcp-ts-template` into the `pubmed-mcp-server`. The core focus is now on providing an MCP interface to NCBI's PubMed E-utilities.
+
+### Added
+
+- **PubMed Integration**:
+  - Implemented `searchPubMedArticles` tool (`src/mcp-server/tools/searchPubMedArticles/`) for searching PubMed.
+  - Implemented `fetchPubMedContent` tool (`src/mcp-server/tools/fetchPubMedContent/`) for retrieving detailed article information.
+  - Added `src/services/NCBI/ncbiService.ts` to manage interactions with NCBI E-utilities, including API key handling, rate limiting, and response parsing.
+  - Introduced NCBI-specific environment variables (`NCBI_API_KEY`, `NCBI_ADMIN_EMAIL`, `NCBI_TOOL_IDENTIFIER`, `NCBI_REQUEST_DELAY_MS`, `NCBI_MAX_RETRIES`) in `src/config/index.ts`.
+  - Added NCBI-specific error codes (e.g., `NCBI_API_ERROR`, `NCBI_PARSING_ERROR`) to `src/types-global/errors.ts`.
+- **Dependencies**:
+  - Added `axios` for HTTP requests (now a direct dependency).
+  - Added `fast-xml-parser` for parsing NCBI XML responses.
+- **Documentation**:
+  - Added `docs/Entrez-EUtils-Documentation.pdf` (NCBI E-utilities official documentation).
+  - Added `docs/project-spec.md` outlining the PubMed MCP Server's goals and features.
+
+### Changed
+
+- **Project Identity**:
+  - Renamed project from `mcp-ts-template` to `pubmed-mcp-server` in `package.json`, `README.md`, and `.clinerules`.
+  - Updated project description, keywords, author, homepage, and repository URLs in `package.json`.
+  - Reset project version to `1.0.0`.
+- **Core Functionality**:
+  - Refocused `src/mcp-server/server.ts` to register PubMed-specific tools.
+- **Configuration**:
+  - Updated `src/config/index.ts` to load and validate new NCBI-related environment variables.
+- **Dependencies**:
+  - Upgraded `@modelcontextprotocol/sdk` from `^1.11.5` to `^1.12.0`.
+  - Upgraded `openai` from `^4.102.0` to `^4.103.0`.
+  - Upgraded `zod` from `^3.25.20` to `^3.25.28`.
+  - Updated `package-lock.json` accordingly.
+- **Documentation**:
+  - Extensively rewrote `README.md` to reflect the PubMed MCP Server's purpose, features, configuration, and usage.
+  - Overhauled `.clinerules` to serve as a developer cheatsheet specifically for `pubmed-mcp-server`, including NCBI E-utility details and new tool information.
+  - Updated `docs/tree.md` to reflect the new directory structure and removal/addition of files.
+
+### Removed
+
+- **Generic MCP Client**:
+  - Deleted the entire `src/mcp-client/` directory and all its sub-modules (`client-config/`, `core/`, `transports/`, `index.ts`). The server no longer includes a generic client for connecting to other MCP servers.
+- **Example Code**:
+  - Deleted the example `echoTool` (`src/mcp-server/tools/echoTool/`) and its associated files.
+  - Deleted the example `echoResource` (`src/mcp-server/resources/echoResource/`) (though its directory might still be in the tree if not explicitly removed by git, the registration in `server.ts` is gone).
+
 ## [1.3.1] - 2025-05-22
 
 ### Added
