@@ -23,7 +23,7 @@ export function registerFetchPubMedContentTool(server: McpServer): void {
   try {
     server.tool(
       "fetch_pubmed_content",
-      "Fetches detailed information for a list of PubMed PMIDs using NCBI EFetch. Supports various 'detailLevel' options: 'abstract_plus' (parsed title, abstract, authors, journal, keywords, DOI, optional MeSH/grant info), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), or 'citation_data' (minimal data for citations). Returns a JSON object containing requested PMIDs, an array of article data (parsed or raw based on detailLevel), any PMIDs not found, and the EFetch URL.",
+      "Fetches detailed information for a list of PubMed PMIDs using NCBI EFetch. Supports various 'detailLevel' options: 'abstract_plus' (parsed title, abstract, authors, journal, keywords, DOI, optional MeSH/grant info), 'full_xml' (JSON representation of the PubMedArticle XML structure), 'medline_text' (MEDLINE format), or 'citation_data' (minimal data for citations). Returns a JSON object containing requested PMIDs, an array of article data (parsed or raw based on detailLevel), any PMIDs not found, and the EFetch URL.",
       FetchPubMedContentInputSchema.shape,
       async (input: FetchPubMedContentInput, toolContext) => {
         const richContext = requestContextService.createRequestContext({
@@ -39,14 +39,16 @@ export function registerFetchPubMedContentTool(server: McpServer): void {
       new McpError(
         BaseErrorCode.INITIALIZATION_FAILED,
         "Failed to register fetch_pubmed_content tool",
-        { originalError: error instanceof Error ? error.message : String(error) }
+        {
+          originalError: error instanceof Error ? error.message : String(error),
+        },
       ),
       {
         operation,
         context,
         errorCode: BaseErrorCode.INITIALIZATION_FAILED,
         critical: true,
-      }
+      },
     );
   }
 }

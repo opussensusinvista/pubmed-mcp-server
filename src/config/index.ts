@@ -171,7 +171,10 @@ const EnvSchema = z.object({
   /** Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION. */
   NCBI_TOOL_IDENTIFIER: z.string().optional(),
   /** Administrator's email for NCBI contact. Optional, but recommended if using an API key. */
-  NCBI_ADMIN_EMAIL: z.string().email("NCBI_ADMIN_EMAIL must be a valid email address.").optional(),
+  NCBI_ADMIN_EMAIL: z
+    .string()
+    .email("NCBI_ADMIN_EMAIL must be a valid email address.")
+    .optional(),
   /** Milliseconds to wait between NCBI requests. Default: 100 (for API key), 334 (without API key). */
   NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().optional(), // Default will be set conditionally
   /** Maximum number of retries for failed NCBI requests. Default: 3. */
@@ -327,11 +330,14 @@ export const config = {
   /** NCBI API Key. From `NCBI_API_KEY`. */
   ncbiApiKey: env.NCBI_API_KEY,
   /** NCBI Tool Identifier. From `NCBI_TOOL_IDENTIFIER`. Defaults to server name/version. */
-  ncbiToolIdentifier: env.NCBI_TOOL_IDENTIFIER || `${env.MCP_SERVER_NAME || pkg.name}/${env.MCP_SERVER_VERSION || pkg.version}`,
+  ncbiToolIdentifier:
+    env.NCBI_TOOL_IDENTIFIER ||
+    `${env.MCP_SERVER_NAME || pkg.name}/${env.MCP_SERVER_VERSION || pkg.version}`,
   /** NCBI Admin Email. From `NCBI_ADMIN_EMAIL`. */
   ncbiAdminEmail: env.NCBI_ADMIN_EMAIL,
   /** NCBI Request Delay in MS. From `NCBI_REQUEST_DELAY_MS`. Dynamically set based on API key presence. */
-  ncbiRequestDelayMs: env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
+  ncbiRequestDelayMs:
+    env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
   /** NCBI Max Retries. From `NCBI_MAX_RETRIES`. */
   ncbiMaxRetries: env.NCBI_MAX_RETRIES,
 

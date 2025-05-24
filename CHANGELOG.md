@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-05-23
+
+### Changed
+- **Refactor: PubMed XML Parsing & Data Extraction**:
+  - Introduced dedicated TypeScript types for PubMed XML structures (`src/types-global/pubmedXml.ts`) to improve type safety and clarity.
+  - Created a suite of helper functions (`src/utils/parsing/pubmedXmlParserHelpers.ts`) for modular, robust, and reusable extraction of data from parsed PubMed XML (e.g., authors, abstracts, MeSH terms, journal info).
+  - Significantly refactored the `fetchPubMedContent` tool's internal logic (`src/mcp-server/tools/fetchPubMedContent/logic.ts`) to leverage these new types and helper functions. This enhances maintainability, readability, and the accuracy of data extraction.
+  - Clarified in `README.md` and tool registration that `fetch_pubmed_content` with `detailLevel: "full_xml"` returns a JSON representation of the `PubmedArticleSet` XML structure, not raw XML text.
+- **Refactor: ESummary Handling in `searchPubMedArticles` Tool**:
+  - Updated the `searchPubMedArticles` tool (`src/mcp-server/tools/searchPubMedArticles/logic.ts`) to more effectively use NCBI ESearch history (`usehistory: "y"`) when `fetchBriefSummaries` is requested.
+  - ESummary calls now correctly utilize `WebEnv` and `query_key` from ESearch results, along with `retmax`, for more efficient fetching of brief summaries.
+  - Refactored ESummary response parsing to use the new XML parsing helper functions and types, improving consistency and robustness.
+- **Improvement: NCBI Service Parameter Handling**:
+  - Enhanced `src/services/NCBI/ncbiService.ts` to ensure all parameters sent to NCBI E-utilities are correctly stringified, preventing potential API errors.
+- **Fix**: Adjusted the maximum value for the `fetchBriefSummaries` parameter in the `searchPubMedArticles` tool from 100 to 50.
+- **Internal**: Minor improvements to logging context and type annotations in NCBI service and tool logic files.
+
 ## [1.0.0] - 2025-05-23
 
 ### Major Changes - Project Transformation to PubMed MCP Server

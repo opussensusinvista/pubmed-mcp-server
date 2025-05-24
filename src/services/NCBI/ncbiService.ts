@@ -114,7 +114,10 @@ export class NcbiService {
       if (delayNeeded > 0) {
         logger.debug(
           `Delaying NCBI request by ${delayNeeded}ms to respect rate limit.`,
-          requestContextService.createRequestContext({ ...context, delayNeeded }),
+          requestContextService.createRequestContext({
+            ...context,
+            delayNeeded,
+          }),
         );
         await new Promise((r) => setTimeout(r, delayNeeded));
       }
@@ -157,7 +160,14 @@ export class NcbiService {
     params: NcbiRequestParams,
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      this.requestQueue.push({ resolve, reject, task, context, endpoint, params });
+      this.requestQueue.push({
+        resolve,
+        reject,
+        task,
+        context,
+        endpoint,
+        params,
+      });
       if (!this.isProcessingQueue) {
         this.processQueue();
       }
@@ -171,12 +181,25 @@ export class NcbiService {
     options: NcbiRequestOptions = {},
     retries = 0,
   ): Promise<T> {
-    const commonParams = {
+    const rawParams: Record<string, any> = {
       tool: config.ncbiToolIdentifier,
       email: config.ncbiAdminEmail,
       api_key: config.ncbiApiKey,
       ...params,
     };
+
+    const finalParams: Record<string, string> = {};
+    for (const key in rawParams) {
+      if (Object.prototype.hasOwnProperty.call(rawParams, key)) {
+        const value = rawParams[key];
+        if (typeof value === "string") {
+          finalParams[key] = value;
+        } else if (typeof value === "number" || typeof value === "boolean") {
+          finalParams[key] = String(value);
+        }
+        // undefined, null, or other types are effectively skipped
+      }
+    }
 
     const requestConfig: AxiosRequestConfig = {
       method: options.usePost ? "POST" : "GET",
@@ -184,12 +207,12 @@ export class NcbiService {
     };
 
     if (options.usePost) {
-      requestConfig.data = new URLSearchParams(commonParams).toString();
+      requestConfig.data = new URLSearchParams(finalParams).toString();
       requestConfig.headers = {
         "Content-Type": "application/x-www-form-urlencoded",
       };
     } else {
-      requestConfig.params = commonParams;
+      requestConfig.params = finalParams;
     }
 
     try {
@@ -215,7 +238,13 @@ export class NcbiService {
         }
         const parsedXml = this.xmlParser.parse(responseData);
 
-        if (parsedXml.eSearchResult?.ErrorList || parsedXml.eLinkResult?.ERROR || parsedXml.eSummaryResult?.ERROR || parsedXml.PubmedArticleSet?.ErrorList || parsedXml.ERROR) {
+        if (
+          parsedXml.eSearchResult?.ErrorList ||
+          parsedXml.eLinkResult?.ERROR ||
+          parsedXml.eSummaryResult?.ERROR ||
+          parsedXml.PubmedArticleSet?.ErrorList ||
+          parsedXml.ERROR
+        ) {
           const errorMessages = this.extractNcbiErrorMessages(parsedXml);
           logger.error(
             "NCBI API returned an error in XML",
@@ -236,7 +265,7 @@ export class NcbiService {
         return parsedXml as T;
       }
 
-      if (options.retmode === 'json' && responseData.error) {
+      if (options.retmode === "json" && responseData.error) {
         logger.error(
           "NCBI API returned an error in JSON",
           new Error(String(responseData.error)),
@@ -248,10 +277,10 @@ export class NcbiService {
           }),
         );
         throw new McpError(
-            BaseErrorCode.NCBI_API_ERROR,
-            `NCBI API Error: ${responseData.error}`,
-            { endpoint, ncbiError: responseData.error },
-          );
+          BaseErrorCode.NCBI_API_ERROR,
+          `NCBI API Error: ${responseData.error}`,
+          { endpoint, ncbiError: responseData.error },
+        );
       }
 
       return responseData as T;
@@ -268,7 +297,13 @@ export class NcbiService {
           }),
         );
         await new Promise((r) => setTimeout(r, retryDelay));
-        return this.makeRequest(endpoint, params, context, options, retries + 1);
+        return this.makeRequest(
+          endpoint,
+          params,
+          context,
+          options,
+          retries + 1,
+        );
       }
 
       if (axios.isAxiosError(error)) {
@@ -297,7 +332,11 @@ export class NcbiService {
       logger.error(
         "Unexpected error during NCBI request",
         error,
-        requestContextService.createRequestContext({ ...context, endpoint, errorMessage: error.message }),
+        requestContextService.createRequestContext({
+          ...context,
+          endpoint,
+          errorMessage: error.message,
+        }),
       );
       throw new McpError(
         BaseErrorCode.INTERNAL_ERROR,
@@ -315,42 +354,49 @@ export class NcbiService {
       parsedXml.eLinkResult?.ERROR,
       parsedXml.eSummaryResult?.ERROR,
       parsedXml.PubmedArticleSet?.ErrorList?.CannotRetrievePMID,
-      parsedXml.ERROR
-    ].flat().filter(Boolean);
+      parsedXml.ERROR,
+    ]
+      .flat()
+      .filter(Boolean);
 
     for (const errorSource of errorSources) {
-        if (typeof errorSource === 'string') {
-            messages.push(errorSource);
-        } else if (typeof errorSource === 'object' && errorSource !== null) {
-            if (Array.isArray(errorSource)) {
-                errorSource.forEach(errItem => {
-                    if (errItem && typeof errItem['#text'] === 'string') {
-                        messages.push(errItem['#text']);
-                    } else if (typeof errItem === 'string') {
-                        messages.push(errItem);
-                    }
-                });
-            } else if (typeof errorSource['#text'] === 'string') {
-                messages.push(errorSource['#text']);
+      if (typeof errorSource === "string") {
+        messages.push(errorSource);
+      } else if (typeof errorSource === "object" && errorSource !== null) {
+        if (Array.isArray(errorSource)) {
+          errorSource.forEach((errItem) => {
+            if (errItem && typeof errItem["#text"] === "string") {
+              messages.push(errItem["#text"]);
+            } else if (typeof errItem === "string") {
+              messages.push(errItem);
             }
+          });
+        } else if (typeof errorSource["#text"] === "string") {
+          messages.push(errorSource["#text"]);
         }
+      }
     }
     if (messages.length === 0 && parsedXml.eSearchResult?.WarningList) {
-        const warningSources = [
-            parsedXml.eSearchResult?.WarningList?.QuotedPhraseNotFound,
-            parsedXml.eSearchResult?.WarningList?.OutputMessage
-        ].flat().filter(Boolean);
-        for (const warningSource of warningSources) {
-            if (typeof warningSource === 'string') {
-                messages.push(`Warning: ${warningSource}`);
-            } else if (Array.isArray(warningSource)) {
-                warningSource.forEach(warnItem => {
-                    if (typeof warnItem === 'string') messages.push(`Warning: ${warnItem}`);
-                });
-            }
+      const warningSources = [
+        parsedXml.eSearchResult?.WarningList?.QuotedPhraseNotFound,
+        parsedXml.eSearchResult?.WarningList?.OutputMessage,
+      ]
+        .flat()
+        .filter(Boolean);
+      for (const warningSource of warningSources) {
+        if (typeof warningSource === "string") {
+          messages.push(`Warning: ${warningSource}`);
+        } else if (Array.isArray(warningSource)) {
+          warningSource.forEach((warnItem) => {
+            if (typeof warnItem === "string")
+              messages.push(`Warning: ${warnItem}`);
+          });
         }
+      }
     }
-    return messages.length > 0 ? messages : ["Unknown NCBI API error structure."];
+    return messages.length > 0
+      ? messages
+      : ["Unknown NCBI API error structure."];
   }
 
   public async eSearch(
@@ -369,7 +415,8 @@ export class NcbiService {
     params: NcbiRequestParams,
     context: RequestContext,
   ): Promise<any> {
-    const retmode = params.version === "2.0" && params.retmode === "json" ? "json" : "xml";
+    const retmode =
+      params.version === "2.0" && params.retmode === "json" ? "json" : "xml";
     return this.enqueueRequest(
       () => this.makeRequest("esummary", params, context, { retmode }),
       context,
@@ -383,7 +430,8 @@ export class NcbiService {
     context: RequestContext,
     options: NcbiRequestOptions = { retmode: "xml" },
   ): Promise<any> {
-    const usePost = typeof params.id === 'string' && params.id.split(',').length > 200;
+    const usePost =
+      typeof params.id === "string" && params.id.split(",").length > 200;
     const fetchOptions = { ...options, usePost };
 
     return this.enqueueRequest(
