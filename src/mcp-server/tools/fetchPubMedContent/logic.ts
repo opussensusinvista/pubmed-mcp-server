@@ -63,6 +63,13 @@ export const FetchPubMedContentInputSchema = z.object({
     .optional()
     .default(false)
     .describe("Applies to 'abstract_plus' if parsed from XML."),
+  outputFormat: z
+    .enum(["json", "raw_text"])
+    .optional()
+    .default("json")
+    .describe(
+      "Specifies the final output format of the tool. 'json' (default) wraps the data in a standard JSON object. 'raw_text' attempts to return raw text for 'medline_text' or a JSON string of the XML structure for 'full_xml'. For other detailLevels, 'raw_text' defaults to 'json'.",
+    ),
 });
 
 export type FetchPubMedContentInput = z.infer<
@@ -220,17 +227,15 @@ export async function fetchPubMedContentLogic(
 
   let retmode: "xml" | "text" = "xml";
   let rettype: string | undefined;
-  let responseContentType = "application/json";
+  // responseContentType is determined by input.outputFormat at the end
 
   switch (input.detailLevel) {
     case "full_xml":
       retmode = "xml";
-      responseContentType = "application/xml";
       break;
     case "medline_text":
       retmode = "text";
       rettype = "medline";
-      responseContentType = "text/plain";
       break;
     case "abstract_plus":
     case "citation_data":
@@ -257,32 +262,80 @@ export async function fetchPubMedContentLogic(
       { retmode, rettype },
     );
 
-    let responseData: any;
+    let finalOutputText: string;
+    let structuredResponseData: any; // Used for building the JSON response
 
-    if (
-      input.detailLevel === "full_xml" ||
-      input.detailLevel === "medline_text"
-    ) {
-      // For full_xml, ncbiService.eFetch (if retmode='xml') returns parsed JSON by default.
-      // If we want raw XML string, ncbiService would need an option or we re-serialize.
-      // For now, assuming ncbiService returns string if retmode='text', and parsed object if retmode='xml'.
-      // If ncbiService returns parsed object for full_xml, we might need to stringify it back to XML if client expects raw XML.
-      // Let's assume for now the client consuming "full_xml" can handle the JSON representation of XML from fast-xml-parser.
-      // If raw XML string is strictly needed, ncbiService.makeRequest would need adjustment or a new method.
-      responseData = eFetchResponseXml;
-      if (
-        input.detailLevel === "full_xml" &&
-        typeof eFetchResponseXml === "object"
-      ) {
-        // If the client expects a string of XML, we'd need to re-serialize.
-        // This is a simplification; true XML serialization is complex.
-        // For now, we'll send the JSON representation.
-        // Consider adding an XMLBuilder if raw XML string output is critical.
-        // responseData = JSON.stringify(eFetchResponseXml); // Or use an XML builder
+    if (input.detailLevel === "medline_text") {
+      structuredResponseData = {
+        requestedPmids: input.pmids,
+        articles: [
+          {
+            pmids: input.pmids,
+            medlineText: String(eFetchResponseXml),
+          },
+        ],
+        notFoundPmids: [], // Simplification
+        eFetchDetails: {
+          urls: [eFetchUrl],
+          requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+        },
+      };
+      if (input.outputFormat === "raw_text") {
+        finalOutputText = String(eFetchResponseXml);
+      } else {
+        finalOutputText = JSON.stringify(structuredResponseData);
+      }
+    } else if (input.detailLevel === "full_xml") {
+      const articlesXml = ensureArray(
+        (eFetchResponseXml as any)?.PubmedArticleSet?.PubmedArticle || [],
+      );
+      const articlesPayload: { pmid: string; fullXmlContent: any }[] = [];
+      const foundPmidsInXml = new Set<string>();
+
+      for (const articleXml of articlesXml) {
+        let pmid = "unknown_pmid";
+        if (articleXml?.MedlineCitation) {
+          // Use the robust extractPmid utility
+          const extracted = extractPmid(articleXml.MedlineCitation);
+          if (extracted) {
+            pmid = extracted;
+          }
+        }
+
+        if (pmid !== "unknown_pmid") {
+          foundPmidsInXml.add(pmid);
+        }
+        articlesPayload.push({
+          pmid: pmid,
+          fullXmlContent: articleXml, // articleXml here is the <PubmedArticle> element
+        });
+      }
+      const notFoundPmids = input.pmids.filter(
+        (pmid) => !foundPmidsInXml.has(pmid),
+      );
+      structuredResponseData = {
+        requestedPmids: input.pmids,
+        articles: articlesPayload,
+        notFoundPmids,
+        eFetchDetails: {
+          urls: [eFetchUrl],
+          requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+        },
+      };
+      if (input.outputFormat === "raw_text") {
+        // NOTE: This returns the JSON string representation of the parsed XML,
+        // not the raw XML string itself. True raw XML output would require
+        // ncbiService to return raw string or use an XML builder here.
+        logger.warning(
+          "outputFormat 'raw_text' for 'full_xml' detailLevel currently returns a JSON string of the parsed XML, not a raw XML string.",
+          toolLogicContext,
+        );
+        finalOutputText = JSON.stringify(eFetchResponseXml); // This is the parsed XML object from ncbiService
+      } else {
+        finalOutputText = JSON.stringify(structuredResponseData);
       }
     } else {
       // abstract_plus or citation_data
-      // Ensure eFetchResponseXml is of type XmlPubmedArticleSet for parsePubMedArticleSet
       const parsedArticles = parsePubMedArticleSet(
         eFetchResponseXml as XmlPubmedArticleSet,
         input,
@@ -291,7 +344,7 @@ export async function fetchPubMedContentLogic(
       const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
       const notFoundPmids = input.pmids.filter((pmid) => !foundPmids.has(pmid));
 
-      responseData = {
+      structuredResponseData = {
         requestedPmids: input.pmids,
         articles: parsedArticles,
         notFoundPmids,
@@ -302,8 +355,8 @@ export async function fetchPubMedContentLogic(
       };
 
       if (input.detailLevel === "citation_data") {
-        responseData.articles = responseData.articles.map(
-          (article: ParsedArticle) => ({
+        structuredResponseData.articles =
+          structuredResponseData.articles.map((article: ParsedArticle) => ({
             pmid: article.pmid,
             title: article.title,
             authors: article.authors?.map((a) => ({
@@ -319,20 +372,18 @@ export async function fetchPubMedContentLogic(
               year: article.journalInfo?.publicationDate?.year,
             },
             doi: article.doi,
-          }),
-        );
+          }));
       }
+      // For abstract_plus and citation_data, outputFormat 'raw_text' doesn't make sense,
+      // as the data is inherently structured. So, always output JSON.
+      finalOutputText = JSON.stringify(structuredResponseData);
     }
 
     return {
       content: [
         {
           type: "text",
-          text:
-            responseContentType === "application/json" ||
-            typeof responseData === "object"
-              ? JSON.stringify(responseData)
-              : String(responseData),
+          text: finalOutputText,
         },
       ],
       isError: false,
