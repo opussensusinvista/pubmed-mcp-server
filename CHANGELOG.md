@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] - 2025-05-24
+
+### Fixed
+
+- Applied `npm pkg fix` to resolve npm publishing warnings. This included:
+  - Correcting the `bin` path in `package.json`.
+  - Updating the version badge in `README.md` to `1.0.12`.
+- Note: This version bump is solely for addressing npm packaging issues. No functional code changes were made.
+
 ## [1.0.11] - 2025-05-24
 
 ### Changed
