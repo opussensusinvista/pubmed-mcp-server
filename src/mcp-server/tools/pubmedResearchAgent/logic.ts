@@ -40,7 +40,10 @@ export async function pubmedResearchAgentLogic(
   );
 
   try {
-    const researchPlanOutline = generateFullResearchPlanOutline(input, operationContext);
+    const researchPlanOutline = generateFullResearchPlanOutline(
+      input,
+      operationContext,
+    );
 
     return {
       content: [
