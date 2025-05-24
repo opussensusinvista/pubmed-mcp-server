@@ -36,41 +36,115 @@ import {
   getText,
 } from "../../../utils/parsing/ncbi-parsing/index.js";
 
-export const FetchPubMedContentInputSchema = z.object({
-  pmids: z
-    .array(z.string().regex(/^\d+$/))
-    .min(1, "At least one PMID is required")
-    .max(200, "Max 200 PMIDs per call.")
-    .describe(
-      "An array of PubMed Unique Identifiers (PMIDs) for which to fetch content. Requires at least one PMID, max 200 per call.",
-    ),
-  detailLevel: z
-    .enum(["abstract_plus", "full_xml", "medline_text", "citation_data"])
-    .optional()
-    .default("abstract_plus")
-    .describe(
-      "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details including abstract, authors, journal, DOI, etc.), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal parsed data for citations). Defaults to 'abstract_plus'.",
-    ),
-  includeMeshTerms: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe(
-      "Applies to 'abstract_plus' and 'citation_data' if parsed from XML.",
-    ),
-  includeGrantInfo: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe("Applies to 'abstract_plus' if parsed from XML."),
-  outputFormat: z
-    .enum(["json", "raw_text"])
-    .optional()
-    .default("json")
-    .describe(
-      "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'.",
-    ),
-});
+export const FetchPubMedContentInputSchema = z
+  .object({
+    pmids: z
+      .array(z.string().regex(/^\d+$/))
+      .max(200, "Max 200 PMIDs per call if not using history.")
+      .optional()
+      .describe(
+        "An array of PubMed Unique Identifiers (PMIDs) for which to fetch content. Use this OR queryKey/webEnv.",
+      ),
+    queryKey: z
+      .string()
+      .optional()
+      .describe(
+        "Query key from ESearch history server. If used, webEnv must also be provided. Use this OR pmids.",
+      ),
+    webEnv: z
+      .string()
+      .optional()
+      .describe(
+        "Web environment from ESearch history server. If used, queryKey must also be provided. Use this OR pmids.",
+      ),
+    retstart: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe(
+        "Sequential index of the first record to retrieve (0-based). Used with queryKey/webEnv.",
+      ),
+    retmax: z
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .describe(
+        "Maximum number of records to retrieve. Used with queryKey/webEnv.",
+      ),
+    detailLevel: z
+      .enum(["abstract_plus", "full_xml", "medline_text", "citation_data"])
+      .optional()
+      .default("abstract_plus")
+      .describe(
+        "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details including abstract, authors, journal, DOI, etc.), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal parsed data for citations). Defaults to 'abstract_plus'.",
+      ),
+    includeMeshTerms: z
+      .boolean()
+      .optional()
+      .default(true)
+      .describe(
+        "Applies to 'abstract_plus' and 'citation_data' if parsed from XML.",
+      ),
+    includeGrantInfo: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe("Applies to 'abstract_plus' if parsed from XML."),
+    outputFormat: z
+      .enum(["json", "raw_text"])
+      .optional()
+      .default("json")
+      .describe(
+        "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'.",
+      ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.queryKey && !data.webEnv) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "webEnv is required if queryKey is provided.",
+        path: ["webEnv"],
+      });
+    }
+    if (!data.queryKey && data.webEnv) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "queryKey is required if webEnv is provided.",
+        path: ["queryKey"],
+      });
+    }
+    if (
+      (!data.pmids || data.pmids.length === 0) &&
+      !(data.queryKey && data.webEnv)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Either pmids (non-empty array) or both queryKey and webEnv must be provided.",
+        path: ["pmids"],
+      });
+    }
+    if (data.pmids && data.pmids.length > 0 && (data.queryKey || data.webEnv)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Cannot use pmids and queryKey/webEnv simultaneously. Please choose one method.",
+        path: ["pmids"],
+      });
+    }
+    if (
+      (data.retstart !== undefined || data.retmax !== undefined) &&
+      !(data.queryKey && data.webEnv)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "retstart/retmax can only be used with queryKey and webEnv.",
+        path: ["retstart"],
+      });
+    }
+  });
 
 export type FetchPubMedContentInput = z.infer<
   typeof FetchPubMedContentInputSchema
@@ -78,12 +152,17 @@ export type FetchPubMedContentInput = z.infer<
 
 /**
  * Interface for parameters passed to the ncbiService.eFetch method.
+ * Adjusted to reflect that 'id' is not used when query_key and WebEnv are present.
  */
 interface EFetchServiceParams {
   db: string;
-  id: string;
+  id?: string; // Optional if using history
+  query_key?: string; // NCBI uses query_key
+  WebEnv?: string; // NCBI uses WebEnv (capital E)
   retmode?: "xml" | "text";
   rettype?: string;
+  retstart?: string;
+  retmax?: string;
   // Allow other E-utility specific parameters, typically strings
   [key: string]: string | undefined;
 }
@@ -237,6 +316,104 @@ export async function fetchPubMedContentLogic(
   input: FetchPubMedContentInput,
   parentRequestContext: RequestContext,
 ): Promise<CallToolResult> {
+  // Manual validation for conditions superRefine should catch,
+  // as SDK might call handler even with refinement issues.
+  if (input.queryKey && !input.webEnv) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: {
+              code: BaseErrorCode.VALIDATION_ERROR,
+              message: "webEnv is required if queryKey is provided.",
+            },
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+  if (!input.queryKey && input.webEnv) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: {
+              code: BaseErrorCode.VALIDATION_ERROR,
+              message: "queryKey is required if webEnv is provided.",
+            },
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+  if (
+    input.pmids &&
+    input.pmids.length > 0 &&
+    (input.queryKey || input.webEnv)
+  ) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: {
+              code: BaseErrorCode.VALIDATION_ERROR,
+              message:
+                "Cannot use pmids and queryKey/webEnv simultaneously. Please choose one method.",
+            },
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+  if (
+    (input.retstart !== undefined || input.retmax !== undefined) &&
+    !(input.queryKey && input.webEnv)
+  ) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: {
+              code: BaseErrorCode.VALIDATION_ERROR,
+              message:
+                "retstart/retmax can only be used with queryKey and webEnv.",
+            },
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+  // SuperRefine also checks: if ((!data.pmids || data.pmids.length === 0) && !(data.queryKey && data.webEnv))
+  // This should ideally be caught before handler, but as a safeguard:
+  if (
+    (!input.pmids || input.pmids.length === 0) &&
+    !(input.queryKey && input.webEnv)
+  ) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: {
+              code: BaseErrorCode.VALIDATION_ERROR,
+              message:
+                "Either pmids (non-empty array) or both queryKey and webEnv must be provided.",
+            },
+          }),
+        },
+      ],
+      isError: true,
+    };
+  }
+
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
     operation: "fetchPubMedContentLogic",
@@ -245,10 +422,23 @@ export async function fetchPubMedContentLogic(
 
   logger.info("Executing fetch_pubmed_content tool", toolLogicContext);
 
-  const eFetchParams: EFetchServiceParams = {
-    db: "pubmed",
-    id: input.pmids.join(","),
-  };
+  const eFetchParams: EFetchServiceParams = { db: "pubmed" };
+  let usingHistory = false;
+
+  if (input.queryKey && input.webEnv) {
+    usingHistory = true;
+    eFetchParams.query_key = input.queryKey;
+    eFetchParams.WebEnv = input.webEnv; // NCBI uses WebEnv with capital E
+    if (input.retstart !== undefined) {
+      eFetchParams.retstart = String(input.retstart);
+    }
+    if (input.retmax !== undefined) {
+      eFetchParams.retmax = String(input.retmax);
+    }
+  } else if (input.pmids && input.pmids.length > 0) {
+    eFetchParams.id = input.pmids.join(",");
+  }
+  // The superRefine ensures that either pmids or (queryKey & webEnv) is provided.
 
   let serviceRetmode: "xml" | "text" = "xml"; // Renamed to avoid conflict with local retmode variable if any
   let rettype: string | undefined;
@@ -276,7 +466,7 @@ export async function fetchPubMedContentLogic(
     const eFetchBase =
       "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
     const eFetchQueryString = new URLSearchParams(
-      eFetchParams as Record<string, string>,
+      eFetchParams as Record<string, string>, // Cast to Record<string, string> for URLSearchParams
     ).toString();
     eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
 
@@ -285,7 +475,7 @@ export async function fetchPubMedContentLogic(
       input.detailLevel === "full_xml" && input.outputFormat === "raw_text";
 
     const eFetchResponseData = await ncbiService.eFetch(
-      eFetchParams, // Now correctly typed
+      eFetchParams,
       toolLogicContext,
       { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml },
     );
@@ -301,24 +491,31 @@ export async function fetchPubMedContentLogic(
       while ((match = pmidRegex.exec(medlineText)) !== null) {
         foundPmidsInMedline.add(match[1]);
       }
-      const notFoundPmids = input.pmids.filter(
-        (pmid) => !foundPmidsInMedline.has(pmid),
-      );
+
+      let notFoundPmids: string[] = [];
+      if (input.pmids && input.pmids.length > 0) {
+        notFoundPmids = input.pmids.filter(
+          (pmid) => !foundPmidsInMedline.has(pmid),
+        );
+      }
 
       structuredResponseData = {
-        requestedPmids: input.pmids,
+        requestedPmids: input.pmids || "N/A (used history query)",
         articles: [
           {
-            // For medline_text, it's one block of text, so associate all input PMIDs
-            // though only found ones are truly in the text.
-            pmids: input.pmids,
+            pmids: input.pmids || "N/A (used history query)",
             medlineText: medlineText,
           },
         ],
-        notFoundPmids,
+        notFoundPmids: usingHistory
+          ? "N/A (used history query)"
+          : notFoundPmids,
         eFetchDetails: {
           urls: [eFetchUrl],
-          requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+          requestMethod:
+            input.pmids && input.pmids.length > 200 && !usingHistory
+              ? "POST"
+              : "GET",
         },
       };
       if (input.outputFormat === "raw_text") {
@@ -356,16 +553,26 @@ export async function fetchPubMedContentLogic(
             fullXmlContent: articleXml,
           });
         }
-        const notFoundPmids = input.pmids.filter(
-          (pmid) => !foundPmidsInXml.has(pmid),
-        );
+
+        let notFoundPmids: string[] | string = [];
+        if (input.pmids && input.pmids.length > 0) {
+          notFoundPmids = input.pmids.filter(
+            (pmid) => !foundPmidsInXml.has(pmid),
+          );
+        } else if (usingHistory) {
+          notFoundPmids = "N/A (used history query)";
+        }
+
         structuredResponseData = {
-          requestedPmids: input.pmids,
+          requestedPmids: input.pmids || "N/A (used history query)",
           articles: articlesPayload,
           notFoundPmids,
           eFetchDetails: {
             urls: [eFetchUrl],
-            requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+            requestMethod:
+              input.pmids && input.pmids.length > 200 && !usingHistory
+                ? "POST"
+                : "GET",
           },
         };
         finalOutputText = JSON.stringify(structuredResponseData);
@@ -379,15 +586,24 @@ export async function fetchPubMedContentLogic(
         toolLogicContext,
       );
       const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
-      const notFoundPmids = input.pmids.filter((pmid) => !foundPmids.has(pmid));
+
+      let notFoundPmids: string[] | string = [];
+      if (input.pmids && input.pmids.length > 0) {
+        notFoundPmids = input.pmids.filter((pmid) => !foundPmids.has(pmid));
+      } else if (usingHistory) {
+        notFoundPmids = "N/A (used history query)";
+      }
 
       structuredResponseData = {
-        requestedPmids: input.pmids,
+        requestedPmids: input.pmids || "N/A (used history query)",
         articles: parsedArticles,
         notFoundPmids,
         eFetchDetails: {
           urls: [eFetchUrl],
-          requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+          requestMethod:
+            input.pmids && input.pmids.length > 200 && !usingHistory
+              ? "POST"
+              : "GET",
         },
       };
 
@@ -456,7 +672,7 @@ export async function fetchPubMedContentLogic(
               message: mcpError.message,
               details: mcpError.details,
             },
-            requestedPmids: input.pmids,
+            requestedPmids: input.pmids || "N/A (used history query)",
             eFetchUrl,
           }),
         },
