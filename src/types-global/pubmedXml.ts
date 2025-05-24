@@ -254,10 +254,36 @@ export interface ParsedArticle {
 // Based on ESummary v2.0 XML (DocSum) and JSON-like XML structure
 // This is a common structure, but individual fields can vary.
 
+/**
+ * Represents a raw author entry as parsed from ESummary XML.
+ * This type accounts for potential inconsistencies in property naming (e.g., Name/name)
+ * and structure directly from the XML-to-JavaScript conversion.
+ * It is intended for use as an intermediate type before normalization into ESummaryAuthor.
+ */
+export interface XmlESummaryAuthorRaw {
+  Name?: string; // Primary name field (often "LastName Initials")
+  name?: string; // Alternative casing for name
+
+  AuthType?: string; // Author type (e.g., "Author")
+  authtype?: string; // Alternative casing
+
+  ClusterId?: string; // Cluster ID
+  clusterid?: string; // Alternative casing
+
+  "#text"?: string; // If the author is represented as a simple text node
+
+  // Allow other properties as NCBI XML can be unpredictable
+  [key: string]: any;
+}
+
+/**
+ * Represents a normalized author entry after parsing from ESummary data.
+ * This is the clean, canonical structure for application use.
+ */
 export interface ESummaryAuthor {
-  name: string; // Typically "LastName Initials"
-  authtype?: string; // e.g., "Author"
-  clusterid?: string;
+  name: string; // Standardized: "LastName Initials"
+  authtype?: string; // Standardized: e.g., "Author"
+  clusterid?: string; // Standardized
 }
 
 export interface ESummaryArticleId {
@@ -300,9 +326,9 @@ export interface ESummaryDocumentSummary {
   EPubDate?: string;
   Source?: string;
   Authors?:
-    | ESummaryAuthor[]
-    | { Author: ESummaryAuthor[] | ESummaryAuthor }
-    | string; // Can be array, object with Author prop, or string
+    | XmlESummaryAuthorRaw[] // Array of raw author entries
+    | { Author: XmlESummaryAuthorRaw[] | XmlESummaryAuthorRaw } // Object containing raw author entries
+    | string; // Or a simple string for authors
   LastAuthor?: string;
   Title?: string;
   SortTitle?: string;

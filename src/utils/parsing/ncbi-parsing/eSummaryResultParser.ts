@@ -12,7 +12,8 @@ import {
   ESummaryItem,
   ESummaryResult,
   ParsedBriefSummary,
-  ESummaryAuthor as XmlESummaryAuthor,
+  ESummaryAuthor as XmlESummaryAuthor, // This is the normalized output type
+  XmlESummaryAuthorRaw, // This is the raw input type from XML parsing
 } from "../../../types-global/pubmedXml.js";
 import {
   dateParser,
@@ -25,7 +26,7 @@ import { ensureArray, getAttribute, getText } from "./xmlGenericHelpers.js";
 /**
  * Formats an array of ESummary authors into a string.
  * Limits to the first 3 authors and adds "et al." if more exist.
- * @param authors - Array of ESummary author objects.
+ * @param authors - Array of ESummary author objects (normalized).
  * @returns A string like "Doe J, Smith A, Brown B, et al." or empty if no authors.
  */
 export function formatESummaryAuthors(authors?: XmlESummaryAuthor[]): string {
@@ -69,24 +70,25 @@ export async function standardizeESummaryDate(
       return parsedDate.toISOString().split("T")[0]; // Format as YYYY-MM-DD
     }
     logger.debug(
-      `standardizeESummaryDate: dateParser could not parse "${dateInputString}", returning original.`,
+      `standardizeESummaryDate: dateParser could not parse "${dateInputString}", returning undefined.`,
       currentContext,
     );
   } catch (e) {
     logger.warning(
-      `standardizeESummaryDate: Error during dateParser.parseDate for "${dateInputString}", returning original.`,
+      `standardizeESummaryDate: Error during dateParser.parseDate for "${dateInputString}", returning undefined.`,
       {
         ...currentContext,
         error: e instanceof Error ? e.message : String(e),
       },
     );
   }
-  return dateInputString; // Return original string (now definitely a string) if parsing fails
+  return undefined; // Return undefined if parsing fails
 }
 
 /**
  * Parses authors from an ESummary DocumentSummary structure.
  * Handles various ways authors might be represented.
+ * Returns an array of normalized XmlESummaryAuthor objects.
  * Internal helper function.
  */
 function parseESummaryAuthorsFromDocumentSummary(
@@ -95,139 +97,120 @@ function parseESummaryAuthorsFromDocumentSummary(
   const authorsProp = docSummary.Authors;
   if (!authorsProp) return [];
 
-  if (Array.isArray(authorsProp)) {
-    // authorsProp could be Array<string> or Array<{ Name: string ...}> or Array<{ name: string ...}>
-    return authorsProp
-      .map((authInput) => {
-        let name = "";
-        if (typeof authInput === "string") {
-          name = authInput;
-        } else if (authInput && typeof authInput === "object") {
-          // Try extracting text from the object itself (e.g., if it's { '#text': 'Author Name' })
-          name = getText(authInput, "");
+  const parsedAuthors: XmlESummaryAuthor[] = [];
 
-          // If name is still empty, try common property names for author names
-          if (!name && (authInput as any).Name) {
-            // Check for { Name: 'Author Name' }
-            name = getText((authInput as any).Name, ""); // authInput.Name could also be an object
-          }
-          if (!name && (authInput as any).name) {
-            // Check for { name: 'Author Name' }
-            name = getText((authInput as any).name, ""); // authInput.name could also be an object
-          }
+  const processRawAuthor = (rawAuthInput: XmlESummaryAuthorRaw | string) => {
+    let name = "";
+    let authtype: string | undefined;
+    let clusterid: string | undefined;
 
-          // Fallback for unhandled structures: log and try to stringify
-          if (!name) {
-            const authInputString = JSON.stringify(authInput);
-            logger.warning(
-              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary. authInput: ${authInputString.substring(0, 100)}`,
-              requestContextService.createRequestContext({
-                operation: "parseESummaryAuthorsFromDocumentSummary",
-                detail: "Unhandled author structure",
-              }),
-            );
-            // As a last resort, if it's a simple object with a single value, that might be the name
-            const keys = Object.keys(authInput);
-            if (
-              keys.length === 1 &&
-              typeof (authInput as any)[keys[0]] === "string"
-            ) {
-              name = (authInput as any)[keys[0]];
-            } else if (authInputString.length < 100) {
-              // Avoid overly long stringified objects
-              name = authInputString; // Not ideal, but better than empty for debugging
-            }
-          }
+    if (typeof rawAuthInput === "string") {
+      name = rawAuthInput;
+    } else if (rawAuthInput && typeof rawAuthInput === "object") {
+      const authorObj = rawAuthInput as XmlESummaryAuthorRaw; // Now typed
+      // Try extracting text from the object itself (e.g., if it's { '#text': 'Author Name' })
+      name = getText(authorObj, "");
+
+      // If name is still empty, try common property names for author names
+      if (!name) {
+        name = getText(authorObj.Name || authorObj.name, "");
+      }
+
+      authtype = getText(authorObj.AuthType || authorObj.authtype, undefined);
+      clusterid = getText(
+        authorObj.ClusterId || authorObj.clusterid,
+        undefined,
+      );
+
+      // Fallback for unhandled structures: log and try to stringify
+      if (!name) {
+        const authInputString = JSON.stringify(authorObj);
+        logger.warning(
+          `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary. authInput: ${authInputString.substring(0, 100)}`,
+          requestContextService.createRequestContext({
+            operation: "parseESummaryAuthorsFromDocumentSummary",
+            detail: "Unhandled author structure",
+          }),
+        );
+        // As a last resort, if it's a simple object with a single value, that might be the name
+        const keys = Object.keys(authorObj);
+        if (
+          keys.length === 1 &&
+          typeof (authorObj as any)[keys[0]] === "string"
+        ) {
+          name = (authorObj as any)[keys[0]];
+        } else if (authInputString.length < 100) {
+          // Avoid overly long stringified objects
+          name = authInputString; // Not ideal, but better than empty for debugging
         }
-        return {
-          name: name.trim(),
-          authtype:
-            (authInput as any)?.AuthType || (authInput as any)?.authtype,
-          clusterid:
-            (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
-        };
-      })
-      .filter((author) => author.name);
-  }
+      }
+    }
 
-  if (
+    if (name.trim()) {
+      parsedAuthors.push({
+        name: name.trim(),
+        authtype,
+        clusterid,
+      });
+    }
+  };
+
+  if (Array.isArray(authorsProp)) {
+    // authorsProp could be Array<string> or Array<XmlESummaryAuthorRaw>
+    (authorsProp as (XmlESummaryAuthorRaw | string)[]).forEach(
+      processRawAuthor,
+    );
+  } else if (
     typeof authorsProp === "object" &&
     "Author" in authorsProp && // authorsProp is { Author: ... }
     authorsProp.Author
   ) {
-    const rawAuthors = ensureArray(authorsProp.Author); // rawAuthors is Array<any>
-    return rawAuthors
-      .map((authInput) => {
-        let name = "";
-        if (typeof authInput === "string") {
-          name = authInput;
-        } else if (authInput && typeof authInput === "object") {
-          name = getText(authInput, "");
-          if (!name && (authInput as any).Name) {
-            name = getText((authInput as any).Name, "");
-          }
-          if (!name && (authInput as any).name) {
-            name = getText((authInput as any).name, "");
-          }
-          if (!name) {
-            const authInputString = JSON.stringify(authInput);
-            logger.warning(
-              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary (from authorsProp.Author). authInput: ${authInputString.substring(0, 100)}`,
-              requestContextService.createRequestContext({
-                operation: "parseESummaryAuthorsFromDocumentSummary",
-                detail: "Unhandled author structure from authorsProp.Author",
-              }),
-            );
-            const keys = Object.keys(authInput);
-            if (
-              keys.length === 1 &&
-              typeof (authInput as any)[keys[0]] === "string"
-            ) {
-              name = (authInput as any)[keys[0]];
-            } else if (authInputString.length < 100) {
-              name = authInputString;
-            }
-          }
-        }
-        return {
-          name: name.trim(),
-          authtype:
-            (authInput as any)?.AuthType || (authInput as any)?.authtype,
-          clusterid:
-            (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
-        };
-      })
-      .filter((author) => author.name); // Filter out authors with no name
-  }
-
-  if (typeof authorsProp === "string") {
+    const rawAuthors = ensureArray(
+      authorsProp.Author as
+        | XmlESummaryAuthorRaw
+        | XmlESummaryAuthorRaw[]
+        | string,
+    );
+    rawAuthors.forEach(processRawAuthor);
+  } else if (typeof authorsProp === "string") {
     try {
+      // Attempt to parse if it looks like a JSON array string
       if (authorsProp.startsWith("[") && authorsProp.endsWith("]")) {
-        const parsed = JSON.parse(authorsProp);
-        if (Array.isArray(parsed)) {
-          return parsed.map((authName: any) =>
-            typeof authName === "string"
-              ? { name: authName }
-              : (authName as XmlESummaryAuthor),
-          );
+        const parsedJsonAuthors = JSON.parse(authorsProp);
+        if (Array.isArray(parsedJsonAuthors)) {
+          parsedJsonAuthors.forEach((authItem: any) => {
+            if (typeof authItem === "string") {
+              parsedAuthors.push({ name: authItem.trim() });
+            } else if (
+              typeof authItem === "object" &&
+              authItem !== null &&
+              (authItem.name || authItem.Name)
+            ) {
+              // If it's an object with a name property, treat as XmlESummaryAuthorRaw
+              processRawAuthor(authItem as XmlESummaryAuthorRaw);
+            }
+          });
+          if (parsedAuthors.length > 0) return parsedAuthors; // Return if JSON parsing yielded results
         }
       }
     } catch (e) {
       logger.debug(
-        `Failed to parse Authors string as JSON: ${authorsProp}`,
+        `Failed to parse Authors string as JSON: ${authorsProp.substring(0, 100)}`,
         requestContextService.createRequestContext({
-          operation: "parseESummaryAuthors",
-          input: authorsProp,
+          operation: "parseESummaryAuthorsFromString",
+          input: authorsProp.substring(0, 100),
           error: e instanceof Error ? e.message : String(e),
         }),
       );
     }
-    return authorsProp
+    // Fallback: split string by common delimiters
+    authorsProp
       .split(/[,;]/)
-      .map((name: string) => ({ name: name.trim() }))
-      .filter((author) => author.name);
+      .map((namePart: string) => namePart.trim())
+      .filter((namePart) => namePart)
+      .forEach((namePart) => parsedAuthors.push({ name: namePart }));
   }
-  return [];
+  return parsedAuthors.filter((author) => author.name);
 }
 
 /**
@@ -244,7 +227,7 @@ function parseSingleDocumentSummary(docSummary: ESummaryDocumentSummary): Omit<
   const pmid = docSummary["@_uid"];
   const authorsArray = parseESummaryAuthorsFromDocumentSummary(docSummary);
 
-  let doiValue: string | undefined = docSummary.DOI;
+  let doiValue: string | undefined = getText(docSummary.DOI, undefined);
   if (!doiValue) {
     const articleIdsProp = docSummary.ArticleIds;
     if (articleIdsProp) {
@@ -262,23 +245,23 @@ function parseSingleDocumentSummary(docSummary: ESummaryDocumentSummary): Omit<
         (id) => (id as ESummaryArticleId).idtype === "doi",
       );
       if (doiEntry) {
-        doiValue = (doiEntry as ESummaryArticleId).value;
+        doiValue = getText((doiEntry as ESummaryArticleId).value, undefined);
       }
     }
   }
 
   return {
     pmid: String(pmid),
-    title: docSummary.Title || undefined,
+    title: getText(docSummary.Title, undefined),
     authors: formatESummaryAuthors(authorsArray),
     source:
-      docSummary.Source ||
-      docSummary.FullJournalName ||
-      docSummary.SO ||
+      getText(docSummary.Source, undefined) ||
+      getText(docSummary.FullJournalName, undefined) ||
+      getText(docSummary.SO, undefined) ||
       undefined,
     doi: doiValue,
-    rawPubDate: docSummary.PubDate || undefined,
-    rawEPubDate: docSummary.EPubDate || undefined,
+    rawPubDate: getText(docSummary.PubDate, undefined),
+    rawEPubDate: getText(docSummary.EPubDate, undefined),
   };
 }
 
@@ -309,10 +292,8 @@ function parseSingleDocSumOldXml(docSum: ESummaryDocSumOldXml): Omit<
           i._Type !== "ERROR",
       );
       if (item) {
-        if (item["#text"] !== undefined) return String(item["#text"]);
-        // fast-xml-parser might parse simple elements directly to string/number
-        if (typeof item === "string" || typeof item === "number")
-          return String(item);
+        const textVal = getText(item);
+        if (textVal !== undefined) return String(textVal);
       }
     }
     return undefined;
@@ -327,6 +308,7 @@ function parseSingleDocSumOldXml(docSum: ESummaryDocSumOldXml): Omit<
         .filter((a) => a._Name === "Author" && a._Type === "String")
         .map((a) => ({ name: getText(a, "") }));
     }
+    // Fallback for authors directly under DocSum items
     return items
       .filter((i) => i._Name === "Author" && i._Type === "String")
       .map((a) => ({ name: getText(a, "") }));
@@ -344,7 +326,7 @@ function parseSingleDocSumOldXml(docSum: ESummaryDocSumOldXml): Omit<
       const doiIdItem = ids.find(
         (id) =>
           getAttribute(id as ESummaryItem, "idtype") === "doi" ||
-          (id as ESummaryItem)._Name === "doi",
+          (id as ESummaryItem)._Name === "doi", // Some older formats might use Name="doi"
       );
       if (doiIdItem) {
         doiFromItems = getText(doiIdItem);
