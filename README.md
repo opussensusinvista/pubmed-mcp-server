@@ -62,7 +62,7 @@ Get the PubMed MCP server running in minutes:
     # RECOMMENDED FOR NCBI E-UTILITIES (for higher rate limits)
     # NCBI_API_KEY=your_ncbi_api_key_here
     # NCBI_ADMIN_EMAIL=your_email@example.com # Recommended if using an API key
-    # NCBI_TOOL_IDENTIFIER=pubmed-mcp-server/1.0.2 # Optional: Tool identifier for NCBI
+    # NCBI_TOOL_IDENTIFIER=@cyanheads/pubmed-mcp-server/1.0.2 # Optional: Tool identifier for NCBI
     ```
 
     For all options, see the [Configuration](#⚙️-configuration) section below or the [Developer Cheatsheet (.clinerules)](./.clinerules).
@@ -113,7 +113,7 @@ Configure the PubMed MCP server's behavior using environment variables (typicall
 | `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT).    | (none - **MUST be set in production**) |
 | `NCBI_API_KEY`          | **Optional, but highly recommended.** Your NCBI API Key for higher rate limits (10/sec vs 3/sec).      | (none)                                 |
 | `NCBI_ADMIN_EMAIL`      | **Optional, but recommended if using an API key.** Your email for NCBI contact.                        | (none)                                 |
-| `NCBI_TOOL_IDENTIFIER`  | Optional. Tool identifier sent to NCBI.                                                                | `pubmed-mcp-server/<version>`          |
+| `NCBI_TOOL_IDENTIFIER`  | Optional. Tool identifier sent to NCBI.                                                                | `@cyanheads/pubmed-mcp-server/<version>` |
 | `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests. Dynamically set (e.g., 100ms with API key, 334ms without). | (see `src/config/index.ts`)            |
 | `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                                    | `3`                                    |
 

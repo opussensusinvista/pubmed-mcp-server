@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 03:06:38
+Generated on: 2025-05-24 05:13:02
 
 ```
 pubmed-mcp-server
@@ -54,7 +54,8 @@ pubmed-mcp-server
 │   │   │   └── ncbiService.ts
 │   │   └── index.ts
 │   ├── types-global
-│   │   └── errors.ts
+│   │   ├── errors.ts
+│   │   └── pubmedXml.ts
 │   ├── utils
 │   │   ├── internal
 │   │   │   ├── errorHandler.ts
@@ -67,7 +68,8 @@ pubmed-mcp-server
 │   │   ├── parsing
 │   │   │   ├── dateParser.ts
 │   │   │   ├── index.ts
-│   │   │   └── jsonParser.ts
+│   │   │   ├── jsonParser.ts
+│   │   │   └── pubmedXmlParserHelpers.ts
 │   │   ├── security
 │   │   │   ├── idGenerator.ts
 │   │   │   ├── index.ts

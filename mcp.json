@@ -8,7 +8,8 @@
         "MCP_TRANSPORT_TYPE": "http",
         "MCP_HTTP_PORT": "3010",
         "NCBI_API_KEY": "YOUR_NCBI_API_KEY_HERE",
-        "NCBI_ADMIN_EMAIL": "YOUR_EMAIL_HERE"
+        "NCBI_ADMIN_EMAIL": "YOUR_EMAIL_HERE",
+        "NCBI_TOOL_IDENTIFIER": "@cyanheads/pubmed-mcp-server/1.0.2"
       }
     }
   }

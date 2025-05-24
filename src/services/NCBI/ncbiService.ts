@@ -219,10 +219,19 @@ export class NcbiService {
       const response: AxiosResponse = await this.axiosInstance(requestConfig);
       const responseData = response.data;
 
-      if (options.retmode === "xml" || typeof responseData === "string") {
-        if (XMLValidator.validate(responseData) !== true) {
+      if (options.retmode === "text") {
+        // For plain text responses, return as is
+        return responseData as T;
+      }
+
+      if (options.retmode === "xml") {
+        // Explicitly check for XML
+        if (
+          typeof responseData !== "string" ||
+          XMLValidator.validate(responseData) !== true
+        ) {
           logger.error(
-            "Invalid XML response from NCBI",
+            "Invalid or non-string XML response from NCBI",
             new Error("Invalid XML structure"),
             requestContextService.createRequestContext({
               ...context,

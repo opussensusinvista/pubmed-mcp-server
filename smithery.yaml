@@ -21,7 +21,8 @@ startCommand:
         description: "NCBI API Key. Optional, but highly recommended for higher rate limits."
       NCBI_TOOL_IDENTIFIER:
         type: string
-        description: "Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION."
+        default: "@cyanheads/pubmed-mcp-server/1.0.2"
+        description: "Tool identifier sent to NCBI. Defaults to @cyanheads/pubmed-mcp-server/MCP_SERVER_VERSION."
       NCBI_ADMIN_EMAIL:
         type: string
         description: "Administrator's email for NCBI contact. Optional, but recommended if using an API key."

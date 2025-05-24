@@ -1,5 +1,5 @@
 {
-  "name": "pubmed-mcp-server",
+  "name": "@cyanheads/pubmed-mcp-server",
   "version": "1.0.2",
   "description": "MCP Server for intelligent PubMed access via NCBI E-utilities. Leverages mcp-ts-template foundation.",
   "main": "dist/index.js",
