@@ -8,15 +8,8 @@ import { ncbiService } from "../../../../services/NCBI/ncbiService.js";
 import type {
   ESummaryResult,
   ParsedBriefSummary,
-  // XmlAuthor as ESummaryAuthor, // Not needed directly here if using extractBriefSummaries
-  // ESummaryDocumentSummary, // Not needed directly here
 } from "../../../../types-global/pubmedXml.js";
-import {
-  logger,
-  RequestContext,
-  // requestContextService, // Not used directly in this snippet, but available
-  // sanitizeInputForLogging, // Not used directly in this snippet
-} from "../../../../utils/index.js";
+import { logger, RequestContext } from "../../../../utils/index.js";
 import { extractBriefSummaries } from "../../../../utils/parsing/ncbi-parsing/index.js";
 import type { GetPubMedArticleConnectionsInput } from "../registration.js";
 import type { ToolOutputData } from "./types.js";
