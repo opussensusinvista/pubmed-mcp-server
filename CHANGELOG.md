@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.8] - 2025-05-24
+
+### Changed
+
+- **Parsing**: Significantly refactored the `parseESummaryAuthorsFromDocumentSummary` function in `src/utils/parsing/ncbi-parsing/eSummaryResultParser.ts` to robustly handle diverse XML structures for author data returned by NCBI ESummary. This includes improved extraction logic for author names, types, and cluster IDs, and enhanced logging for unhandled structures.
+- **Build**: Bumped project version from `1.0.7` to `1.0.8` in `package.json` and `README.md`.
+- **Internal**: Minor import order change in `eSummaryResultParser.ts`.
+
 ## [1.0.7] - 2025-05-24
 
 ### Added
