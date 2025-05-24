@@ -5,7 +5,7 @@
 [![MCP Spec Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-lightgrey.svg)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)
 [![Version](https://img.shields.io/badge/Version-1.0.11-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/Status-Development-yellow.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
+[![Status](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
 
 **Unlock the power of biomedical literature for your AI agents with the PubMed MCP Server!**
