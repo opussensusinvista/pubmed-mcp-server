@@ -370,7 +370,7 @@ const safeLogData = sanitizeInputForLogging(sensitiveData);
 
 ### 6. JSON Parsing (`src/utils/parsing/jsonParser.ts`)
 
-- **Purpose**: Parse potentially partial/incomplete JSON strings. Handles optional `<think>` blocks. XML parsing will also be critical for PubMed; consider adding a utility or using a robust library like `xml2js` or `fast-xml-parser` and wrapping it in a utility function within `src/utils/parsing/` or a new `src/pubmed-utils/` directory.
+- **Purpose**: Parse potentially partial/incomplete JSON strings. Handles optional `<think>` blocks. For XML parsing, critical for PubMed, `fast-xml-parser` is used within `src/services/NCBI/ncbiService.ts`. Helper functions for parsing specific PubMed XML structures are located in `src/utils/parsing/pubmedXmlParserHelpers.ts`. Dedicated parsing functions for different E-utility responses are implemented within tool logic files (e.g., `src/mcp-server/tools/fetchPubMedContent/logic.ts`).
 - **Usage**: Import `jsonParser` from the main utils barrel file. Use `Allow` constants for options.
 
 ```typescript
@@ -544,8 +544,9 @@ This section details how to add the specific PubMed tools and resources. A commo
 - **Server Setup**: `src/mcp-server/server.ts`
 - **HTTP Auth Middleware**: `src/mcp-server/transports/authentication/authMiddleware.ts`
 - **Configuration**: `src/config/index.ts` (Loads env vars including NCBI keys, package info, initializes logger)
-- **Global Types**: `src/types-global/errors.ts`
+- **Global Types**: `src/types-global/errors.ts`, `src/types-global/pubmedXml.ts`
 - **Utilities**: `src/utils/` (barrel file for all sub-utils)
+  - `src/utils/parsing/pubmedXmlParserHelpers.ts`
 - **NCBI Interaction Service**: `src/services/NCBI/ncbiService.ts`
 - **Tools**: `src/mcp-server/tools/`
   - `src/mcp-server/tools/searchPubMedArticles/`
@@ -555,36 +556,21 @@ This section details how to add the specific PubMed tools and resources. A commo
   - `src/mcp-server/resources/echoResource/` (Example)
   - `src/mcp-server/resources/serverInfo/` (To be implemented)
   - `src/mcp-server/resources/getPubMedStats/` (To be implemented)
-- **MCP Client**: `src/mcp-client/` (If used for testing or other purposes)
 
 **Important NCBI E-utility Considerations:**
 
 - **Error Handling:** NCBI E-utilities return errors in XML format. The NCBI interaction service (`src/services/NCBI/ncbiService.ts`) must parse these and translate them into appropriate `McpError` instances.
 - **Rate Limiting:** Strictly adhere to NCBI's rate limits (3 requests/second without API key, 10 requests/second with API key). Robust queuing and delay mechanisms are implemented in `src/services/NCBI/ncbiService.ts`.
-- **XML Parsing:** PubMed XML can be complex. `fast-xml-parser` is used in `src/services/NCBI/ncbiService.ts`. Dedicated parsing functions for different E-utility responses and data structures (e.g., AuthorList, MeshHeadingList) are implemented within tool logic files (e.g., `src/mcp-server/tools/fetchPubMedContent/logic.ts`).
+- **XML Parsing:** PubMed XML can be complex. `fast-xml-parser` is used in `src/services/NCBI/ncbiService.ts`. Dedicated parsing functions for different E-utility responses and data structures (e.g., AuthorList, MeshHeadingList) are implemented within tool logic files (e.g., `src/mcp-server/tools/fetchPubMedContent/logic.ts`) and helper utilities (`src/utils/parsing/pubmedXmlParserHelpers.ts`).
 - **Data Transformation:** Transform parsed XML data into the structured JSON formats defined in the project specification for tool outputs.
 
 ## Repository Tree
 
 ```plaintext
 # pubmed-mcp-server - Directory Structure
-# Generated on: 2025-05-23 (Update with actual generation date if using script)
+# Generated on: 2025-05-24T05:21:58.223Z (Update with actual generation date if using script)
 
 config/
-  index.ts
-mcp-client/
-  client-config/
-    configLoader.ts
-    mcp-config.json.example
-  core/
-    clientCache.ts
-    clientConnectionLogic.ts
-    clientManager.ts
-  transports/
-    httpClientTransport.ts
-    index.ts
-    stdioClientTransport.ts
-    transportFactory.ts
   index.ts
 mcp-server/
   resources/
@@ -619,6 +605,7 @@ services/
   index.ts
 types-global/
   errors.ts
+  pubmedXml.ts
 utils/
   internal/
     errorHandler.ts
@@ -632,6 +619,7 @@ utils/
     dateParser.ts
     index.ts
     jsonParser.ts
+    pubmedXmlParserHelpers.ts
   security/
     idGenerator.ts
     index.ts

@@ -1,193 +1,632 @@
-# CLAUDE.md
+# pubmed-mcp-server Developer Cheatsheet
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This cheatsheet provides quick references for common patterns, utilities, and server configuration within the `pubmed-mcp-server` codebase, which is based on the `mcp-ts-template` and updated for MCP Spec 2025-03-26.
 
-## Development Commands
+## Server Transports & Configuration
 
-### Build & Run
+The server can run using different communication transports, configured via environment variables.
 
-- `npm run build` - Build TypeScript and make executable
-- `npm run rebuild` - Clean build (removes node_modules, logs, dist)
-- `npm start` - Run the built server (stdio transport)
-- `npm run start:stdio` - Run server with stdio transport and debug logging
-- `npm run start:http` - Run server with HTTP transport and debug logging
+- **`MCP_TRANSPORT_TYPE`**: Specifies the transport.
+  - `"stdio"` (Default): Uses standard input/output for communication.
+  - `"http"`: Uses Streamable HTTP Server-Sent Events (SSE) for communication. Runs an Express server. Recommended for `pubmed-mcp-server`.
+- **`MCP_HTTP_PORT`**: Port for the HTTP server (Default: `3010`). Used only if `MCP_TRANSPORT_TYPE=http`.
+- **`MCP_HTTP_HOST`**: Host address for the HTTP server (Default: `127.0.0.1`). Used only if `MCP_TRANSPORT_TYPE=http`.
+- **`MCP_ALLOWED_ORIGINS`**: Comma-separated list of allowed origins for HTTP requests (e.g., `http://localhost:8080,https://my-frontend.com`). Used only if `MCP_TRANSPORT_TYPE=http`.
+- **`MCP_LOG_LEVEL`**: Minimum logging level for the server (e.g., "debug", "info", "warning", "error", "notice", "crit", "alert", "emerg"). Defaults to "debug".
+- **`LOGS_DIR`**: Directory for log files. Defaults to "`logs/`" in the project root.
+- **`MCP_AUTH_SECRET_KEY`**: **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT). **MUST be set in production.**
 
-### Development Tools
+**PubMed Specific Configuration (NCBI E-utilities):**
 
-- `npm run format` - Format code with Prettier
-- `npm run docs:generate` - Generate TypeDoc documentation
-- `npm run tree` - Generate project structure tree
-- `npm run inspector` - Launch MCP inspector for debugging
+- **`NCBI_API_KEY`**: Your NCBI API Key. Essential for higher rate limits and reliable access. The server will automatically include this in E-utility requests.
+- **`NCBI_TOOL_IDENTIFIER`**: The `tool` parameter value sent to NCBI (e.g., "pubmed-mcp-server/1.0.0"). Defaults to `pubmed-mcp-server/<version>`.
+- **`NCBI_ADMIN_EMAIL`**: The `email` parameter value sent to NCBI (your email address for contact by NCBI).
+- **`NCBI_REQUEST_DELAY_MS`**: Milliseconds to wait between NCBI requests to respect rate limits (e.g., 100 for API key, 334 for no key).
+- **`NCBI_MAX_RETRIES`**: Maximum number of retries for failed NCBI requests.
 
-## Project Architecture
+**LLM Provider Configuration (Optional, if server uses LLMs internally):**
 
-This is a TypeScript template for building Model Context Protocol (MCP) servers and clients following the MCP 2025-03-26 specification.
+- **`OPENROUTER_API_KEY`**: API key for OpenRouter.
+- **`OPENROUTER_APP_URL`**: Application URL to send to OpenRouter.
+- **`OPENROUTER_APP_NAME`**: Application name to send to OpenRouter.
+- **`LLM_DEFAULT_MODEL`**: Default LLM model to use.
+- **`LLM_DEFAULT_TEMPERATURE`**: Default temperature for LLM responses.
+- **`LLM_DEFAULT_TOP_P`**: Default top_p for LLM responses.
+- **`LLM_DEFAULT_MAX_TOKENS`**: Default max tokens for LLM responses.
+- **`LLM_DEFAULT_TOP_K`**: Default top_k for LLM responses.
+- **`LLM_DEFAULT_MIN_P`**: Default min_p for LLM responses.
+- **`GEMINI_API_KEY`**: API key for Google Gemini services.
 
-### Project Structure
+**OAuth Proxy Configuration (Optional):**
 
-```
-mcp-ts-template
-├── .github
-│   └── workflows
-│       └── publish.yml
-├── docs
-│   ├── api-references
-│   │   ├── jsdoc-standard-tags.md
-│   │   └── typedoc-reference.md
-│   └── tree.md
-├── scripts
-│   ├── clean.ts
-│   ├── fetch-openapi-spec.ts
-│   ├── make-executable.ts
-│   └── tree.ts
-├── src
-│   ├── config
-│   │   └── index.ts
-│   ├── mcp-client
-│   │   ├── client-config
-│   │   │   ├── configLoader.ts
-│   │   │   ├── mcp-config.json
-│   │   │   └── mcp-config.json.example
-│   │   ├── core
-│   │   │   ├── clientCache.ts
-│   │   │   ├── clientConnectionLogic.ts
-│   │   │   └── clientManager.ts
-│   │   ├── transports
-│   │   │   ├── httpClientTransport.ts
-│   │   │   ├── index.ts
-│   │   │   ├── stdioClientTransport.ts
-│   │   │   └── transportFactory.ts
-│   │   └── index.ts
-│   ├── mcp-server
-│   │   ├── resources
-│   │   │   └── echoResource
-│   │   │       ├── echoResourceLogic.ts
-│   │   │       ├── index.ts
-│   │   │       └── registration.ts
-│   │   ├── tools
-│   │   │   └── echoTool
-│   │   │       ├── echoToolLogic.ts
-│   │   │       ├── index.ts
-│   │   │       └── registration.ts
-│   │   ├── transports
-│   │   │   ├── authentication
-│   │   │   │   └── authMiddleware.ts
-│   │   │   ├── httpTransport.ts
-│   │   │   └── stdioTransport.ts
-│   │   └── server.ts
-│   ├── services
-│   │   ├── llm-providers
-│   │   │   ├── openRouter
-│   │   │   │   ├── index.ts
-│   │   │   │   └── openRouterProvider.ts
-│   │   │   ├── index.ts
-│   │   │   └── llmFactory.ts
-│   │   └── index.ts
-│   ├── types-global
-│   │   └── errors.ts
-│   ├── utils
-│   │   ├── internal
-│   │   │   ├── errorHandler.ts
-│   │   │   ├── index.ts
-│   │   │   ├── logger.ts
-│   │   │   └── requestContext.ts
-│   │   ├── metrics
-│   │   │   ├── index.ts
-│   │   │   └── tokenCounter.ts
-│   │   ├── parsing
-│   │   │   ├── dateParser.ts
-│   │   │   ├── index.ts
-│   │   │   └── jsonParser.ts
-│   │   ├── security
-│   │   │   ├── idGenerator.ts
-│   │   │   ├── index.ts
-│   │   │   ├── rateLimiter.ts
-│   │   │   └── sanitization.ts
-│   │   └── index.ts
-│   └── index.ts
-├── .clinerules
-├── .dockerignore
-├── .gitignore
-├── CHANGELOG.md
-├── CLAUDE.md
-├── Dockerfile
-├── LICENSE
-├── mcp.json
-├── package-lock.json
-├── package.json
-├── README.md
-├── repomix.config.json
-├── smithery.yaml
-├── tsconfig.json
-├── tsconfig.typedoc.json
-├── tsdoc.json
-└── typedoc.json
+- **`OAUTH_PROXY_AUTHORIZATION_URL`**: OAuth provider authorization endpoint URL.
+- **`OAUTH_PROXY_TOKEN_URL`**: OAuth provider token endpoint URL.
+- **`OAUTH_PROXY_REVOCATION_URL`**: OAuth provider revocation endpoint URL.
+- **`OAUTH_PROXY_ISSUER_URL`**: OAuth provider issuer URL.
+- **`OAUTH_PROXY_SERVICE_DOCUMENTATION_URL`**: OAuth service documentation URL.
+- **`OAUTH_PROXY_DEFAULT_CLIENT_REDIRECT_URIS`**: Comma-separated default OAuth client redirect URIs.
+
+### HTTP Transport Details (`MCP_TRANSPORT_TYPE=http`)
+
+- **Endpoint**: A single endpoint `/mcp` handles all communication.
+  - `POST /mcp`: Client sends requests/notifications to the server. Requires `mcp-session-id` header for subsequent requests after initialization. Server responds with JSON or initiates SSE stream.
+  - `GET /mcp`: Client initiates SSE stream for server-sent messages. Requires `mcp-session-id` header.
+  - `DELETE /mcp`: Client signals session termination. Requires `mcp-session-id` header.
+- **Session Management**: Each client connection establishes a session identified by the `mcp-session-id` header. The server maintains state per session.
+- **Security**: Robust origin checking is implemented via `isOriginAllowed` in `httpTransport.ts`. Configure `MCP_ALLOWED_ORIGINS` for production environments. JWT authentication via `MCP_AUTH_SECRET_KEY`.
+
+### Running the Server
+
+- **Format Code**: `npm run format`
+- **Build**: `npm run build`
+- **Stdio**: `npm run start:stdio`
+- **HTTP**: `npm run start:http` (ensure `MCP_AUTH_SECRET_KEY`, `NCBI_API_KEY`, `NCBI_ADMIN_EMAIL` are set).
+
+## Model Context Protocol (MCP) Overview (Spec: 2025-03-26)
+
+MCP provides a standardized way for LLMs (via host applications) to interact with external capabilities (tools, data) exposed by dedicated servers.
+
+### Core Concepts & Architecture
+
+- **Host:** Manages clients, LLM integration, security, and user consent (e.g., Claude Desktop, VS Code).
+- **Client:** Resides in the host, connects 1:1 to a server, handles protocol.
+- **Server:** Standalone process exposing capabilities (Resources, Tools, Prompts). Focuses on its domain, isolated from LLM/other servers.
+
+```mermaid
+graph LR
+    subgraph "Host Application Process"
+        H[Host]
+        C1[Client 1]
+        C2[Client 2]
+        H --> C1
+        H --> C2
+    end
+    subgraph "Server Process 1"
+        S1["MCP Server A<br>(e.g., Filesystem)"]
+        R1["Local Resource<br>e.g., Files"]
+        S1 <--> R1
+    end
+    subgraph "Server Process 2"
+        S2["MCP Server B<br>(e.g., API Wrapper)"]
+        R2["Remote Resource<br>e.g., Web API"]
+        S2 <--> R2
+    end
+    C1 <-->|MCP Protocol| S1
+    C2 <-->|MCP Protocol| S2
 ```
 
-_Note: This tree excludes files and directories matched by .gitignore and default patterns._
+- **Key Principles:** Simplicity, Composability, Isolation, Progressive Features.
 
-### Key Architectural Patterns
+### Protocol Basics
 
-**Server Architecture (`src/mcp-server/`)**:
+- **Communication:** JSON-RPC 2.0 over a transport (Stdio, Streamable HTTP).
+- **Messages:** Requests (with `id`), Responses (`id` + `result`/`error`), Notifications (no `id`). Batches MUST be supported for receiving.
+- **Lifecycle:**
+  1.  **Initialization:** Client sends `initialize` (version, capabilities, clientInfo). Server responds (`initialize` response: agreed version, capabilities, serverInfo, instructions?). Client sends `initialized` notification.
+  2.  **Operation:** Message exchange based on negotiated capabilities.
+  3.  **Shutdown:** Transport disconnect.
 
-- `server.ts` - Main server initialization and transport selection
-- `createMcpServerInstance()` - Factory for McpServer instances (per-session for HTTP, singleton for stdio)
-- Tools and resources are registered via dedicated registration functions
-- Supports both stdio and HTTP (SSE) transports with JWT authentication for HTTP
-- The `src/config/` directory and the root `src/index.ts` file are primarily related to the MCP server's overall configuration and entry point.
+### Server Capabilities
 
-**Client Architecture (`src/mcp-client/`)**:
+Servers expose functionality via:
 
-- Modular design with separate transport, config, and connection management
-- `clientManager.ts` - Manages client lifecycle and connections
-- `configLoader.ts` - Handles `mcp-config.json` validation with Zod schemas
-- Supports connecting to external MCP servers via stdio or HTTP
-- The `mcp-client` functionality is entirely self-contained within the `src/mcp-client` directory, though it does utilize shared utilities from `src/utils/`.
+1.  **Resources:**
 
-**Transport Layer**:
+    - **Purpose:** Expose data/content (files, DB records) as context.
+    - **Control:** Application-controlled.
+    - **ID:** Unique URI (e.g., `file:///path/to/doc.txt`).
+    - **Discovery:** `resources/list` (paginated), `resources/templates/list` (paginated).
+    - **Reading:** `resources/read` -> `ResourceContent` array (`text` or `blob`).
+    - **Updates (Optional):** `listChanged: true` -> `notifications/resources/list_changed`. `subscribe: true` -> `resources/subscribe`, `notifications/resources/updated`, **MUST handle `resources/unsubscribe` request**.
 
-- stdio: Single server instance, connects via standard input/output
-- HTTP: Per-session server instances, uses Server-Sent Events with CORS and JWT auth
+2.  **Tools:**
 
-**Utilities (`src/utils/`)**:
+    - **Purpose:** Expose executable functions for LLM invocation (via client).
+    - **Control:** Model-controlled.
+    - **Definition:** `Tool` object (`name`, `description`, `inputSchema` (JSON Schema), `annotations?`). Annotations (`title`, `readOnlyHint`, etc.) are untrusted hints.
+    - **Discovery:** `tools/list` (paginated).
+    - **Invocation:** `tools/call` (`name`, `arguments`) -> `CallToolResult` (`content` array, `isError: boolean`). Execution errors reported via `isError: true`. **Rich schemas are crucial.**
+    - **Updates (Optional):** `listChanged: true` -> `notifications/tools/list_changed` (MUST send after dynamic changes).
 
-- Centralized error handling with pattern-based classification
-- Request context tracking for correlation across operations
-- Security utilities (sanitization, rate limiting, ID generation)
-- Structured logging with file rotation and MCP notifications
+3.  **Prompts:**
+    - **Purpose:** Reusable prompt templates/workflows (e.g., slash commands).
+    - **Control:** User-controlled.
+    - **Definition:** `Prompt` object (`name`, `description?`, `arguments?`).
+    - **Discovery:** `prompts/list` (paginated).
+    - **Usage:** `prompts/get` (`name`, `arguments`) -> `GetPromptResult` (`messages` array).
+    - **Updates (Optional):** `listChanged: true` -> `notifications/prompts/list_changed`.
 
-### Configuration
+### Interacting with Client Capabilities
 
-**Environment Variables** (see README for full list):
+- **Roots:** Client may provide filesystem roots (`file://`). Server receives list on init, updates via `notifications/roots/list_changed` (if supported). Servers SHOULD respect roots.
+- **Sampling:** Server can request LLM completion via client using `sampling/createMessage`. Client SHOULD implement human-in-the-loop.
 
-- `MCP_TRANSPORT_TYPE` - "stdio" or "http" (default: stdio)
-- `MCP_HTTP_PORT` - HTTP server port (default: 3010)
-- `MCP_AUTH_SECRET_KEY` - Required for HTTP transport (JWT signing)
-- `MCP_LOG_LEVEL` - Logging level (default: debug)
+### Server Utilities
 
-**Client Configuration**:
+- **Logging:** `logging` capability -> `notifications/message` (RFC 5424 levels: `debug`, `info`, `notice`, `warning`, `error`, `critical`, `alert`, `emergency`). Client can send `logging/setLevel`.
+- **Pagination:** List operations use `cursor`/`nextCursor`.
+- **Completion:** `completions` capability -> `completion/complete`.
+- **Cancellation:** `notifications/cancelled` (best-effort).
+- **Ping:** `ping` request -> `{}` response.
+- **Progress:** `notifications/progress` (requires `_meta.progressToken` in original request).
+- **Configuration:** `configuration/get`, `configuration/set`.
+- **Back-pressure:** Clients debounce rapid notifications. Servers should aim for idempotency.
 
-- `src/mcp-client/client-config/mcp-config.json` - Defines external server connections
-- Falls back to `.example` file if main config missing
+### SDK Usage (TypeScript) - IMPORTANT
 
-### Adding Tools/Resources
+- **High-Level SDK Abstractions (Strongly Recommended):**
+  - **Use `server.tool(name, description, zodSchemaShape, handler)`:** This is the **preferred and strongly recommended** way to define tools. It automatically handles:
+    - Registering the tool for `tools/list`.
+    - Generating the JSON Schema from the Zod shape.
+    - Validating incoming `tools/call` arguments against the schema.
+    - Routing the call to your handler with validated arguments.
+    - Formatting the `CallToolResult`.
+  - **Use `server.resource(regName, template, metadata, handler)`:** Similarly recommended for resources.
+  - **Benefits:** Significantly reduces boilerplate, enforces type safety, simplifies protocol adherence.
+- **Low-Level SDK Handlers (AVOID unless absolutely necessary):**
+  - Manually using `server.setRequestHandler(SchemaObject, handler)` requires you to handle schema generation, argument validation, request routing, and response formatting yourself.
+  - **CRITICAL WARNING:** **Do NOT mix high-level (`server.tool`, `server.resource`) and low-level (`server.setRequestHandler`) approaches for the _same capability type_ (e.g., tools).** The SDK's internal state management and type handling can become confused, leading to unexpected errors or incorrect behavior. Stick to one approach per capability type, **strongly preferring the high-level abstractions.**
 
-1. Create directory under `src/mcp-server/tools/yourTool/` or `src/mcp-server/resources/yourResource/`
-2. Implement logic with Zod schemas in `logic.ts`
-3. Create registration function in `registration.ts` using SDK patterns
-4. Export from `index.ts` and call registration in `src/mcp-server/server.ts`
-5. Use `ErrorHandler.tryCatch` for robust error handling
+### Security Considerations
 
-### Error Handling
+- **Input Validation:** Use schemas (Zod), sanitize inputs (paths, HTML, SQL).
+- **Access Control:** Least privilege, respect roots.
+- **Transport Security:**
+  - **HTTP:** Mandatory JWT authentication (`src/mcp-server/transports/authentication/authMiddleware.ts`). **Requires `MCP_AUTH_SECRET_KEY` to be set.** Validate `Origin` header (via `isOriginAllowed` in `httpTransport.ts`). Use HTTPS in production. Bind to `127.0.0.1` for local servers.
+  - **Stdio:** Authentication typically handled by the host process. Best practice is to not apply authentication to MCP Server stdio processes.
+- **Secrets Management:** Use env vars (`NCBI_API_KEY`, `MCP_AUTH_SECRET_KEY`) or secrets managers, avoid hardcoding/logging.
+- **Dependency Security:** Keep dependencies updated (`npm audit`).
+- **Rate Limiting:** Crucial for NCBI E-utilities. Implement server-side queuing and delays based on `NCBI_REQUEST_DELAY_MS`.
 
-- All errors go through `ErrorHandler` in `src/utils/internal/errorHandler.ts`
-- Pattern-based error classification and consistent formatting
-- Request context tracking via `requestContextService`
-- Structured logging with correlation IDs
+## JSDoc and Code Documentation
 
-### Type Safety
+Comprehensive code documentation is crucial for maintainability and collaboration. This project utilizes JSDoc for documenting JavaScript and TypeScript code.
 
-- Strong TypeScript with strict mode enabled
-- Zod validation for runtime data validation
-- Global type definitions in `src/types-global/`
-- MCP SDK types for protocol compliance
+- **Purpose**: JSDoc comments are used to describe the purpose, high-level behavior, and important considerations of functions, classes, methods, and variables. While detailed parameter and return type annotations are supported, the primary goal is to complement TypeScript's strong typing.
+- **Standard Tags**: A consistent set of JSDoc tags should be used. Key tags like `@fileoverview`, `@module`, `@type`, `@typedef`, `@function`, `@template`, `@property`, `@class`, `@static`, `@private`, and `@constant` are defined in `tsdoc.json` for TypeDoc compatibility.
+- **File-Level Documentation**: Each file should begin with a JSDoc block providing an overview of its contents, using `@fileoverview` and `@module`.
+- **Detailed Reference**: For standard JSDoc tags, see [JSDoc Standard Tags Reference](./docs/api-references/jsdoc-standard-tags.md) and the [TypeDoc documentation](https://typedoc.org/guides/doccomments/).
+- **Code Formatting**: This project uses Prettier. Run `npm run format`.
+- **Best Practices**:
+  - Document all public APIs.
+  - **Focus on "why" and "how"**: Explain the purpose, algorithm, or important context that isn't obvious from the code or types.
+  - **Leverage TypeDoc & TypeScript**: Rely on TypeDoc's ability to infer types from TypeScript. Explicit `@param` and `@returns` JSDoc tags are often unnecessary if TypeScript signatures are clear and descriptive. Use them primarily to add detail beyond what the type conveys (e.g., constraints, specific meanings of parameters).
+  - **Conciseness**: Keep comments brief and to the point. Avoid restating what is obvious from the code or type signatures. The goal is to reduce verbosity and improve readability.
+  - Document any thrown exceptions using `@throws`.
+  - Use `@example` to provide clear usage scenarios.
+  - Keep documentation synchronized with code changes.
+
+## Core Utilities Integration
+
+### 1. Logging (`src/utils/internal/logger.ts`)
+
+- **Purpose**: Structured logging compliant with MCP Spec (RFC 5424 levels). Logs to files (`logs/`) and can send `notifications/message` to connected clients supporting the `logging` capability.
+- **Levels**: `debug`(7), `info`(6), `notice`(5), `warning`(4), `error`(3), `crit`(2), `alert`(1), `emerg`(0).
+- **Usage**: Import the singleton `logger` instance from the main utils barrel file (`src/utils/index.ts`). Pass a `context` object (`RequestContext`) for correlation.
+
+```typescript
+// Example assuming import from a file within src/
+import { logger, McpLogLevel, RequestContext } from './utils/index.js'; // Import logger, level type, and context type
+
+// Inside a function or handler
+const operationContext: RequestContext = /* ... get or create context ... */;
+
+logger.info("Processing request", operationContext); // Level 6
+logger.debug("Detailed step info", { ...operationContext, data: someData }); // Level 7
+logger.notice("Operation completed successfully.", operationContext); // Level 5
+logger.warning("Potential issue detected", operationContext); // Level 4 (Use warning, not warn)
+logger.error("An error occurred", new Error("Something failed"), operationContext); // Level 3 (Pass error object first)
+logger.crit("Critical system failure component", new Error("Details"), operationContext); // Level 2
+
+// Set log level dynamically (e.g., based on client request if supported)
+logger.setLevel('debug' as McpLogLevel);
+
+// Set MCP notification sender (called by server logic on connection)
+// logger.setMcpNotificationSender((level, data, loggerName) => { /* server.sendNotification logic */ });
+```
+
+- **Key Files**:
+  - `src/utils/internal/logger.ts`: Logger implementation (includes file rotation).
+  - `logs/`: Directory where JSON log files are stored (e.g., `combined.log`, `error.log`), managed with rotation.
+
+### 2. Error Handling (`src/types-global/errors.ts`, `src/utils/internal/errorHandler.ts`)
+
+- **Purpose**: Standardized error objects (`McpError`) and centralized handling (`ErrorHandler`). Automatically determines error codes based on type/patterns. Ensure NCBI specific errors can be categorized, e.g., `NCBI_API_ERROR`, `NCBI_PARSING_ERROR`.
+- **Usage**:
+  - Use `ErrorHandler.tryCatch` to wrap operations that might fail.
+  - Throw `McpError` for specific, categorized errors using `BaseErrorCode`.
+  - `ErrorHandler` automatically logs errors (using the logger) with context and sanitized input.
+
+```typescript
+// Example assuming import from a file within src/
+import { ErrorHandler, RequestContext } from "./utils/index.js"; // Import ErrorHandler and context type
+import { McpError, BaseErrorCode } from "./types-global/errors.ts"; // Import error types
+
+async function performTask(input: any, context: RequestContext) {
+  return await ErrorHandler.tryCatch(
+    async () => {
+      if (!input) {
+        throw new McpError(
+          BaseErrorCode.VALIDATION_ERROR,
+          "Input cannot be empty",
+          context
+        );
+      }
+      // ... perform task logic ...
+      const result = await someAsyncOperation(input);
+      return result;
+    },
+    {
+      operation: "performTask",
+      context: context,
+      input: input, // Input is automatically sanitized for logging
+      errorCode: BaseErrorCode.INTERNAL_ERROR, // Default code if unexpected error occurs
+      critical: false, // Or true if failure should halt the process
+    }
+  );
+}
+```
+
+- **Key Files**:
+  - `src/types-global/errors.ts`: Defines `McpError` and `BaseErrorCode`.
+  - `src/utils/internal/errorHandler.ts`: Provides `ErrorHandler.tryCatch`, `handleError`, `determineErrorCode`.
+
+### 3. Request Context (`src/utils/internal/requestContext.ts`)
+
+- **Purpose**: Track and correlate operations related to a single request or workflow using a unique `requestId`.
+- **Usage**:
+  - Create context at the beginning of an operation using `requestContextService.createRequestContext`.
+  - Pass the context object down through function calls.
+  - Include the context object when logging or creating errors.
+
+```typescript
+// Example assuming import from a file within src/
+import {
+  requestContextService,
+  RequestContext,
+  logger,
+} from "./utils/index.js"; // Import service, type, and logger
+
+function handleIncomingRequest(requestData: any) {
+  const context: RequestContext = requestContextService.createRequestContext({
+    operation: "HandleIncomingRequest",
+    initialData: requestData.id,
+  });
+
+  logger.info("Received request", context);
+  processSubTask(requestData.payload, context);
+}
+
+function processSubTask(payload: any, parentContext: RequestContext) {
+  const subTaskContext = { ...parentContext, subOperation: "ProcessSubTask" };
+  logger.debug("Processing sub-task", subTaskContext);
+  // ... logic ...
+}
+```
+
+- **Key Files**:
+  - `src/utils/internal/requestContext.ts`: Defines `RequestContext` interface and `requestContextService`.
+
+### 4. ID Generation (`src/utils/security/idGenerator.ts`)
+
+- **Purpose**: Generate unique, prefixed IDs for different entity types and standard UUIDs.
+- **Usage**: Configure prefixes (if needed) and use `idGenerator.generateForEntity` or `generateUUID` from the main utils barrel file.
+
+```typescript
+// Example assuming import from a file within src/
+import { idGenerator, generateUUID } from "./utils/index.js"; // Import generator instance and UUID function
+
+idGenerator.setEntityPrefixes({ project: "PROJ", task: "TASK" });
+
+const projectId = idGenerator.generateForEntity("project"); // e.g., "PROJ_A6B3J0"
+const taskId = idGenerator.generateForEntity("task", { length: 8 }); // e.g., "TASK_C9D4E1F2"
+const standardUuid = generateUUID(); // e.g., "123e4567-e89b-12d3-a456-426614174000"
+
+const isValid = idGenerator.isValid(projectId, "project"); // true
+const entityType = idGenerator.getEntityType(taskId); // "task"
+```
+
+- **Key Files**:
+  - `src/utils/security/idGenerator.ts`: `IdGenerator` class, `idGenerator` instance, `generateUUID`.
+
+### 5. Sanitization (`src/utils/security/sanitization.ts`)
+
+- **Purpose**: Clean and validate input data (HTML, paths, numbers, URLs, JSON) to prevent security issues. Also sanitizes objects for logging.
+- **Usage**: Import the singleton `sanitization` instance or `sanitizeInputForLogging` from the main utils barrel file.
+
+```typescript
+// Example assuming import from a file within src/
+import { sanitization, sanitizeInputForLogging } from "./utils/index.js"; // Import sanitization instance and helper
+
+const unsafeHtml = '<script>alert("xss")</script><p>Safe content</p>';
+const safeHtml = sanitization.sanitizeHtml(unsafeHtml); // "<p>Safe content</p>"
+
+const unsafePath = "../../etc/passwd";
+try {
+  const safePath = sanitization.sanitizePath(unsafePath, {
+    rootDir: "/app/data",
+  });
+} catch (error) {
+  /* Handle McpError */
+}
+
+const userInput = " 123.45 ";
+const num = sanitization.sanitizeNumber(userInput, 0, 1000); // 123.45
+
+const unsafeUrl = 'javascript:alert("bad")';
+try {
+  const safeUrl = sanitization.sanitizeUrl(unsafeUrl);
+} catch (error) {
+  /* Handle McpError */
+}
+
+const sensitiveData = { user: "admin", password: "pwd", token: "abc" };
+const safeLogData = sanitizeInputForLogging(sensitiveData);
+// safeLogData = { user: 'admin', password: '[REDACTED]', token: '[REDACTED]' }
+```
+
+- **Key Files**:
+  - `src/utils/security/sanitization.ts`: `Sanitization` class, `sanitization` instance, `sanitizeInputForLogging`.
+
+### 6. JSON Parsing (`src/utils/parsing/jsonParser.ts`)
+
+- **Purpose**: Parse potentially partial/incomplete JSON strings. Handles optional `<think>` blocks. For XML parsing, critical for PubMed, `fast-xml-parser` is used within `src/services/NCBI/ncbiService.ts`. Helper functions for parsing specific PubMed XML structures are located in `src/utils/parsing/pubmedXmlParserHelpers.ts`. Dedicated parsing functions for different E-utility responses are implemented within tool logic files (e.g., `src/mcp-server/tools/fetchPubMedContent/logic.ts`).
+- **Usage**: Import `jsonParser` from the main utils barrel file. Use `Allow` constants for options.
+
+```typescript
+// Example assuming import from a file within src/
+import { jsonParser, Allow, RequestContext } from './utils/index.js'; // Import parser, Allow enum, and context type
+
+const partialJson = '<think>Parsing...</think>{"key": "value", "incomplete": ';
+const context: RequestContext = /* ... */;
+
+try {
+  const parsed = jsonParser.parse(partialJson, Allow.ALL, context);
+  // parsed = { key: 'value', incomplete: undefined }
+} catch (error) { /* Handle McpError */ }
+```
+
+- **Key Files**:
+  - `src/utils/parsing/jsonParser.ts`: `JsonParser` class, `jsonParser` instance, `Allow` enum.
+
+### 7. Rate Limiting (`src/utils/security/rateLimiter.ts`)
+
+- **Purpose**: Implement rate limiting based on a key. This can be used for client-side rate limiting if needed, distinct from NCBI's server-to-NCBI rate limiting.
+- **Usage**: Import `rateLimiter` from the main utils barrel file. Use `check`.
+
+```typescript
+// Example assuming import from a file within src/
+import { rateLimiter, RequestContext } from './utils/index.js'; // Import limiter instance and context type
+
+const userId = 'user123';
+const context: RequestContext = /* ... */;
+
+try {
+  rateLimiter.check(userId, context);
+  // ... proceed ...
+} catch (error) { /* Handle McpError (RATE_LIMITED) */ }
+
+rateLimiter.configure({ windowMs: 60 * 1000, maxRequests: 10 });
+```
+
+- **Key Files**:
+  - `src/utils/security/rateLimiter.ts`: `RateLimiter` class, `rateLimiter` instance.
+
+### 8. Token Counting (`src/utils/metrics/tokenCounter.ts`)
+
+- **Purpose**: Estimate tokens using `tiktoken` (`gpt-4o` model).
+- **Usage**: Import `countTokens` or `countChatTokens` from the main utils barrel file.
+
+```typescript
+// Example assuming import from a file within src/
+import { countTokens, countChatTokens, RequestContext } from './utils/index.js'; // Import counting functions and context type
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+
+const text = "Sample text.";
+const context: RequestContext = /* ... */;
+
+async function calculateTokens() {
+  try {
+    const textTokens = await countTokens(text, context);
+    const messages: ChatCompletionMessageParam[] = [/* ... */];
+    const chatTokens = await countChatTokens(messages, context);
+  } catch (error) { /* Handle McpError */ }
+}
+```
+
+- **Key Files**:
+  - `src/utils/metrics/tokenCounter.ts`: Provides `countTokens` and `countChatTokens`.
+
+## Utility Scripts (`scripts/`)
+
+This project includes several utility scripts located in the `scripts/` directory to aid development:
+
+### 1. Clean (`scripts/clean.ts`)
+
+- **Purpose**: Removes build artifacts and temporary directories.
+- **Usage**: `npm run rebuild` (uses this script) or `ts-node --esm scripts/clean.ts [dir1] [dir2]...`
+- **Default Targets**: `dist`, `logs`.
+
+### 2. Make Executable (`scripts/make-executable.ts`)
+
+- **Purpose**: Sets executable permissions (`chmod +x`) on specified files (Unix-like systems only). Useful for CLI entry points after building.
+- **Usage**: `npm run build` (uses this script) or `ts-node --esm scripts/make-executable.ts [file1] [file2]...`
+- **Default Target**: `dist/index.js`.
+
+### 3. Generate Tree (`scripts/tree.ts`)
+
+- **Purpose**: Creates a visual directory tree markdown file (`docs/tree.md` by default), respecting `.gitignore`.
+- **Usage**: `npm run tree` or `ts-node --esm scripts/tree.ts [output-path] [--depth=<number>]`
+
+### 4. Fetch OpenAPI Spec (`scripts/fetch-openapi-spec.ts`)
+
+- **Purpose**: Fetches an OpenAPI specification (YAML/JSON) from a URL, attempts fallbacks (`/openapi.yaml`, `/openapi.json`), parses it, and saves both YAML and JSON versions locally.
+- **Usage**: `npm run fetch-spec <url> <output-base-path>` or `ts-node --esm scripts/fetch-openapi-spec.ts <url> <output-base-path>`
+- **Example**: `npm run fetch-spec https://petstore3.swagger.io/api/v3 docs/api/petstore_v3`
+- **Dependencies**: `axios`, `js-yaml`.
+
+## Adding New Features to `pubmed-mcp-server`
+
+This section details how to add the specific PubMed tools and resources. A common module for NCBI interactions (`src/services/NCBI/ncbiService.ts`) is recommended to handle E-utility calls, API key injection, rate limiting, and XML/JSON parsing.
+
+### Adding a PubMed Tool
+
+1.  **Directory**: e.g., `src/mcp-server/tools/yourNewToolName/`
+2.  **Logic (`logic.ts`)**:
+    - Define input types and Zod schema as per the project specification.
+    - Define the core processing function that:
+      - Takes validated input and a `RequestContext`.
+      - Constructs parameters for the relevant E-utility.
+      - Calls the NCBI interaction module (`src/services/NCBI/ncbiService.ts`).
+      - Processes the E-utility response (parses XML/JSON, extracts data).
+      - Formats the output according to the MCP `CallToolResult` structure.
+3.  **Registration (`registration.ts`)**:
+    - Import logic, Zod schema, `McpServer`, `ErrorHandler`.
+    - Use `server.tool("toolName", "description", zodSchemaShape, async (validatedInput, requestContext) => { ... })`.
+    - Ensure the handler returns `CallToolResult` (`{ content: [...], isError: boolean }`).
+    - Wrap handler logic and registration in `ErrorHandler.tryCatch`.
+4.  **Index (`index.ts`)**: Export registration function.
+5.  **Server (`src/mcp-server/server.ts`)**: Import and call the tool's registration function within `createMcpServerInstance`.
+
+**Implemented PubMed Tools:**
+
+- **`search_pubmed_articles`**:
+  - **Location**: `src/mcp-server/tools/searchPubMedArticles/`
+  - **Description:** Searches PubMed for articles matching a query term. Returns PMIDs, metadata, and optional brief summaries.
+  - **Underlying E-utilities:** `ESearch`, `ESummary`.
+- **`fetchPubMedContent`**:
+  - **Location**: `src/mcp-server/tools/fetchPubMedContent/`
+  - **Description:** Retrieves detailed information for PMIDs with flexible content control (replaces `fetchArticleDetails`).
+  - **Underlying E-utility:** `EFetch`.
+
+**PubMed Tools Still To Implement:**
+
+- **`getArticleRelationships`**:
+  - **Description:** Finds articles related to a PMID (cited by, similar) or retrieves citation formats.
+  - **Underlying E-utilities:** `ELink`, `EFetch`.
+  - **Key Logic:** Map `relationshipType` to appropriate ELink commands or EFetch for citations. Optionally enrich related PMIDs with details.
+
+### Adding a PubMed Resource
+
+1.  **Directory**: e.g., `src/mcp-server/resources/yourNewResourceName/`
+2.  **Logic (`logic.ts`)**:
+    - Define the core processing function (e.g., takes `uri: URL`, `params`, `requestContext`).
+    - For static or config-based resources, it might read from `src/config/index.ts`.
+    - For dynamic resources (like `getPubMedStats`), it will call the NCBI interaction module.
+3.  **Registration (`registration.ts`)**:
+    - Import logic, `McpServer`, `ResourceTemplate`, `ErrorHandler`.
+    - Define `ResourceTemplate` (name, URI pattern, description).
+    - Use `server.resource(template.name, template, metadata, async (params, requestContext) => { ... })`.
+    - Handler should return `{ contents: [{ uri, blob, mimeType }] }` where `blob` is Base64 encoded content of the JSON data.
+    - Wrap handler logic and registration in `ErrorHandler.tryCatch`.
+4.  **Index (`index.ts`)**: Export registration function.
+5.  **Server (`src/mcp-server/server.ts`)**: Import and call the resource's registration function.
+
+**Implemented PubMed Resources:**
+- **`echoResource`**: (Example resource, not PubMed specific)
+  - **Location**: `src/mcp-server/resources/echoResource/`
+
+**PubMed Resources to Implement:**
+
+- **`serverInfo`**:
+  - **Description:** Provides comprehensive information about the `pubmed-mcp-server`, configuration, NCBI compliance, and status.
+  - **URI Example:** `pubmed-connect://info`
+  - **Key Logic:** Assemble data from configuration (server version, admin email, tool ID) and potentially dynamic status checks.
+- **`getPubMedStats`**:
+  - **Description:** Retrieves general statistics about the PubMed database using `EInfo`.
+  - **URI Example:** `pubmed-connect://stats/pubmed`
+  - **Underlying E-utility:** `EInfo`.
+  - **Key Logic:** Call EInfo for `db=pubmed`, parse XML response for stats like record count and last update.
+
+## Key File Locations (for `pubmed-mcp-server`)
+
+- **Main Entry**: `src/index.ts`
+- **Server Setup**: `src/mcp-server/server.ts`
+- **HTTP Auth Middleware**: `src/mcp-server/transports/authentication/authMiddleware.ts`
+- **Configuration**: `src/config/index.ts` (Loads env vars including NCBI keys, package info, initializes logger)
+- **Global Types**: `src/types-global/errors.ts`, `src/types-global/pubmedXml.ts`
+- **Utilities**: `src/utils/` (barrel file for all sub-utils)
+  - `src/utils/parsing/pubmedXmlParserHelpers.ts`
+- **NCBI Interaction Service**: `src/services/NCBI/ncbiService.ts`
+- **Tools**: `src/mcp-server/tools/`
+  - `src/mcp-server/tools/searchPubMedArticles/`
+  - `src/mcp-server/tools/fetchPubMedContent/`
+  - `src/mcp-server/tools/getArticleRelationships/` (To be implemented)
+- **Resources**: `src/mcp-server/resources/`
+  - `src/mcp-server/resources/echoResource/` (Example)
+  - `src/mcp-server/resources/serverInfo/` (To be implemented)
+  - `src/mcp-server/resources/getPubMedStats/` (To be implemented)
+
+**Important NCBI E-utility Considerations:**
+
+- **Error Handling:** NCBI E-utilities return errors in XML format. The NCBI interaction service (`src/services/NCBI/ncbiService.ts`) must parse these and translate them into appropriate `McpError` instances.
+- **Rate Limiting:** Strictly adhere to NCBI's rate limits (3 requests/second without API key, 10 requests/second with API key). Robust queuing and delay mechanisms are implemented in `src/services/NCBI/ncbiService.ts`.
+- **XML Parsing:** PubMed XML can be complex. `fast-xml-parser` is used in `src/services/NCBI/ncbiService.ts`. Dedicated parsing functions for different E-utility responses and data structures (e.g., AuthorList, MeshHeadingList) are implemented within tool logic files (e.g., `src/mcp-server/tools/fetchPubMedContent/logic.ts`) and helper utilities (`src/utils/parsing/pubmedXmlParserHelpers.ts`).
+- **Data Transformation:** Transform parsed XML data into the structured JSON formats defined in the project specification for tool outputs.
+
+## Repository Tree
+
+```plaintext
+# pubmed-mcp-server - Directory Structure
+# Generated on: 2025-05-24T05:21:58.223Z (Update with actual generation date if using script)
+
+config/
+  index.ts
+mcp-server/
+  resources/
+    echoResource/
+      echoResourceLogic.ts
+      index.ts
+      registration.ts
+  tools/
+    fetchPubMedContent/
+      index.ts
+      logic.ts
+      registration.ts
+    searchPubMedArticles/
+      index.ts
+      logic.ts
+      registration.ts
+  transports/
+    authentication/
+      authMiddleware.ts
+    httpTransport.ts
+    stdioTransport.ts
+  server.ts
+services/
+  llm-providers/
+    openRouter/
+      index.ts
+      openRouterProvider.ts
+    index.ts
+    llmFactory.ts
+  NCBI/
+    ncbiService.ts
+  index.ts
+types-global/
+  errors.ts
+  pubmedXml.ts
+utils/
+  internal/
+    errorHandler.ts
+    index.ts
+    logger.ts
+    requestContext.ts
+  metrics/
+    index.ts
+    tokenCounter.ts
+  parsing/
+    dateParser.ts
+    index.ts
+    jsonParser.ts
+    pubmedXmlParserHelpers.ts
+  security/
+    idGenerator.ts
+    index.ts
+    rateLimiter.ts
+    sanitization.ts
+  index.ts
+index.ts
+```
+
+Remember to keep this cheatsheet updated as the `pubmed-mcp-server` evolves!
