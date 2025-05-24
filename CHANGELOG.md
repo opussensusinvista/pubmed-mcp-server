@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2025-05-24
+
+### Added
+
+- **`fetchPubMedContent` Tool**:
+  - Introduced an `outputFormat` parameter (`json` or `raw_text`) to the `fetchPubMedContent` tool.
+  - When `outputFormat` is `raw_text`:
+    - For `detailLevel: "medline_text"`, the tool now returns the direct MEDLINE text string.
+    - For `detailLevel: "full_xml"`, the tool returns a JSON string representation of the parsed XML structure. A warning is logged as true raw XML string output is not yet supported by the underlying `ncbiService`.
+  - For `detailLevel: "abstract_plus"` and `detailLevel: "citation_data"`, the output remains a JSON object regardless of the `outputFormat` setting, as raw text is not applicable for these structured data types.
+  - Updated `FetchPubMedContentInputSchema` in `src/mcp-server/tools/fetchPubMedContent/logic.ts` to include the new `outputFormat` option.
+  - Modified the logic in `fetchPubMedContentLogic` to handle the new `outputFormat` and adjust the response accordingly.
+
 ## [1.0.4] - 2025-05-24
 
 ### Changed
