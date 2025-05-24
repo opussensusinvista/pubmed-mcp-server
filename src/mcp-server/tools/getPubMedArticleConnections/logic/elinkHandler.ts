@@ -35,15 +35,25 @@ export async function handleELinkRelationships(
   const eLinkParams: any = {
     dbfrom: "pubmed",
     db: "pubmed",
-    cmd: "neighbor_score",
     id: input.sourcePmid,
     retmode: "xml",
+    // cmd and linkname will be set below based on relationshipType
   };
 
-  if (input.relationshipType === "pubmed_citedin") {
-    eLinkParams.linkname = "pubmed_pubmed_citedin";
-  } else if (input.relationshipType === "pubmed_references") {
-    eLinkParams.linkname = "pubmed_pubmed_refs";
+  switch (input.relationshipType) {
+    case "pubmed_citedin":
+      eLinkParams.cmd = "neighbor_history";
+      eLinkParams.linkname = "pubmed_pubmed_citedin";
+      break;
+    case "pubmed_references":
+      eLinkParams.cmd = "neighbor_history";
+      eLinkParams.linkname = "pubmed_pubmed_refs";
+      break;
+    case "pubmed_similar_articles":
+    default: // Default to similar articles
+      eLinkParams.cmd = "neighbor_score";
+      // No linkname is explicitly needed for neighbor_score when dbfrom and db are pubmed
+      break;
   }
 
   const tempUrl = new URL(
