@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2025-05-24
+
+### Changed
+
+- **NCBI ELink Interaction (`getPubMedArticleConnections` tool)**:
+  - Significantly refactored the ELink response handling in `src/mcp-server/tools/getPubMedArticleConnections/logic/elinkHandler.ts` to improve robustness and accuracy for different `relationshipType` values:
+    - Correctly processes `cmd=neighbor_history` responses (used for `pubmed_citedin` and `pubmed_references`) by utilizing `LinkSetDbHistory`, `QueryKey`, and `WebEnv` to perform a subsequent ESearch to retrieve related PMIDs.
+    - Accurately parses `cmd=neighbor_score` responses (used for `pubmed_similar_articles`) by targeting the `LinkSetDb` entry with `LinkName` as `pubmed_pubmed`.
+    - Loosened type definitions for `XmlELinkItem`'s `Id` and `Score` to accept numbers, accommodating variations in NCBI's XML output.
+    - Enhanced filtering of results to exclude the source PMID and invalid PMIDs (e.g., "0").
+    - Added more detailed debug logging throughout the ELink processing flow.
+- **NCBI EFetch Interaction (`getPubMedArticleConnections` tool)**:
+  - In `src/mcp-server/tools/getPubMedArticleConnections/logic/citationFormatter.ts`, the `rettype` parameter is now omitted by default when calling EFetch for citation data. This aims to retrieve the fullest possible XML record from NCBI, potentially improving the quality and completeness of generated citations. The EFetch URL construction was updated accordingly.
+- **XML Parsing Utilities**:
+  - Improved the `getText` helper function in `src/utils/parsing/ncbi-parsing/xmlGenericHelpers.ts` to more robustly extract text content from XML elements. It now handles cases where the element itself or its `#text` child might be a number or boolean, and correctly handles undefined or null elements.
+- **Date Parsing Utilities**:
+  - Enhanced `standardizeESummaryDate` in `src/utils/parsing/ncbi-parsing/eSummaryResultParser.ts` to explicitly check for `null` inputs and ensure the date string is consistently handled as a string before parsing.
+
+### Removed
+
+- **Documentation**: Deleted `docs/Entrez-EUtils-Documentation.pdf`. Users should refer to the official NCBI E-utilities documentation online.
+
+### Fixed
+
+- Minor type issues and potential parsing inconsistencies in NCBI data handling.
+
 ## [1.0.3] - 2025-05-23
 
 ### Added
