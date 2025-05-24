@@ -71,7 +71,7 @@ export type FetchPubMedContentInput = z.infer<
 
 function parsePubMedArticleSet(
   // xmlData is the root of the parsed XML document from EFetch
-  xmlData: { PubmedArticleSet?: XmlPubmedArticleSet } | any, 
+  xmlData: { PubmedArticleSet?: XmlPubmedArticleSet } | any,
   input: FetchPubMedContentInput,
   parentContext: RequestContext,
 ): ParsedArticle[] {
@@ -104,7 +104,9 @@ function parsePubMedArticleSet(
       JSON.stringify(pubmedArticlesXml).substring(0, 500),
     ),
     isPubmedArticlesXmlArray: Array.isArray(pubmedArticlesXml),
-    pubmedArticlesXmlLength: Array.isArray(pubmedArticlesXml) ? pubmedArticlesXml.length : undefined,
+    pubmedArticlesXmlLength: Array.isArray(pubmedArticlesXml)
+      ? pubmedArticlesXml.length
+      : undefined,
   });
 
   if (Array.isArray(pubmedArticlesXml) && pubmedArticlesXml.length > 0) {
@@ -115,13 +117,16 @@ function parsePubMedArticleSet(
       ),
     });
   }
-  
+
   for (const articleXml of pubmedArticlesXml) {
-    if (!articleXml || typeof articleXml !== 'object') {
-      logger.warning("Skipping invalid articleXml item in pubmedArticlesXml array", {
-        ...operationContext,
-        articleXmlItem: sanitizeInputForLogging(articleXml),
-      });
+    if (!articleXml || typeof articleXml !== "object") {
+      logger.warning(
+        "Skipping invalid articleXml item in pubmedArticlesXml array",
+        {
+          ...operationContext,
+          articleXmlItem: sanitizeInputForLogging(articleXml),
+        },
+      );
       continue;
     }
     const medlineCitation: XmlMedlineCitation | undefined =
@@ -129,7 +134,9 @@ function parsePubMedArticleSet(
     if (!medlineCitation) {
       logger.warning("MedlineCitation not found in articleXml, skipping.", {
         ...operationContext,
-        articleXmlPreview: sanitizeInputForLogging(JSON.stringify(articleXml).substring(0,200)),
+        articleXmlPreview: sanitizeInputForLogging(
+          JSON.stringify(articleXml).substring(0, 200),
+        ),
       });
       continue;
     }
@@ -138,7 +145,9 @@ function parsePubMedArticleSet(
     logger.debug("Extracted PMID from MedlineCitation:", {
       ...operationContext,
       extractedPmid: pmid,
-      medlineCitationPreview: sanitizeInputForLogging(JSON.stringify(medlineCitation).substring(0, 200)),
+      medlineCitationPreview: sanitizeInputForLogging(
+        JSON.stringify(medlineCitation).substring(0, 200),
+      ),
     });
     if (!pmid) continue;
 

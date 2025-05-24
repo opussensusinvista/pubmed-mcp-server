@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [1.0.1] - 2025-05-23
 
 ### Changed
+
 - **Refactor: PubMed XML Parsing & Data Extraction**:
   - Introduced dedicated TypeScript types for PubMed XML structures (`src/types-global/pubmedXml.ts`) to improve type safety and clarity.
   - Created a suite of helper functions (`src/utils/parsing/pubmedXmlParserHelpers.ts`) for modular, robust, and reusable extraction of data from parsed PubMed XML (e.g., authors, abstracts, MeSH terms, journal info).

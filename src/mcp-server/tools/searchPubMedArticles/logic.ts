@@ -176,7 +176,7 @@ export async function searchPubMedArticlesLogic(
       eSearchParams,
       toolLogicContext,
     );
-    
+
     const eSearchBase =
       "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
     const eSearchQueryStringParams: Record<string, string> = {};
@@ -232,10 +232,12 @@ export async function searchPubMedArticlesLogic(
         eSummaryParams.retmax = currentFetchBriefSummaries; // Use history with retmax
       } else {
         // Fallback to using explicit IDs if history is not available (should not happen if usehistory='y' was successful)
-        const pmidsForSummary = pmids.slice(0, currentFetchBriefSummaries).join(",");
+        const pmidsForSummary = pmids
+          .slice(0, currentFetchBriefSummaries)
+          .join(",");
         eSummaryParams.id = pmidsForSummary;
       }
-      
+
       const eSummaryBase =
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
       const eSummaryQueryStringParams: Record<string, string> = {};

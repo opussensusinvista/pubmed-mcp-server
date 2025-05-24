@@ -72,7 +72,10 @@ export function getText(element: any, defaultValue = ""): string {
     if (typeof element["#text"] === "string") {
       return element["#text"];
     }
-    if (typeof element["#text"] === "number" || typeof element["#text"] === "boolean") {
+    if (
+      typeof element["#text"] === "number" ||
+      typeof element["#text"] === "boolean"
+    ) {
       return String(element["#text"]);
     }
   }

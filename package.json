@@ -1,6 +1,6 @@
 {
   "name": "pubmed-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP Server for intelligent PubMed access via NCBI E-utilities. Leverages mcp-ts-template foundation.",
   "main": "dist/index.js",
   "files": [
