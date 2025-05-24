@@ -1,9 +1,9 @@
-# mcp-ts-template - Directory Structure
+# pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-22 17:15:25
+Generated on: 2025-05-24 03:06:38
 
 ```
-mcp-ts-template
+pubmed-mcp-server
 ├── .github
 │   └── workflows
 │       └── publish.yml
@@ -11,6 +11,8 @@ mcp-ts-template
 │   ├── api-references
 │   │   ├── jsdoc-standard-tags.md
 │   │   └── typedoc-reference.md
+│   ├── Entrez-EUtils-Documentation.pdf
+│   ├── project-spec.md
 │   └── tree.md
 ├── scripts
 │   ├── clean.ts
@@ -20,21 +22,6 @@ mcp-ts-template
 ├── src
 │   ├── config
 │   │   └── index.ts
-│   ├── mcp-client
-│   │   ├── client-config
-│   │   │   ├── configLoader.ts
-│   │   │   ├── mcp-config.json
-│   │   │   └── mcp-config.json.example
-│   │   ├── core
-│   │   │   ├── clientCache.ts
-│   │   │   ├── clientConnectionLogic.ts
-│   │   │   └── clientManager.ts
-│   │   ├── transports
-│   │   │   ├── httpClientTransport.ts
-│   │   │   ├── index.ts
-│   │   │   ├── stdioClientTransport.ts
-│   │   │   └── transportFactory.ts
-│   │   └── index.ts
 │   ├── mcp-server
 │   │   ├── resources
 │   │   │   └── echoResource
@@ -42,9 +29,13 @@ mcp-ts-template
 │   │   │       ├── index.ts
 │   │   │       └── registration.ts
 │   │   ├── tools
-│   │   │   └── echoTool
-│   │   │       ├── echoToolLogic.ts
+│   │   │   ├── fetchPubMedContent
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   └── searchPubMedArticles
 │   │   │       ├── index.ts
+│   │   │       ├── logic.ts
 │   │   │       └── registration.ts
 │   │   ├── transports
 │   │   │   ├── authentication
@@ -59,6 +50,8 @@ mcp-ts-template
 │   │   │   │   └── openRouterProvider.ts
 │   │   │   ├── index.ts
 │   │   │   └── llmFactory.ts
+│   │   ├── NCBI
+│   │   │   └── ncbiService.ts
 │   │   └── index.ts
 │   ├── types-global
 │   │   └── errors.ts

@@ -41,6 +41,18 @@ export enum BaseErrorCode {
   CONFIGURATION_ERROR = "CONFIGURATION_ERROR",
   /** An error occurred during the initialization phase of a service or module. */
   INITIALIZATION_FAILED = "INITIALIZATION_FAILED",
+
+  // NCBI Specific Errors
+  /** An error was returned by the NCBI E-utilities API. */
+  NCBI_API_ERROR = "NCBI_API_ERROR",
+  /** An error occurred while parsing a response from NCBI (e.g., XML, JSON). */
+  NCBI_PARSING_ERROR = "NCBI_PARSING_ERROR",
+  /** A warning or notice related to NCBI rate limits. */
+  NCBI_RATE_LIMIT_WARNING = "NCBI_RATE_LIMIT_WARNING",
+  /** An error related to the construction or validity of an NCBI E-utility query. */
+  NCBI_QUERY_ERROR = "NCBI_QUERY_ERROR",
+  /** NCBI service temporarily unavailable or returned a server-side error. */
+  NCBI_SERVICE_UNAVAILABLE = "NCBI_SERVICE_UNAVAILABLE",
 }
 
 /**

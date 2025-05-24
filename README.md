@@ -1,62 +1,41 @@
-# MCP TypeScript Template 🚀
+# PubMed MCP Server Pubmed
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Model Context Protocol SDK](https://img.shields.io/badge/MCP%20SDK-1.11.5-green.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
+[![Model Context Protocol SDK](https://img.shields.io/badge/MCP%20SDK-1.12.0-green.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![MCP Spec Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-lightgrey.svg)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)
-[![Version](https://img.shields.io/badge/Version-1.3.1-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/mcp-ts-template/issues)
-[![GitHub](https://img.shields.io/github/stars/cyanheads/mcp-ts-template?style=social)](https://github.com/cyanheads/mcp-ts-template)
+[![Status](https://img.shields.io/badge/Status-Development-yellow.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
+[![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
 
-**Jumpstart your [Model Context Protocol (MCP) Client & Server](https://modelcontextprotocol.io/) development with this TypeScript Repo Template!**
+**Connect your AI agents to the world of biomedical literature with the PubMed MCP Server!**
 
-This template provides a solid, beginner-friendly foundation for building robust MCP servers and clients, adhering to the **MCP 2025-03-26 specification**. It includes production-ready utilities, a well-structured codebase, working examples, and clear documentation to get you up and running quickly.
-
-Whether you're creating a new MCP server to extend an AI's capabilities or integrating MCP client features into your application, this template is your starting point.
+This server provides a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) interface to NCBI's PubMed and E-utilities, enabling language models to search, fetch, and analyze biomedical articles and data. Built on a robust TypeScript foundation (derived from `mcp-ts-template`), it adheres to the **MCP 2025-03-26 specification** and includes production-ready utilities for logging, error handling, and secure communication.
 
 ## ✨ Key Features
 
-| Feature Area                | Description                                                                                                                      | Key Components / Location                                                      |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| **🔌 MCP Server**           | Functional server example with Echo Tool & Resource. Supports `stdio` and `http` (SSE) transports.                               | `src/mcp-server/`                                                              |
-| **💻 MCP Client**           | Working client aligned with **MCP 2025-03-26 spec**. Connects via `mcp-config.json`. Includes detailed comments.                 | `src/mcp-client/`                                                              |
-| **🚀 Production Utilities** | Logging, Error Handling, ID Generation, Rate Limiting, Request Context tracking, Input Sanitization.                             | `src/utils/`                                                                   |
-| **🔒 Type Safety/Security** | Strong type checking via TypeScript & Zod validation. Built-in security utilities (sanitization, auth middleware stub for HTTP). | Throughout, `src/utils/security/`, `src/mcp-server/transports/authentication/` |
-| **⚙️ Error Handling**       | Consistent error categorization (`BaseErrorCode`), detailed logging, centralized handling (`ErrorHandler`).                      | `src/utils/internal/errorHandler.ts`, `src/types-global/`                      |
-| **📚 Documentation**        | Comprehensive `README.md`, structured JSDoc comments (via `tsdoc.json`), API references.                                         | `README.md`, Codebase, `tsdoc.json`, `docs/api-references/`                    |
-| **🤖 Agent Ready**          | Includes a [.clinerules](.clinerules) developer cheatsheet tailored for LLM coding agents.                                       | `.clinerules`                                                                  |
-| **🛠️ Utility Scripts**      | Scripts for cleaning builds, setting executable permissions, generating directory trees, and fetching OpenAPI specs.             | `scripts/`                                                                     |
-
-_For a more granular breakdown, see the [Detailed Features Table](#detailed-features-table) below._
-
-## 🚀 Projects Using This Template
-
-This template is already powering several MCP servers, demonstrating its flexibility and robustness:
-
-| Project                                                                                                   | Description                                                                                                                                                                                                                  | Status / Notes                                                                                                                           |
-| :-------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| [**git-mcp-server**](https://github.com/cyanheads/git-mcp-server)                                         | Provides an enterprise-ready MCP interface for Git operations. Allows LLM agents to initialize, clone, branch, commit, and manage repositories via STDIO & Streamable HTTP.                                                  | Actively using this template.                                                                                                            |
-| [**obsidian-mcp-server**](https://github.com/cyanheads/obsidian-mcp-server/tree/mcp-ts-template-refactor) | Enables LLMs to interact securely with Obsidian vaults via MCP. Offers token-aware tools for searching, navigating, and updating Obsidian notes, facilitating seamless knowledge base management with Properties management. | Refactor in progress using this template ([see branch](https://github.com/cyanheads/obsidian-mcp-server/tree/mcp-ts-template-refactor)). |
-| [**filesystem-mcp-server**](https://github.com/cyanheads/filesystem-mcp-server)                           | Offers platform-agnostic file system capabilities for AI agents via MCP. Enables reading, writing, updating, and managing files/directories, featuring advanced search/replace and directory traversal.                      | Actively using this template.                                                                                                            |
-| [**atlas-mcp-server**](https://github.com/cyanheads/atlas-mcp-server)                                     | Advanced task and knowledge management system with Neo4j backend, enabling structured data organization and complex querying for AI agents.                                                                                  | Aligned with this template (as of v2.8.8).                                                                                               |
-
-_Note: [**toolkit-mcp-server**](https://github.com/cyanheads/toolkit-mcp-server) was initially built using an older version of this template and is pending updates to the latest structure._
-
-You can also **see my [GitHub profile](https://github.com/cyanheads/)** for additional MCP servers I've created, many of which are planned to be migrated to or built upon this template in the future.
+| Feature Area                | Description                                                                                                                               | Key Components / Location                                                      |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| **PubMed Integration**      | Tools for searching articles (`searchPubMedArticles`), fetching content (`fetchPubMedContent`).                                           | `src/mcp-server/tools/`, `src/services/NCBI/`                                  |
+| **🔌 MCP Server**           | Functional server with PubMed tools. Supports `stdio` and `http` (SSE) transports.                                                        | `src/mcp-server/`                                                              |
+| **🚀 Production Utilities** | Logging, Error Handling, ID Generation, Rate Limiting, Request Context tracking, Input Sanitization.                                      | `src/utils/`                                                                   |
+| **🔒 Type Safety/Security** | Strong type checking via TypeScript & Zod validation. NCBI API key management, rate limiting, auth middleware for HTTP.                    | Throughout, `src/utils/security/`, `src/mcp-server/transports/authentication/` |
+| **⚙️ Error Handling**       | Consistent error categorization (`BaseErrorCode`), detailed logging, centralized handling (`ErrorHandler`), NCBI-specific error types.    | `src/utils/internal/errorHandler.ts`, `src/types-global/`                      |
+| **📚 Documentation**        | Comprehensive `README.md`, structured JSDoc comments (via `tsdoc.json`), API references, project specification.                           | `README.md`, Codebase, `tsdoc.json`, `docs/`                                   |
+| **🤖 Agent Ready**          | Includes a [.clinerules](.clinerules) developer cheatsheet tailored for LLM coding agents, specific to this PubMed server.                 | `.clinerules`                                                                  |
+| **🛠️ Utility Scripts**      | Scripts for cleaning builds, setting executable permissions, generating directory trees, and fetching OpenAPI specs.                      | `scripts/`                                                                     |
 
 ## 📋 Table of Contents
 
-[✨ Key Features](#-key-features) | [🚀 Projects Using This Template](#-projects-using-this-template) | [🚀 Quick Start](#quick-start) | [⚙️ Configuration](#️-configuration) | [Server Configuration](#server-configuration-environment-variables) | [Client Configuration](#client-configuration-mcp-configjson) | [🏗️ Project Structure](#️-project-structure) | [🧩 Adding Tools/Resources](#-adding-your-own-tools--resources) | [🌍 More MCP Resources](#-explore-more-mcp-resources) | [📜 License](#-license) | [Detailed Features](#detailed-features-table)
+[✨ Key Features](#-key-features) | [🚀 Quick Start](#quick-start) | [⚙️ Configuration](#️-configuration) | [Server Configuration](#server-configuration-environment-variables) | [🏗️ Project Structure](#️-project-structure) | [🧩 Adding PubMed Tools/Resources](#-adding-pubmed-toolsresources) | [🌍 More MCP Resources](#-explore-more-mcp-resources) | [📜 License](#-license)
 
-## Quick Start
-
-Get the example server running in minutes:
+## 🚀 Quick Start
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/cyanheads/mcp-ts-template.git
-    cd mcp-ts-template
+    git clone https://github.com/cyanheads/pubmed-mcp-server.git
+    cd pubmed-mcp-server
     ```
 
 2.  **Install dependencies:**
@@ -65,202 +44,132 @@ Get the example server running in minutes:
     npm install
     ```
 
-3.  **Build the project:**
+3.  **Configure Environment Variables:**
+    Create a `.env` file in the project root and add your NCBI API key and admin email:
+    ```env
+    NCBI_API_KEY=your_ncbi_api_key_here
+    NCBI_ADMIN_EMAIL=your_email@example.com
+    MCP_AUTH_SECRET_KEY=generate_a_strong_random_32_plus_char_secret_key_for_http_auth # Required for HTTP
+    # Optional:
+    # MCP_TRANSPORT_TYPE=http
+    # MCP_HTTP_PORT=3010
+    # MCP_LOG_LEVEL=debug
+    ```
+    Refer to the [Configuration](#server-configuration-environment-variables) section for more details.
+
+4.  **Build the project:**
 
     ```bash
     npm run build
-    # Or use 'npm run rebuild' for a clean install (deletes node_modules, logs, dist)
     ```
 
-4.  **Format the code (Optional but Recommended):**
+5.  **Run the Server:**
 
-    ```bash
-    npm run format
-    ```
-
-5.  **Run the Example Server:**
-
-    - **Via Stdio (Default):** Many MCP host applications will run this automatically using `stdio`. To run manually for testing:
+    - **Via Stdio (Default):**
       ```bash
       npm start
       # or 'npm run start:stdio'
       ```
-    - **Via HTTP (SSE):**
+    - **Via HTTP (SSE):** Ensure `MCP_TRANSPORT_TYPE=http` and `MCP_AUTH_SECRET_KEY` are set in your `.env` file.
       ```bash
       npm run start:http
       ```
-      This starts an HTTP server (default: `http://127.0.0.1:3010`) using Server-Sent Events. The port, host, and allowed origins are configurable via environment variables (see [Configuration](#configuration)).
+      This starts an HTTP server (default: `http://127.0.0.1:3010`).
 
 ## ⚙️ Configuration
 
 ### Server Configuration (Environment Variables)
 
-Configure the MCP server's behavior using these environment variables:
+Configure the PubMed MCP server using these environment variables (typically in a `.env` file):
 
-| Variable                  | Description                                                                                         | Default                                 |
-| :------------------------ | :-------------------------------------------------------------------------------------------------- | :-------------------------------------- |
-| `MCP_TRANSPORT_TYPE`      | Server transport: `stdio` or `http`.                                                                | `stdio`                                 |
-| `MCP_HTTP_PORT`           | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                            | `3010`                                  |
-| `MCP_HTTP_HOST`           | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                    | `127.0.0.1`                             |
-| `MCP_ALLOWED_ORIGINS`     | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                            | (none)                                  |
-| `MCP_SERVER_NAME`         | Optional server name (used in MCP initialization).                                                  | (from package.json)                     |
-| `MCP_SERVER_VERSION`      | Optional server version (used in MCP initialization).                                               | (from package.json)                     |
-| `MCP_LOG_LEVEL`           | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                   | `debug`                                 |
-| `LOGS_DIR`                | Directory for log files.                                                                            | `logs/` (in project root)               |
-| `NODE_ENV`                | Runtime environment (`development`, `production`).                                                  | `development`                           |
-| `MCP_AUTH_SECRET_KEY`     | **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT). | (none - **MUST be set in production**)  |
-| `OPENROUTER_APP_URL`      | URL of the application (used by OpenRouter service for HTTP Referer).                               | `http://localhost:3000`                 |
-| `OPENROUTER_APP_NAME`     | Name of the application (used by OpenRouter service for X-Title header).                            | 'mcp-ts-template'                       |
-| `OPENROUTER_API_KEY`      | API key for OpenRouter.ai service. Optional, but service will be unconfigured without it.           | (none)                                  |
-| `LLM_DEFAULT_MODEL`       | Default model to use for LLM calls via OpenRouter.                                                  | `google/gemini-2.5-flash-preview-05-20` |
-| `LLM_DEFAULT_TEMPERATURE` | Default temperature for LLM calls (0-2). Optional.                                                  | (none)                                  |
-| `LLM_DEFAULT_TOP_P`       | Default top_p for LLM calls (0-1). Optional.                                                        | (none)                                  |
-| `LLM_DEFAULT_MAX_TOKENS`  | Default max_tokens for LLM calls. Optional.                                                         | (none)                                  |
-| `LLM_DEFAULT_TOP_K`       | Default top_k for LLM calls (non-negative integer). Optional.                                       | (none)                                  |
-| `LLM_DEFAULT_MIN_P`       | Default min_p for LLM calls (0-1). Optional.                                                        | (none)                                  |
+| Variable                        | Description                                                                                                | Default                                      | Required                                  |
+| :------------------------------ | :--------------------------------------------------------------------------------------------------------- | :------------------------------------------- | :---------------------------------------- |
+| **`NCBI_API_KEY`**              | **Your NCBI API Key.** Essential for higher rate limits and reliable access.                               | (none)                                       | **Yes**                                   |
+| **`NCBI_ADMIN_EMAIL`**          | **Your email address for NCBI contact.**                                                                   | (none)                                       | **Yes**                                   |
+| `NCBI_TOOL_IDENTIFIER`          | Tool identifier sent to NCBI.                                                                              | `pubmed-mcp-server/<version>`                | No                                        |
+| `NCBI_REQUEST_DELAY_MS`         | Milliseconds to wait between NCBI requests (e.g., 100 for API key, 334 for no key).                        | `100`                                        | No                                        |
+| `NCBI_MAX_RETRIES`              | Maximum number of retries for failed NCBI requests.                                                        | `3`                                          | No                                        |
+| `MCP_TRANSPORT_TYPE`            | Server transport: `stdio` or `http`.                                                                       | `stdio`                                      | No                                        |
+| `MCP_HTTP_PORT`                 | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                                   | `3010`                                       | No (if stdio)                             |
+| `MCP_HTTP_HOST`                 | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                           | `127.0.0.1`                                  | No (if stdio)                             |
+| `MCP_ALLOWED_ORIGINS`           | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                                   | (none)                                       | No                                        |
+| **`MCP_AUTH_SECRET_KEY`**       | **Secret key (min 32 chars) for JWT auth (HTTP transport).**                                               | (none)                                       | **Yes (if `MCP_TRANSPORT_TYPE=http`)**    |
+| `MCP_SERVER_NAME`               | Optional server name (used in MCP initialization).                                                         | (from package.json)                          | No                                        |
+| `MCP_SERVER_VERSION`            | Optional server version (used in MCP initialization).                                                      | (from package.json)                          | No                                        |
+| `MCP_LOG_LEVEL`                 | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                          | `debug`                                      | No                                        |
+| `LOGS_DIR`                      | Directory for log files.                                                                                   | `logs/` (in project root)                    | No                                        |
+| `NODE_ENV`                      | Runtime environment (`development`, `production`).                                                         | `development`                                | No                                        |
+| `OPENROUTER_API_KEY`            | API key for OpenRouter.ai (if using internal LLM features).                                                | (none)                                       | No                                        |
+| `OPENROUTER_APP_URL`            | Application URL for OpenRouter.                                                                            | `http://localhost:3000`                      | No                                        |
+| `OPENROUTER_APP_NAME`           | Application name for OpenRouter.                                                                           | (from package.json name)                     | No                                        |
+| `LLM_DEFAULT_MODEL`             | Default LLM model for OpenRouter.                                                                          | `google/gemini-2.5-flash-preview-05-20`      | No                                        |
+| `GEMINI_API_KEY`                | API key for Google Gemini services (if using internal LLM features).                                       | (none)                                       | No                                        |
+| `OAUTH_PROXY_AUTHORIZATION_URL` | OAuth provider authorization endpoint URL.                                                                 | (none)                                       | No                                        |
+| `OAUTH_PROXY_TOKEN_URL`         | OAuth provider token endpoint URL.                                                                         | (none)                                       | No                                        |
+| `OAUTH_PROXY_REVOCATION_URL`    | OAuth provider revocation endpoint URL.                                                                    | (none)                                       | No                                        |
+| `OAUTH_PROXY_ISSUER_URL`        | OAuth provider issuer URL.                                                                                 | (none)                                       | No                                        |
+| `OAUTH_PROXY_SERVICE_DOCUMENTATION_URL` | OAuth service documentation URL.                                                                 | (none)                                       | No                                        |
+| `OAUTH_PROXY_DEFAULT_CLIENT_REDIRECT_URIS` | Comma-separated default OAuth client redirect URIs.                                             | (none)                                       | No                                        |
 
-**Note on HTTP Port Retries:** If the `MCP_HTTP_PORT` is busy, the server automatically tries the next port (up to 15 times).
-
-**Security Note for HTTP Transport:** When using `MCP_TRANSPORT_TYPE=http`, authentication is **mandatory** as per the MCP specification. This template includes JWT-based authentication middleware (`src/mcp-server/transports/authentication/authMiddleware.ts`). You **MUST** set a strong, unique `MCP_AUTH_SECRET_KEY` in your production environment for this security mechanism to function correctly. Failure to do so will result in bypassed authentication checks in development and fatal errors in production.
-
-### Client Configuration (`src/mcp-client/client-config/mcp-config.json`)
-
-Configure the connections for the built-in **MCP client** using `src/mcp-client/client-config/mcp-config.json`. If this file is missing, it falls back to `src/mcp-client/client-config/mcp-config.json.example`.
-
-This file defines external MCP servers the client can connect to. The client implementation adheres to the **MCP 2025-03-26 specification**.
-
-**Example `mcp-config.json` (see `src/mcp-client/client-config/mcp-config.json.example` for the full version):**
-
-```json
-{
-  "mcpServers": {
-    "my-stdio-server": {
-      "command": "node", // Command or executable
-      "args": ["/path/to/my-server/index.js"], // Arguments for stdio
-      "env": { "LOG_LEVEL": "debug" }, // Optional environment variables
-      "transportType": "stdio" // Explicitly stdio (or omit for default)
-    },
-    "my-http-server": {
-      "command": "http://localhost:8080", // Base URL for HTTP
-      "args": [], // Not used for HTTP
-      "env": {}, // Not used for HTTP
-      "transportType": "http" // Explicitly http
-    }
-    // ... add other servers
-  }
-}
-```
-
-- **`command`**: Executable path (`stdio`) or Base URL (`http`).
-- **`args`**: Array of arguments (required for `stdio`).
-- **`env`**: Optional environment variables to set for the server process (`stdio`).
-- **`transportType`**: `stdio` (default) or `http`.
-
-See `src/mcp-client/client-config/configLoader.ts` for the Zod validation schema and `src/mcp-client/client-config/mcp-config.json.example` for a complete example.
+**Security Note for HTTP Transport:** When using `MCP_TRANSPORT_TYPE=http`, authentication is **mandatory**. This server uses JWT-based authentication. You **MUST** set a strong, unique `MCP_AUTH_SECRET_KEY` in your production environment.
 
 ## 🏗️ Project Structure
 
-The `src/` directory is organized for clarity:
+The `src/` directory is organized as follows:
 
 - `config/`: Loads environment variables and package info.
-- `mcp-client/`: Logic for the client connecting to _external_ MCP servers (updated to MCP 2025-03-26 spec).
-  - `client-config/`: Handles loading and validation of `mcp-config.json`.
-    - `configLoader.ts`: Loads and validates server configurations.
-    - `mcp-config.json.example`: Example configuration file.
-  - `core/`: Core client logic including connection management and caching.
-    - `clientManager.ts`: Manages client instances and their lifecycle.
-    - `clientConnectionLogic.ts`: Handles the details of connecting and initializing with servers.
-    - `clientCache.ts`: Caches active client connections.
-  - `transports/`: Manages different communication transports (Stdio, HTTP).
-    - `transportFactory.ts`: Creates appropriate transport instances.
-    - `stdioClientTransport.ts`: Implements Stdio transport.
-    - `httpClientTransport.ts`: Implements HTTP transport.
-  - `index.ts`: Barrel file exporting key client functionalities.
-- `mcp-server/`: Logic for the MCP server _provided by this template_.
-  - `server.ts`: Initializes the server, registers tools/resources.
-  - `resources/`: Example resource implementations (e.g., EchoResource).
-  - `tools/`: Example tool implementations (e.g., EchoTool).
+- `mcp-server/`: Core logic for the PubMed MCP server.
+  - `server.ts`: Initializes the server, registers PubMed tools/resources.
+  - `resources/`: PubMed-specific resource implementations (e.g., `serverInfo`, `getPubMedStats` - to be implemented).
+  - `tools/`: PubMed-specific tool implementations.
+    - `searchPubMedArticles/`: Implements PubMed search.
+    - `fetchPubMedContent/`: Implements fetching article details.
+    - `getArticleRelationships/`: (To be implemented)
   - `transports/`: Handles `stdio` and `http` communication for the server.
+    - `authentication/`: JWT authentication middleware for HTTP.
 - `services/`: Contains service integrations.
-  - `llm-providers/`: API Providers for Large Language Models.
-    - `openRouter/`: OpenRouter provider implementation.
-    - `llmFactory.ts`: Factory for creating LLM provider clients.
-    - `index.ts`: Barrel file for all LLM providers.
-  - `index.ts`: Barrel file for services.
+  - `NCBI/`: Service for interacting with NCBI E-utilities.
+    - `ncbiService.ts`: Handles API calls, rate limiting, parsing.
+  - `llm-providers/`: (Optional) For internal LLM use.
 - `types-global/`: Shared TypeScript definitions (Errors, MCP types).
-- `utils/`: Reusable utilities (logging, errors, security, parsing, etc.). Exported via `index.ts`.
+- `utils/`: Reusable utilities (logging, errors, security, parsing, etc.).
 
-**Explore the structure yourself:**
+**View the full structure:**
 
 ```bash
 npm run tree
 ```
 
-(This uses `scripts/tree.ts` to generate a current file tree.)
+## 🧩 Adding PubMed Tools/Resources
 
-## 🧩 Adding Your Own Tools & Resources
+Extend the server's capabilities by adding new PubMed tools or resources:
 
-This template is designed for extension! Follow the high-level SDK patterns:
-
-1.  **Create Directories**: Add new directories under `src/mcp-server/tools/yourToolName/` or `src/mcp-server/resources/yourResourceName/`.
-2.  **Implement Logic (`logic.ts`)**: Define Zod schemas for inputs/outputs and write your core processing function.
+1.  **Create Directories**: Under `src/mcp-server/tools/yourNewToolName/` or `src/mcp-server/resources/yourNewResourceName/`.
+2.  **Implement Logic (`logic.ts`)**:
+    - Define Zod schemas for inputs.
+    - Write the core function to interact with `src/services/NCBI/ncbiService.ts` (e.g., call `ncbiService.eFetch(...)`).
+    - Parse the NCBI response and format it as per MCP `CallToolResult` or `ReadResourceResult`.
 3.  **Register (`registration.ts`)**:
-    - **Tools**: Use `server.tool(name, description, zodSchemaShape, handler)` (SDK v1.10.2+). This handles schema generation, validation, and routing. Remember to add relevant annotations (`readOnlyHint`, `destructiveHint`, etc.) as untrusted hints.
-    - **Resources**: Use `server.resource(regName, template, metadata, handler)`.
-    - Wrap logic in `ErrorHandler.tryCatch` for robust error handling.
-4.  **Export & Import**: Export the registration function from your new directory's `index.ts` and call it within `createMcpServerInstance` in `src/mcp-server/server.ts`.
+    - Use `server.tool(name, description, zodSchemaShape, handler)` for tools.
+    - Use `server.resource(regName, template, metadata, handler)` for resources.
+    - Wrap logic in `ErrorHandler.tryCatch`.
+4.  **Export & Import**: Export the registration function from your new directory's `index.ts` and call it in `src/mcp-server/server.ts`.
 
-Refer to the included `EchoTool` and `EchoResource` examples and the [.clinerules](.clinerules) cheatsheet for detailed patterns.
+Refer to the implemented `searchPubMedArticles` and `fetchPubMedContent` tools for examples. The [.clinerules](.clinerules) file also contains detailed guidance.
 
 ## 🌍 Explore More MCP Resources
 
-Looking for more examples, guides, and pre-built MCP servers? Check out the companion repository:
-
-➡️ **[cyanheads/model-context-protocol-resources](https://github.com/cyanheads/model-context-protocol-resources)**
-
-This collection includes servers for Filesystem, Obsidian, Git, GitHub, Perplexity, Atlas, Ntfy, and more, along with in-depth guides based on my real-world MCP development.
+-   **[Model Context Protocol Official Site](https://modelcontextprotocol.io/)**
+-   **[MCP Specification (2025-03-26)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)**
+-   **[TypeScript SDK for MCP](https://github.com/modelcontextprotocol/typescript-sdk)**
+-   **[NCBI E-utilities Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25501/)** (also in `docs/Entrez-EUtils-Documentation.pdf`)
 
 ## 📜 License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
-## Detailed Features Table
-
-| Category                 | Feature                         | Description                                                                                                                              | Location(s)                                                               |
-| :----------------------- | :------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| **Core Components**      | MCP Server                      | Core server logic, tool/resource registration, transport handling. Includes Echo Tool & Resource examples.                               | `src/mcp-server/`                                                         |
-|                          | MCP Client                      | Logic for connecting to external MCP servers (updated to **MCP 2025-03-26 spec**). Refactored for modularity.                            | `src/mcp-client/` (see subdirs: `core/`, `client-config/`, `transports/`) |
-|                          | Configuration                   | Environment-aware settings with Zod validation.                                                                                          | `src/config/`, `src/mcp-client/client-config/configLoader.ts`             |
-|                          | HTTP Transport                  | Express-based server with SSE, session management, CORS, port retries.                                                                   | `src/mcp-server/transports/httpTransport.ts`                              |
-|                          | Stdio Transport                 | Handles MCP communication over standard input/output.                                                                                    | `src/mcp-server/transports/stdioTransport.ts`                             |
-| **Utilities (Core)**     | Logger                          | Structured, context-aware logging (files with rotation & MCP notifications).                                                             | `src/utils/internal/logger.ts`                                            |
-|                          | ErrorHandler                    | Centralized error processing, classification, and logging.                                                                               | `src/utils/internal/errorHandler.ts`                                      |
-|                          | RequestContext                  | Request/operation tracking and correlation.                                                                                              | `src/utils/internal/requestContext.ts`                                    |
-| **Utilities (Metrics)**  | TokenCounter                    | Estimates token counts using `tiktoken`.                                                                                                 | `src/utils/metrics/tokenCounter.ts`                                       |
-| **Utilities (Parsing)**  | DateParser                      | Parses natural language date strings using `chrono-node`.                                                                                | `src/utils/parsing/dateParser.ts`                                         |
-|                          | JsonParser                      | Parses potentially partial JSON, handles `<think>` blocks.                                                                               | `src/utils/parsing/jsonParser.ts`                                         |
-| **Utilities (Security)** | IdGenerator                     | Generates unique IDs (prefixed or UUIDs).                                                                                                | `src/utils/security/idGenerator.ts`                                       |
-|                          | RateLimiter                     | Request throttling based on keys.                                                                                                        | `src/utils/security/rateLimiter.ts`                                       |
-|                          | Sanitization                    | Input validation/cleaning (HTML, paths, URLs, numbers, JSON) & log redaction (`validator`, `sanitize-html`).                             | `src/utils/security/sanitization.ts`                                      |
-| **Services**             | OpenRouter Provider             | Service for interacting with OpenRouter API via OpenAI SDK compatibility.                                                                | `src/services/llm-providers/openRouter/openRouterProvider.ts`             |
-|                          | LLM Provider Factory            | Centralized factory for creating LLM client instances (e.g., OpenRouter, Gemini (partial integration in LLMFactory but not usable yet)). | `src/services/llm-providers/llmFactory.ts`                                |
-| **Type Safety**          | Global Types                    | Shared TypeScript definitions for consistent interfaces (Errors, MCP types).                                                             | `src/types-global/`                                                       |
-|                          | Zod Schemas                     | Used for robust validation of configuration files and tool/resource inputs.                                                              | Throughout (`config`, `mcp-client`, tools, etc.)                          |
-| **Error Handling**       | Pattern-Based Classification    | Automatically categorize errors based on message patterns.                                                                               | `src/utils/internal/errorHandler.ts`                                      |
-|                          | Consistent Formatting           | Standardized error responses with additional context.                                                                                    | `src/utils/internal/errorHandler.ts`                                      |
-|                          | Safe Try/Catch Patterns         | Centralized error processing helpers (`ErrorHandler.tryCatch`).                                                                          | `src/utils/internal/errorHandler.ts`                                      |
-|                          | Client/Transport Error Handling | Specific handlers for MCP client and transport error handling.                                                                           | `src/mcp-client/core/`, `src/mcp-client/transports/`                      |
-| **Security**             | Input Validation                | Using `validator` and `zod` for various data type checks.                                                                                | `src/utils/security/sanitization.ts`, etc.                                |
-|                          | Input Sanitization              | Using `sanitize-html` to prevent injection attacks.                                                                                      | `src/utils/security/sanitization.ts`                                      |
-|                          | Sensitive Data Redaction        | Automatic redaction in logs.                                                                                                             | `src/utils/security/sanitization.ts`                                      |
-|                          | Configuration Fallback          | Safely falls back to `mcp-config.json.example` if primary client config is missing.                                                      | `src/mcp-client/client-config/configLoader.ts`                            |
-| **Scripts**              | Clean Script                    | Removes `dist` and `logs` directories (or custom targets).                                                                               | `scripts/clean.ts`                                                        |
-|                          | Make Executable Script          | Sets executable permissions (`chmod +x`) on specified files (Unix-like only).                                                            | `scripts/make-executable.ts`                                              |
-|                          | Tree Script                     | Generates a directory structure tree, respecting `.gitignore`.                                                                           | `scripts/tree.ts`                                                         |
-|                          | Fetch OpenAPI Spec Script       | Fetches an OpenAPI spec (YAML/JSON) from a URL with fallbacks, saves locally.                                                            | `scripts/fetch-openapi-spec.ts`                                           |
-
 ---
 
 <div align="center">
-Built with ❤️ and the <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>
+Access PubMed with AI | Built with the <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>
 </div>
