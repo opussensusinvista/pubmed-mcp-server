@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2025-05-24
+
+### Changed
+
+- **Documentation Overhaul**:
+  - Transformed `.clinerules` and `CLAUDE.md` from a "Developer Cheatsheet" into a comprehensive "Developer Guide & MCP Standards" document. This includes restructured content, more detailed explanations of environment variables, MCP concepts, SDK usage (emphasizing `server.tool` and `server.resource`), security mandates, JSDoc standards, core utilities, and project-specific PubMed integration.
+  - Updated the directory tree within the developer guide.
+- **Build & Versioning**:
+  - Bumped project version from `1.0.5` to `1.0.6` in `README.md` and `package.json`.
+  - Updated generation timestamp in `docs/tree.md`.
+- **Core Refactoring**:
+  - Moved `requestContextService.configure()` call to `src/index.ts` for global, one-time initialization, removing it from `createMcpServerInstance` in `src/mcp-server/server.ts`.
+- **Tool Registration & Exports**:
+  - Removed `registrationContext` parameter from `registerGetPubMedArticleConnectionsTool` invocation and definition.
+  - Standardized tool registration exports in barrel files (e.g., `src/mcp-server/tools/fetchPubMedContent/index.ts`) to use explicit named exports like `export { registerFetchPubMedContentTool } from "./registration.js";`.
+- **`fetchPubMedContent` Tool Enhancements**:
+  - Improved type safety in `parsePubMedArticleSet` with a type guard for `xmlData`.
+  - Correctly implemented raw XML string output for `detailLevel: "full_xml"` and `outputFormat: "raw_text"` by leveraging a new `returnRawXml` option in `ncbiService`.
+  - Accurately populates `notFoundPmids` for `detailLevel: "medline_text"` by parsing PMIDs from the MEDLINE response.
+  - Made MeSH term inclusion in `citation_data` conditional based on the `input.includeMeshTerms` flag.
+  - Introduced `EFetchServiceParams` interface for better typing of parameters passed to `ncbiService.eFetch`.
+- **`getPubMedArticleConnections` Tool Enhancements**:
+  - `elinkHandler.ts`: Now robustly uses `ensureArray` for parsing ELink API responses, improving resilience.
+  - `citationFormatter.ts`: Minor refactoring for EFetch URL construction and parameter typing.
+- **`searchPubMedArticles` Tool Enhancements**:
+  - Introduced `ESearchServiceParams` interface for improved typing of parameters passed to `ncbiService.eSearch` and `eSummary`.
+- **Authentication Middleware (`authMiddleware.ts`)**:
+  - Clarified logging for missing/invalid JWT scopes.
+  - Added a comment regarding downstream authorization logic's responsibility to handle default empty scopes.
+- **NCBI Service Layer (`ncbiConstants.ts`, `ncbiResponseHandler.ts`)**:
+  - Added `returnRawXml?: boolean` to `NcbiRequestOptions` in `ncbiConstants.ts`.
+  - `NcbiResponseHandler.ts`: Modified to always parse XML responses for error checking, even if `returnRawXml` is true. If no errors are found and raw XML was requested, the original XML string is returned; otherwise, the parsed object is returned. This ensures errors are caught before returning potentially unvalidated raw XML.
+
+### Fixed
+
+- Ensured type safety and correctness in handling various NCBI API response formats and XML parsing across multiple tools.
+- Addressed potential inconsistencies in request context initialization.
+
 ## [1.0.5] - 2025-05-24
 
 ### Added
