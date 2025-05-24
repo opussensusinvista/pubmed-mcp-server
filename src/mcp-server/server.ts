@@ -47,12 +47,6 @@ async function createMcpServerInstance(): Promise<McpServer> {
   });
   logger.info("Initializing MCP server instance", context);
 
-  requestContextService.configure({
-    appName: config.mcpServerName,
-    appVersion: config.mcpServerVersion,
-    environment,
-  });
-
   logger.debug("Instantiating McpServer with capabilities", {
     ...context,
     serverInfo: {
@@ -80,7 +74,7 @@ async function createMcpServerInstance(): Promise<McpServer> {
     logger.debug("Registering resources and tools...", context);
     // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
     await registerFetchPubMedContentTool(server);
-    await registerGetPubMedArticleConnectionsTool(server, context);
+    await registerGetPubMedArticleConnectionsTool(server);
     await registerSearchPubMedArticlesTool(server);
     // Add other tool/resource registrations here
     logger.info("Resources and tools registered successfully", context);

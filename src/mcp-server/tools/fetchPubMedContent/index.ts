@@ -4,4 +4,4 @@
  * @module src/mcp-server/tools/fetchPubMedContent/index
  */
 
-export * from "./registration.js"; // Should export registerFetchPubMedContentTool
+export { registerFetchPubMedContentTool } from "./registration.js";

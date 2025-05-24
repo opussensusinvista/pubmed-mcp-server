@@ -68,11 +68,11 @@ export type GetPubMedArticleConnectionsInput = z.infer<
  */
 export function registerGetPubMedArticleConnectionsTool(
   server: McpServer,
-  registrationContext: RequestContext, // This context is for the registration itself
 ): void {
   const operation = "registerGetPubMedArticleConnectionsTool";
-  // Use the passed-in registrationContext or create one if it's more appropriate
-  // For consistency with other tools, let's assume registrationContext is the primary context for this operation.
+  const registrationContext = requestContextService.createRequestContext({
+    operation,
+  });
 
   try {
     server.tool(

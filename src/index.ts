@@ -120,6 +120,16 @@ const start = async (): Promise<void> => {
     `Logger has been initialized by start(). Effective MCP logging level set to: ${validatedMcpLogLevel}.`,
   );
 
+  // Configure RequestContextService once globally
+  requestContextService.configure({
+    appName: config.mcpServerName,
+    appVersion: config.mcpServerVersion,
+    environment,
+  });
+  logger.debug(
+    "RequestContextService configured with app name, version, and environment.",
+  );
+
   const transportType = config.mcpTransportType;
   const startupContext = requestContextService.createRequestContext({
     operation: `ServerStartupSequence_${transportType}`,

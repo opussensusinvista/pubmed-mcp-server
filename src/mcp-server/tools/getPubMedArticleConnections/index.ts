@@ -4,4 +4,4 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/index
  */
 
-export * from "./registration.js";
+export { registerGetPubMedArticleConnectionsTool } from "./registration.js";
