@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 05:13:02
+Generated on: 2025-05-24 06:23:10
 
 ```
 pubmed-mcp-server
@@ -33,6 +33,15 @@ pubmed-mcp-server
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts
+│   │   │   ├── getPubMedArticleConnections
+│   │   │   │   ├── logic
+│   │   │   │   │   ├── citationFormatter.ts
+│   │   │   │   │   ├── elinkHandler.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   └── types.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
 │   │   │   └── searchPubMedArticles
 │   │   │       ├── index.ts
 │   │   │       ├── logic.ts
@@ -51,6 +60,10 @@ pubmed-mcp-server
 │   │   │   ├── index.ts
 │   │   │   └── llmFactory.ts
 │   │   ├── NCBI
+│   │   │   ├── ncbiConstants.ts
+│   │   │   ├── ncbiCoreApiClient.ts
+│   │   │   ├── ncbiRequestQueueManager.ts
+│   │   │   ├── ncbiResponseHandler.ts
 │   │   │   └── ncbiService.ts
 │   │   └── index.ts
 │   ├── types-global
@@ -66,10 +79,14 @@ pubmed-mcp-server
 │   │   │   ├── index.ts
 │   │   │   └── tokenCounter.ts
 │   │   ├── parsing
+│   │   │   ├── ncbi-parsing
+│   │   │   │   ├── eSummaryResultParser.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── pubmedArticleStructureParser.ts
+│   │   │   │   └── xmlGenericHelpers.ts
 │   │   │   ├── dateParser.ts
 │   │   │   ├── index.ts
-│   │   │   ├── jsonParser.ts
-│   │   │   └── pubmedXmlParserHelpers.ts
+│   │   │   └── jsonParser.ts
 │   │   ├── security
 │   │   │   ├── idGenerator.ts
 │   │   │   ├── index.ts

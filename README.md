@@ -3,7 +3,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol SDK](https://img.shields.io/badge/MCP%20SDK-1.12.0-green.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
 [![MCP Spec Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-lightgrey.svg)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)
-[![Version](https://img.shields.io/badge/Version-1.0.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.0.3-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Development-yellow.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -12,14 +12,15 @@
 
 This server acts as a bridge, connecting your AI to NCBI's PubMed and E-utilities through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). It empowers language models to seamlessly search, retrieve, and analyze biomedical articles and data. Built with TypeScript and adhering to the **MCP 2025-03-26 specification**, it's designed for robustness and includes production-grade utilities.
 
-## 🚀 Core Capabilities: PubMed Tools
+## 🚀 Core Capabilities: PubMed Tools 🛠️
 
 This server equips your AI with specialized tools to interact with PubMed:
 
-| Tool Name                   | Description                                                          | Key Features                                                                                                                                                                                                                                            | Output Structure                                                                                                                                                          |
-| :-------------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 🛠️ `search_pubmed_articles` | Searches PubMed for articles based on your query.                    | - Filter by max results, sort order, date range, publication types.<br/>- Uses NCBI ESearch for PMIDs.<br/>- Optionally fetches brief summaries (title, authors, source, dates) via ESummary.                                                           | JSON object: <br/>- Original search parameters<br/>- ESearch term used<br/>- Result counts<br/>- List of PMIDs<br/>- Optional article summaries<br/>- E-utility URLs used |
-| 🛠️ `fetch_pubmed_content`   | Retrieves detailed information for a list of specified PubMed PMIDs. | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Uses NCBI EFetch. | JSON object: <br/>- Requested PMIDs<br/>- Array of article data (parsed/raw based on `detailLevel`)<br/>- PMIDs not found<br/>- EFetch URL used                           |
+| Tool Name                | Description                                                          | Key Features                                                                                                                                                                                                                                            | Output Structure                                                                                                                                                          |
+| :----------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `search_pubmed_articles` | Searches PubMed for articles based on your query.                    | - Filter by max results, sort order, date range, publication types.<br/>- Uses NCBI ESearch for PMIDs.<br/>- Optionally fetches brief summaries (title, authors, source, dates) via ESummary.                                                           | JSON object: <br/>- Original search parameters<br/>- ESearch term used<br/>- Result counts<br/>- List of PMIDs<br/>- Optional article summaries<br/>- E-utility URLs used |
+| `fetch_pubmed_content`   | Retrieves detailed information for a list of specified PubMed PMIDs. | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Uses NCBI EFetch. | JSON object: <br/>- Requested PMIDs<br/>- Array of article data (parsed/raw based on `detailLevel`)<br/>- PMIDs not found<br/>- EFetch URL used                           |
+| `get_pubmed_article_connections` | Finds related articles (cited by, similar, references) or formats citations for a PMID. | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results. | JSON object: <br/>- Source PMID<br/>- Relationship type<br/>- List of related PMIDs or formatted citations<br/>- E-utility URLs used |
 
 ---
 
@@ -62,7 +63,7 @@ Get the PubMed MCP server running in minutes:
     # RECOMMENDED FOR NCBI E-UTILITIES (for higher rate limits)
     # NCBI_API_KEY=your_ncbi_api_key_here
     # NCBI_ADMIN_EMAIL=your_email@example.com # Recommended if using an API key
-    # NCBI_TOOL_IDENTIFIER=@cyanheads/pubmed-mcp-server/1.0.2 # Optional: Tool identifier for NCBI
+    # NCBI_TOOL_IDENTIFIER=@cyanheads/pubmed-mcp-server/1.0.3 # Optional: Tool identifier for NCBI
     ```
 
     For all options, see the [Configuration](#⚙️-configuration) section below or the [Developer Cheatsheet (.clinerules)](./.clinerules).
@@ -99,23 +100,23 @@ Get the PubMed MCP server running in minutes:
 
 Configure the PubMed MCP server's behavior using environment variables (typically in a `.env` file).
 
-| Variable                | Description                                                                                            | Default                                |
-| :---------------------- | :----------------------------------------------------------------------------------------------------- | :------------------------------------- |
-| `MCP_TRANSPORT_TYPE`    | Server transport: `stdio` or `http`.                                                                   | `stdio`                                |
-| `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                               | `3010`                                 |
-| `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                       | `127.0.0.1`                            |
-| `MCP_ALLOWED_ORIGINS`   | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                               | (none)                                 |
-| `MCP_SERVER_NAME`       | Optional server name (used in MCP initialization).                                                     | (from package.json)                    |
-| `MCP_SERVER_VERSION`    | Optional server version (used in MCP initialization).                                                  | (from package.json)                    |
-| `MCP_LOG_LEVEL`         | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                      | `debug`                                |
-| `LOGS_DIR`              | Directory for log files.                                                                               | `logs/` (in project root)              |
-| `NODE_ENV`              | Runtime environment (`development`, `production`).                                                     | `development`                          |
-| `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT).    | (none - **MUST be set in production**) |
-| `NCBI_API_KEY`          | **Optional, but highly recommended.** Your NCBI API Key for higher rate limits (10/sec vs 3/sec).      | (none)                                 |
-| `NCBI_ADMIN_EMAIL`      | **Optional, but recommended if using an API key.** Your email for NCBI contact.                        | (none)                                 |
+| Variable                | Description                                                                                            | Default                                  |
+| :---------------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------- |
+| `MCP_TRANSPORT_TYPE`    | Server transport: `stdio` or `http`.                                                                   | `stdio`                                  |
+| `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                               | `3010`                                   |
+| `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                       | `127.0.0.1`                              |
+| `MCP_ALLOWED_ORIGINS`   | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                               | (none)                                   |
+| `MCP_SERVER_NAME`       | Optional server name (used in MCP initialization).                                                     | (from package.json)                      |
+| `MCP_SERVER_VERSION`    | Optional server version (used in MCP initialization).                                                  | (from package.json)                      |
+| `MCP_LOG_LEVEL`         | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                      | `debug`                                  |
+| `LOGS_DIR`              | Directory for log files.                                                                               | `logs/` (in project root)                |
+| `NODE_ENV`              | Runtime environment (`development`, `production`).                                                     | `development`                            |
+| `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT).    | (none - **MUST be set in production**)   |
+| `NCBI_API_KEY`          | **Optional, but highly recommended.** Your NCBI API Key for higher rate limits (10/sec vs 3/sec).      | (none)                                   |
+| `NCBI_ADMIN_EMAIL`      | **Optional, but recommended if using an API key.** Your email for NCBI contact.                        | (none)                                   |
 | `NCBI_TOOL_IDENTIFIER`  | Optional. Tool identifier sent to NCBI.                                                                | `@cyanheads/pubmed-mcp-server/<version>` |
-| `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests. Dynamically set (e.g., 100ms with API key, 334ms without). | (see `src/config/index.ts`)            |
-| `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                                    | `3`                                    |
+| `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests. Dynamically set (e.g., 100ms with API key, 334ms without). | (see `src/config/index.ts`)              |
+| `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                                    | `3`                                      |
 
 **Note on HTTP Port Retries:** If the `MCP_HTTP_PORT` is busy, the server automatically tries the next port (up to 15 times).
 

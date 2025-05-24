@@ -2,13 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2025-05-23
+
+### Added
+
+- **New Tool**: Implemented `getPubMedArticleConnections` tool (`src/mcp-server/tools/getPubMedArticleConnections/`) for finding related articles (cited by, similar, references) and formatting citations (RIS, BibTeX, APA, MLA) using NCBI ELink and EFetch.
+- **NCBI Service Modules**: Introduced new modules for `NcbiService` to enhance modularity and maintainability:
+  - `src/services/NCBI/ncbiConstants.ts`: Defines constants and types for NCBI interactions.
+  - `src/services/NCBI/ncbiCoreApiClient.ts`: Handles core HTTP request logic to NCBI E-utilities.
+  - `src/services/NCBI/ncbiRequestQueueManager.ts`: Manages request queuing and rate limiting for NCBI API calls.
+  - `src/services/NCBI/ncbiResponseHandler.ts`: Responsible for parsing and validating responses from NCBI.
+- **NCBI Parsing Utilities**: Created a new directory `src/utils/parsing/ncbi-parsing/` with specialized XML parsing helpers:
+  - `eSummaryResultParser.ts`: For parsing ESummary results.
+  - `pubmedArticleStructureParser.ts`: For parsing detailed PubMed article XML.
+  - `xmlGenericHelpers.ts`: Common XML parsing utilities.
+- **Types**: Added `src/types-global/pubmedXml.ts` for PubMed XML type definitions. (This was also noted in 1.0.2 but is a key part of this set of changes).
+
+### Changed
+
+- **Refactor: `NcbiService`**: Major architectural overhaul of `src/services/NCBI/ncbiService.ts`. The service now delegates core responsibilities (API calls, request queuing, response handling) to the newly added modules (`ncbiCoreApiClient.ts`, `ncbiRequestQueueManager.ts`, `ncbiResponseHandler.ts`), significantly improving separation of concerns and testability.
+- **Parsing Utilities**: Reorganized and enhanced XML parsing logic. Functionality from the previously deleted `src/utils/parsing/pubmedXmlParserHelpers.ts` has been moved and expanded within the new `src/utils/parsing/ncbi-parsing/` directory.
+- **Project Identity & Configuration**:
+  - Updated project version to `1.0.3` in `package.json`, `README.md`, and relevant configuration files.
+  - Ensured `package.json` `name` is `@cyanheads/pubmed-mcp-server`.
+  - Updated `NCBI_TOOL_IDENTIFIER` to `@cyanheads/pubmed-mcp-server/1.0.3` in `mcp.json`, `smithery.yaml`, and `README.md`.
+  - Updated `package.json` description and keywords for better clarity and discoverability.
+- **Tool Registration**: Updated `src/mcp-server/server.ts` to register the new `getPubMedArticleConnections` tool and reordered tool registrations alphabetically.
+- **Import Paths**: Adjusted import paths in `fetchPubMedContent/logic.ts` and `searchPubMedArticles/logic.ts` to reflect the new location of parsing utilities.
+
+### Removed
+
+- **Old Parsing Utilities**: Deleted `src/utils/parsing/pubmedXmlParserHelpers.ts` as its functionality has been superseded by the new modules in `src/utils/parsing/ncbi-parsing/`.
+
 ## [1.0.2] - 2025-05-23
 
 ### Added
+
 - **Types**: Added `src/types-global/pubmedXml.ts` for PubMed XML type definitions.
 - **Parsing Utilities**: Added `src/utils/parsing/pubmedXmlParserHelpers.ts` for helper functions related to parsing PubMed XML.
 
 ### Changed
+
 - **Project Identity & Configuration**:
   - Renamed `package.json` name to `@cyanheads/pubmed-mcp-server`.
   - Updated `NCBI_TOOL_IDENTIFIER` to `@cyanheads/pubmed-mcp-server/1.0.2` in `mcp.json`, `smithery.yaml` (as default), and `README.md`.

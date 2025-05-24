@@ -20,7 +20,7 @@ import {
   requestContextService,
   sanitizeInputForLogging,
 } from "../../../utils/index.js";
-import { extractBriefSummaries } from "../../../utils/parsing/pubmedXmlParserHelpers.js";
+import { extractBriefSummaries } from "../../../utils/parsing/ncbi-parsing/index.js";
 import { sanitization } from "../../../utils/security/sanitization.js";
 
 export const SearchPubMedArticlesInputSchema = z.object({

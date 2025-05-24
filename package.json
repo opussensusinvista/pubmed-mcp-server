@@ -1,7 +1,7 @@
 {
   "name": "@cyanheads/pubmed-mcp-server",
-  "version": "1.0.2",
-  "description": "MCP Server for intelligent PubMed access via NCBI E-utilities. Leverages mcp-ts-template foundation.",
+  "version": "1.0.3",
+  "description": "An MCP-compliant server enabling AI agents to intelligently search, retrieve, and analyze biomedical literature from PubMed via NCBI E-utilities. Built on the mcp-ts-template for robust, production-ready performance.",
   "main": "dist/index.js",
   "files": [
     "dist"
@@ -61,24 +61,21 @@
     "zod": "^3.25.28"
   },
   "keywords": [
-    "typescript",
-    "template",
-    "MCP",
+    "mcp",
     "model-context-protocol",
-    "LLM",
-    "AI-integration",
-    "server",
-    "client",
-    "sdk",
-    "http",
-    "sse",
-    "jwt",
-    "authentication",
+    "ai-agent",
+    "llm-integration",
     "pubmed",
     "ncbi",
     "e-utilities",
-    "biomedical",
-    "literature"
+    "biomedical-research",
+    "scientific-literature",
+    "api-server",
+    "typescript",
+    "node",
+    "ai-tools",
+    "bioinformatics",
+    "health-tech"
   ],
   "author": "cyanheads <casey@caseyjhand.com> (https://github.com/cyanheads/pubmed-mcp-server#readme)",
   "license": "Apache-2.0",

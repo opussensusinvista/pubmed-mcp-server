@@ -249,7 +249,7 @@ async function performTask(input: any, context: RequestContext) {
         throw new McpError(
           BaseErrorCode.VALIDATION_ERROR,
           "Input cannot be empty",
-          context
+          context,
         );
       }
       // ... perform task logic ...
@@ -262,7 +262,7 @@ async function performTask(input: any, context: RequestContext) {
       input: input, // Input is automatically sanitized for logging
       errorCode: BaseErrorCode.INTERNAL_ERROR, // Default code if unexpected error occurs
       critical: false, // Or true if failure should halt the process
-    }
+    },
   );
 }
 ```
@@ -523,6 +523,7 @@ This section details how to add the specific PubMed tools and resources. A commo
 5.  **Server (`src/mcp-server/server.ts`)**: Import and call the resource's registration function.
 
 **Implemented PubMed Resources:**
+
 - **`echoResource`**: (Example resource, not PubMed specific)
   - **Location**: `src/mcp-server/resources/echoResource/`
 

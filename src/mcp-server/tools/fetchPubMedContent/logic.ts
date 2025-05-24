@@ -33,8 +33,8 @@ import {
   extractMeshTerms,
   extractPmid,
   extractPublicationTypes,
-  getText, // Keep if still needed for direct title access or similar
-} from "../../../utils/parsing/pubmedXmlParserHelpers.js";
+  getText,
+} from "../../../utils/parsing/ncbi-parsing/index.js";
 
 export const FetchPubMedContentInputSchema = z.object({
   pmids: z

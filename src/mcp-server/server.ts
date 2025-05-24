@@ -17,9 +17,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
-// import { registerEchoResource } from "./resources/echoResource/index.js"; // To be removed
-// import { registerEchoTool } from "./tools/echoTool/index.js"; // To be removed
-import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js"; // Renamed import
+// import { registerEchoResource } from "./resources/echoResource/index.js"; // To be removed after resource implementations.
+import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
+import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js"; // Added import
 import { registerSearchPubMedArticlesTool } from "./tools/searchPubMedArticles/index.js";
 import { startHttpTransport } from "./transports/httpTransport.js";
 import { connectStdioTransport } from "./transports/stdioTransport.js";
@@ -78,10 +78,10 @@ async function createMcpServerInstance(): Promise<McpServer> {
 
   try {
     logger.debug("Registering resources and tools...", context);
-    // await registerEchoResource(server); // Removed
-    // await registerEchoTool(server); // Removed
+    // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
+    await registerFetchPubMedContentTool(server);
+    await registerGetPubMedArticleConnectionsTool(server, context);
     await registerSearchPubMedArticlesTool(server);
-    await registerFetchPubMedContentTool(server); // Renamed function call
     // Add other tool/resource registrations here
     logger.info("Resources and tools registered successfully", context);
   } catch (err) {
