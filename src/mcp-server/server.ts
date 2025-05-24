@@ -15,10 +15,12 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { config, environment } from "../config/index.js";
+import { config } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
 // import { registerEchoResource } from "./resources/echoResource/index.js"; // To be removed after resource implementations.
 import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
+// Removed: import { registerFetchImageTestTool } from "./tools/imageTest/index.js";
+import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js"; // Added import
 import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
 import { registerPubMedResearchAgentTool } from "./tools/pubmedResearchAgent/index.js"; // Added import
 import { registerSearchPubMedArticlesTool } from "./tools/searchPubMedArticles/index.js";
@@ -75,6 +77,8 @@ async function createMcpServerInstance(): Promise<McpServer> {
     logger.debug("Registering resources and tools...", context);
     // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
     await registerFetchPubMedContentTool(server);
+    // Removed: await registerFetchImageTestTool(server);
+    await registerGeneratePubMedChartTool(server); // Added new tool registration
     await registerGetPubMedArticleConnectionsTool(server);
     await registerPubMedResearchAgentTool(server); // Added new tool registration
     await registerSearchPubMedArticlesTool(server);
