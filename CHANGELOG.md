@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.10] - 2025-05-24
+
+### Changed
+
+- **Parsing**: Enhanced author name extraction in `parseESummaryAuthorsFromDocumentSummary` (`src/utils/parsing/ncbi-parsing/eSummaryResultParser.ts`) to more robustly handle varied NCBI ESummary XML structures. This includes better checking for `Name` or `name` properties (even if they are objects) and adding a fallback to use single string properties or the stringified object for debugging if a name isn't found through standard paths.
+- **Build**: Bumped project version from `1.0.9` to `1.0.10` in `package.json` and `README.md` (to be done in a subsequent step).
+- **Documentation**: Updated `docs/tree.md` generation timestamp.
+
 ## [1.0.9] - 2025-05-24
 
 ### Changed

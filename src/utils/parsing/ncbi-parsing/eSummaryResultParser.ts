@@ -107,10 +107,12 @@ function parseESummaryAuthorsFromDocumentSummary(
           name = getText(authInput, "");
 
           // If name is still empty, try common property names for author names
-          if (!name && (authInput as any).Name) { // Check for { Name: 'Author Name' }
+          if (!name && (authInput as any).Name) {
+            // Check for { Name: 'Author Name' }
             name = getText((authInput as any).Name, ""); // authInput.Name could also be an object
           }
-          if (!name && (authInput as any).name) { // Check for { name: 'Author Name' }
+          if (!name && (authInput as any).name) {
+            // Check for { name: 'Author Name' }
             name = getText((authInput as any).name, ""); // authInput.name could also be an object
           }
 
@@ -118,22 +120,31 @@ function parseESummaryAuthorsFromDocumentSummary(
           if (!name) {
             const authInputString = JSON.stringify(authInput);
             logger.warning(
-              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary. authInput: ${authInputString.substring(0,100)}`,
-              requestContextService.createRequestContext({ operation: "parseESummaryAuthorsFromDocumentSummary", detail: "Unhandled author structure" })
+              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary. authInput: ${authInputString.substring(0, 100)}`,
+              requestContextService.createRequestContext({
+                operation: "parseESummaryAuthorsFromDocumentSummary",
+                detail: "Unhandled author structure",
+              }),
             );
             // As a last resort, if it's a simple object with a single value, that might be the name
             const keys = Object.keys(authInput);
-            if (keys.length === 1 && typeof (authInput as any)[keys[0]] === 'string') {
+            if (
+              keys.length === 1 &&
+              typeof (authInput as any)[keys[0]] === "string"
+            ) {
               name = (authInput as any)[keys[0]];
-            } else if (authInputString.length < 100) { // Avoid overly long stringified objects
-                name = authInputString; // Not ideal, but better than empty for debugging
+            } else if (authInputString.length < 100) {
+              // Avoid overly long stringified objects
+              name = authInputString; // Not ideal, but better than empty for debugging
             }
           }
         }
         return {
           name: name.trim(),
-          authtype: (authInput as any)?.AuthType || (authInput as any)?.authtype,
-          clusterid: (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
+          authtype:
+            (authInput as any)?.AuthType || (authInput as any)?.authtype,
+          clusterid:
+            (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
         };
       })
       .filter((author) => author.name);
@@ -161,21 +172,29 @@ function parseESummaryAuthorsFromDocumentSummary(
           if (!name) {
             const authInputString = JSON.stringify(authInput);
             logger.warning(
-              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary (from authorsProp.Author). authInput: ${authInputString.substring(0,100)}`,
-              requestContextService.createRequestContext({ operation: "parseESummaryAuthorsFromDocumentSummary", detail: "Unhandled author structure from authorsProp.Author" })
+              `Unhandled author structure in parseESummaryAuthorsFromDocumentSummary (from authorsProp.Author). authInput: ${authInputString.substring(0, 100)}`,
+              requestContextService.createRequestContext({
+                operation: "parseESummaryAuthorsFromDocumentSummary",
+                detail: "Unhandled author structure from authorsProp.Author",
+              }),
             );
             const keys = Object.keys(authInput);
-            if (keys.length === 1 && typeof (authInput as any)[keys[0]] === 'string') {
+            if (
+              keys.length === 1 &&
+              typeof (authInput as any)[keys[0]] === "string"
+            ) {
               name = (authInput as any)[keys[0]];
             } else if (authInputString.length < 100) {
-                name = authInputString;
+              name = authInputString;
             }
           }
         }
         return {
           name: name.trim(),
-          authtype: (authInput as any)?.AuthType || (authInput as any)?.authtype,
-          clusterid: (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
+          authtype:
+            (authInput as any)?.AuthType || (authInput as any)?.authtype,
+          clusterid:
+            (authInput as any)?.ClusterId || (authInput as any)?.clusterid,
         };
       })
       .filter((author) => author.name); // Filter out authors with no name
