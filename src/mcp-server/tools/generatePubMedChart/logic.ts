@@ -18,90 +18,110 @@ import {
 export const GeneratePubMedChartInputSchema = z.object({
   chartType: z
     .enum(["bar", "line", "scatter"])
-    .describe("Type of chart to generate (e.g., 'bar', 'line', 'scatter')."),
-  title: z.string().optional().describe("Title for the chart."),
+    .describe(
+      "Required. Specifies the type of chart to generate. Options: 'bar', 'line', 'scatter'.",
+    ),
+  title: z
+    .string()
+    .optional()
+    .describe(
+      "Optional. The main title displayed above the chart. If omitted, no title is shown.",
+    ),
   width: z
     .number()
     .int()
     .positive()
     .optional()
     .default(400)
-    .describe("Width of the chart in pixels."),
+    .describe(
+      "Optional. The width of the chart canvas in pixels. Must be a positive integer. Default: 400.",
+    ),
   height: z
     .number()
     .int()
     .positive()
     .optional()
     .default(300)
-    .describe("Height of the chart in pixels."),
+    .describe(
+      "Optional. The height of the chart canvas in pixels. Must be a positive integer. Default: 300.",
+    ),
   dataValues: z
     .array(z.record(z.string(), z.any()))
     .min(1)
     .describe(
-      "Array of data objects to plot. Each object is a record (e.g., { category: 'A', amount: 28 }).",
+      "Required. An array of data objects used to plot the chart. Each object represents a data point or bar, structured as key-value pairs (e.g., [{ 'year': '2020', 'articles': 150 }, { 'year': '2021', 'articles': 180 }]). Must contain at least one data object.",
     ),
   outputFormat: z
     .enum(["svg"])
     .default("svg")
     .describe(
-      "Specifies the desired output format for the generated chart. " +
-        "Currently, only 'svg' (Scalable Vector Graphics) is supported.",
+      "Specifies the output format for the chart. Currently, only 'svg' (Scalable Vector Graphics) is supported and is the default.",
     ),
 
   xField: z
     .string()
     .describe(
-      "Field name for the X-axis (e.g., 'category', 'date', 'metric1').",
+      "Required. The name of the field in `dataValues` to be used for the X-axis (horizontal). This field determines the categories or values along the bottom of the chart (e.g., 'year', 'geneName', 'publicationCount').",
     ),
   yField: z
     .string()
     .describe(
-      "Field name for the Y-axis (e.g., 'amount', 'value', 'metric2').",
+      "Required. The name of the field in `dataValues` to be used for the Y-axis (vertical). This field determines the values plotted upwards on the chart (e.g., 'articles', 'expressionLevel', 'citationCount').",
     ),
 
   xFieldType: z
     .enum(["nominal", "ordinal", "quantitative", "temporal"])
     .optional()
     .describe(
-      "Type of the X-axis field. Defaults appropriately for chart type if omitted (e.g., 'nominal' for bar, 'temporal' for line, 'quantitative' for scatter).",
+      "Optional. Specifies the data type of the X-axis field. Options: 'nominal' (categories), 'ordinal' (ordered categories), 'quantitative' (numerical), 'temporal' (dates/times). If omitted, a suitable default is chosen based on `chartType` (e.g., 'nominal' for bar charts, 'temporal' for line charts, 'quantitative' for scatter plots).",
     ),
   yFieldType: z
     .enum(["nominal", "ordinal", "quantitative", "temporal"])
     .optional()
     .describe(
-      "Type of the Y-axis field. Defaults to 'quantitative' if omitted.",
+      "Optional. Specifies the data type of the Y-axis field. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'quantitative' if omitted.",
     ),
 
   // Optional fields for various chart types
   colorField: z
     .string()
     .optional()
-    .describe("Optional field name for color encoding."),
+    .describe(
+      "Optional. The name of the field in `dataValues` to use for color encoding. This can differentiate bars, lines, or points by color based on the values in this field (e.g., 'studyType', 'country').",
+    ),
   colorFieldType: z
     .enum(["nominal", "ordinal", "quantitative", "temporal"])
     .optional()
-    .describe("Type of the color field if provided. Defaults to 'nominal'."),
+    .describe(
+      "Optional. Specifies the data type of the `colorField`. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'nominal' if `colorField` is provided and this is omitted.",
+    ),
 
   seriesField: z
     .string()
     .optional()
     .describe(
-      "Optional field name for creating multiple lines/series (typically for line charts).",
+      "Optional. Primarily for line charts. The name of the field in `dataValues` used to create multiple distinct lines (series) on the same chart. Each unique value in this field will correspond to a separate line (e.g., 'drugName' to plot different drug efficacy trends). Often used with `colorField` implicitly or explicitly.",
     ),
   seriesFieldType: z
     .enum(["nominal", "ordinal", "quantitative", "temporal"])
     .optional()
-    .describe("Type of the series field if provided. Defaults to 'nominal'."),
+    .describe(
+      "Optional. Specifies the data type of the `seriesField`. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'nominal' if `seriesField` is provided and this is omitted.",
+    ),
 
   // Scatter plot specific optional fields (can be expanded)
   sizeField: z
     .string()
     .optional()
-    .describe("Optional field for encoding point size in scatter plots."),
+    .describe(
+      "Optional. For scatter plots. The name of the field in `dataValues` to use for encoding the size of the points. Larger values in this field will result in larger points on the scatter plot (e.g., 'sampleSize', 'effectMagnitude').",
+    ),
   sizeFieldType: z
     .enum(["quantitative", "ordinal"])
     .optional()
-    .describe("Type of the size field. Defaults to 'quantitative'."),
+    .describe(
+      "Optional. Specifies the data type of the `sizeField`. Options: 'quantitative', 'ordinal'. Defaults to 'quantitative' if `sizeField` is provided and this is omitted.",
+    ),
   // shapeField: z.string().optional().describe("Optional field for encoding point shape in scatter plots."), // Future enhancement
   // shapeFieldType: z.enum(["nominal", "ordinal"]).optional().describe("Type of the shape field."), // Future enhancement
 });
