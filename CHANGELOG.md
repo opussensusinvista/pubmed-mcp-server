@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.11] - 2025-05-24
+
+### Changed
+
+- **Type Definitions (`src/types-global/pubmedXml.ts`)**:
+  - Introduced `XmlESummaryAuthorRaw` type to represent author data directly parsed from ESummary XML, accommodating inconsistencies in property names (e.g., `Name`/`name`) and structure.
+  - Clarified that `ESummaryAuthor` is the normalized author type for application use.
+  - Updated `ESummaryDocumentSummary.Authors` to use `XmlESummaryAuthorRaw[]` (or an object with `XmlESummaryAuthorRaw`, or a string) to better reflect the varied raw input from NCBI.
+- **Parsing Logic (`src/utils/parsing/ncbi-parsing/eSummaryResultParser.ts`)**:
+  - Significantly refactored `parseESummaryAuthorsFromDocumentSummary` to robustly handle diverse author data structures using `XmlESummaryAuthorRaw`. This includes improved handling of property casing and direct text content.
+  - Changed `standardizeESummaryDate` to return `undefined` (instead of the original string) if date parsing fails, enforcing stricter date handling.
+  - Updated `parseSingleDocumentSummary` to consistently use the `getText` helper for extracting `DOI`, `Title`, `Source`, `PubDate`, and `EPubDate`, improving resilience to XML variations.
+  - Added a check for `_Name === "doi"` in `parseSingleDocSumOldXml` for better compatibility with older ESummary XML formats.
+- **Build**: Bumped project version from `1.0.10` to `1.0.11` in `package.json` and `README.md`.
+- **Documentation**: Updated `docs/tree.md` generation timestamp.
+
 ## [1.0.10] - 2025-05-24
 
 ### Changed
