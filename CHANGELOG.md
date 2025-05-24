@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2025-05-23
+
+### Added
+- **Configuration**:
+  - Added `NCBI_TOOL_IDENTIFIER` environment variable to `src/config/index.ts` (implicitly, as it's loaded from env), `smithery.yaml`, and `README.md` for specifying the tool identifier sent to NCBI.
+  - Added `NCBI_API_KEY` and `NCBI_ADMIN_EMAIL` placeholder configurations to `mcp.json`. These variables were also added to the `smithery.yaml` configuration options.
+- **Types**: Added `src/types-global/pubmedXml.ts` for PubMed XML type definitions.
+- **Parsing Utilities**: Added `src/utils/parsing/pubmedXmlParserHelpers.ts` for helper functions related to parsing PubMed XML.
+
+### Changed
+- **NCBI Service**:
+  - In `src/services/NCBI/ncbiService.ts`, added a direct return path for `options.retmode === "text"`.
+  - Improved robustness for `options.retmode === "xml"` by adding a `typeof responseData !== "string"` check before XML validation.
+- **Configuration**:
+  - Renamed server key in `mcp.json` from `mcp-ts-template` to `pubmed-mcp-server` for accurate identification.
+- **Documentation**:
+  - Updated `README.md` to include `NCBI_TOOL_IDENTIFIER` in configuration sections.
+  - Regenerated `docs/tree.md` to reflect new files (`pubmedXml.ts`, `pubmedXmlParserHelpers.ts`) and updated timestamp.
+- **Build**:
+  - Updated project version to `1.0.2` in `package.json` and `README.md` version badge.
+
 ## [1.0.1] - 2025-05-23
 
 ### Changed

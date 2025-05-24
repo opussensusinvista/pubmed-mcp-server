@@ -16,6 +16,15 @@ startCommand:
         type: string
         default: "info"
         description: "Minimum logging level."
+      NCBI_API_KEY:
+        type: string
+        description: "NCBI API Key. Optional, but highly recommended for higher rate limits."
+      NCBI_TOOL_IDENTIFIER:
+        type: string
+        description: "Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION."
+      NCBI_ADMIN_EMAIL:
+        type: string
+        description: "Administrator's email for NCBI contact. Optional, but recommended if using an API key."
   commandFunction: |
     (config) => ({
       "command": "node",
@@ -23,6 +32,9 @@ startCommand:
       "env": {
         "MCP_TRANSPORT_TYPE": config.MCP_TRANSPORT_TYPE,
         "MCP_HTTP_PORT": config.MCP_HTTP_PORT,
-        "MCP_LOG_LEVEL": config.MCP_LOG_LEVEL
+        "MCP_LOG_LEVEL": config.MCP_LOG_LEVEL,
+        "NCBI_API_KEY": config.NCBI_API_KEY,
+        "NCBI_TOOL_IDENTIFIER": config.NCBI_TOOL_IDENTIFIER,
+        "NCBI_ADMIN_EMAIL": config.NCBI_ADMIN_EMAIL
       }
     })
