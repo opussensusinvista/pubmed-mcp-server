@@ -11,13 +11,14 @@ import type {
 } from "../../../../types-global/pubmedXml.js";
 import { logger, RequestContext } from "../../../../utils/index.js";
 import { extractBriefSummaries } from "../../../../utils/parsing/ncbi-parsing/index.js";
+import { ensureArray } from "../../../../utils/parsing/ncbi-parsing/xmlGenericHelpers.js"; // Added import
 import type { GetPubMedArticleConnectionsInput } from "../registration.js";
 import type { ToolOutputData } from "./types.js";
 
 // Local interface for the structure of an ELink 'Link' item
 interface XmlELinkItem {
-  Id: string | { "#text"?: string };
-  Score?: string | { "#text"?: string };
+  Id: string | number | { "#text"?: string | number }; // Allow number for Id
+  Score?: string | number | { "#text"?: string | number }; // Allow number for Score
 }
 
 export async function handleELinkRelationships(
@@ -59,51 +60,149 @@ export async function handleELinkRelationships(
 
   const eLinkResult: any = await ncbiService.eLink(eLinkParams, context);
 
+  // Log the full eLinkResult for debugging
+  logger.debug("Raw eLinkResult from ncbiService:", {
+    ...context,
+    eLinkResultString: JSON.stringify(eLinkResult, null, 2),
+  });
+
   const firstELinkResult =
     eLinkResult?.eLinkResult?.[0] || eLinkResult?.eLinkResult;
   const linkSet = firstELinkResult?.LinkSet?.[0] || firstELinkResult?.LinkSet;
-  const linkSetDb = linkSet?.LinkSetDb?.[0] || linkSet?.LinkSetDb;
 
-  if (firstELinkResult?.ERROR || !linkSetDb?.Link?.length) {
+  let foundPmids: { pmid: string; score?: number }[] = [];
+
+  if (firstELinkResult?.ERROR) {
     const errorMsg =
-      firstELinkResult?.ERROR || "No related articles found or ELink error.";
-    logger.warning(errorMsg, context);
-    outputData.message =
-      typeof errorMsg === "string" ? errorMsg : JSON.stringify(errorMsg);
+      typeof firstELinkResult.ERROR === "string"
+        ? firstELinkResult.ERROR
+        : JSON.stringify(firstELinkResult.ERROR);
+    logger.warning(`ELink returned an error: ${errorMsg}`, context);
+    outputData.message = `ELink error: ${errorMsg}`;
     outputData.retrievedCount = 0;
     return;
   }
 
-  let foundPmids: { pmid: string; score?: number }[] = [];
+  if (linkSet?.LinkSetDbHistory) {
+    // Handle cmd=neighbor_history response (citedin, references)
+    const history = Array.isArray(linkSet.LinkSetDbHistory)
+      ? linkSet.LinkSetDbHistory[0]
+      : linkSet.LinkSetDbHistory;
 
-  if (linkSetDb.Link) {
-    const links = Array.isArray(linkSetDb.Link)
-      ? linkSetDb.Link
-      : [linkSetDb.Link];
-    foundPmids = links
-      .map((link: XmlELinkItem) => {
-        const pmidValue =
-          typeof link.Id === "string" ? link.Id : link.Id?.["#text"];
-        const scoreValue =
-          typeof link.Score === "string" ? link.Score : link.Score?.["#text"];
-        return {
-          pmid: String(pmidValue || ""),
-          score: scoreValue !== undefined ? Number(scoreValue) : undefined,
-        };
-      })
-      .filter(
-        (item: { pmid: string; score?: number }) =>
-          item.pmid && item.pmid !== input.sourcePmid,
+    if (history?.QueryKey && linkSet.WebEnv) {
+      const eSearchParams = {
+        db: "pubmed",
+        query_key: history.QueryKey,
+        WebEnv: linkSet.WebEnv,
+        retmode: "xml",
+        retmax: input.maxRelatedResults * 2, // Fetch a bit more to allow filtering sourcePmid
+      };
+      const eSearchResult: any = await ncbiService.eSearch(
+        eSearchParams,
+        context,
       );
+      if (eSearchResult?.eSearchResult?.IdList?.Id) {
+        const ids = ensureArray(eSearchResult.eSearchResult.IdList.Id);
+        foundPmids = ids
+          .map((idNode: string | number | { "#text"?: string | number }) => {
+            // Allow number for idNode
+            let pmidVal: string | number | undefined;
+            if (typeof idNode === "object" && idNode !== null) {
+              pmidVal = idNode["#text"];
+            } else {
+              pmidVal = idNode;
+            }
+            return {
+              pmid: pmidVal !== undefined ? String(pmidVal) : "",
+              // No scores from this ESearch path
+            };
+          })
+          .filter(
+            (item: { pmid: string }) =>
+              item.pmid && item.pmid !== input.sourcePmid && item.pmid !== "0",
+          );
+      }
+    }
+  } else if (linkSet?.LinkSetDb) {
+    // Handle cmd=neighbor_score response (similar_articles)
+    const linkSetDbArray = Array.isArray(linkSet.LinkSetDb)
+      ? linkSet.LinkSetDb
+      : [linkSet.LinkSetDb];
+
+    const targetLinkSetDbEntry = linkSetDbArray.find(
+      (db: any) => db.LinkName === "pubmed_pubmed", // For similar articles, this is the one
+    );
+
+    if (targetLinkSetDbEntry?.Link) {
+      const links = ensureArray(targetLinkSetDbEntry.Link); // Use ensureArray here too
+      foundPmids = links
+        .map((link: XmlELinkItem) => {
+          let pmidValue: string | number | undefined;
+          if (typeof link.Id === "object" && link.Id !== null) {
+            pmidValue = link.Id["#text"];
+          } else if (link.Id !== undefined) {
+            pmidValue = link.Id;
+          }
+
+          let scoreValue: string | number | undefined;
+          if (typeof link.Score === "object" && link.Score !== null) {
+            scoreValue = link.Score["#text"];
+          } else if (link.Score !== undefined) {
+            scoreValue = link.Score;
+          }
+
+          const pmidString = pmidValue !== undefined ? String(pmidValue) : "";
+
+          return {
+            pmid: pmidString,
+            score: scoreValue !== undefined ? Number(scoreValue) : undefined,
+          };
+        })
+        .filter(
+          (item: { pmid: string; score?: number }) =>
+            item.pmid && item.pmid !== input.sourcePmid && item.pmid !== "0",
+        );
+    }
   }
+
+  if (foundPmids.length === 0) {
+    logger.warning(
+      "No related PMIDs found after ELink/ESearch processing.",
+      context,
+    );
+    outputData.message = "No related articles found or ELink error."; // Generic message if no PMIDs
+    outputData.retrievedCount = 0;
+    return;
+  }
+
+  logger.debug(
+    "Found PMIDs after initial parsing and filtering (before sort):",
+    {
+      ...context,
+      foundPmidsCount: foundPmids.length,
+      firstFewFoundPmids: foundPmids.slice(0, 3),
+    },
+  );
 
   if (foundPmids.every((p) => p.score !== undefined)) {
     foundPmids.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   }
 
+  logger.debug("Found PMIDs after sorting:", {
+    ...context,
+    sortedFoundPmidsCount: foundPmids.length,
+    firstFewSortedFoundPmids: foundPmids.slice(0, 3),
+  });
+
   const pmidsToEnrich = foundPmids
     .slice(0, input.maxRelatedResults)
     .map((p) => p.pmid);
+
+  logger.debug("PMIDs to enrich with ESummary:", {
+    ...context,
+    pmidsToEnrichCount: pmidsToEnrich.length,
+    pmidsToEnrichList: pmidsToEnrich,
+  });
 
   if (pmidsToEnrich.length > 0) {
     try {

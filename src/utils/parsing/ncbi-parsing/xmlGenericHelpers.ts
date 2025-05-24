@@ -26,18 +26,21 @@ export function ensureArray<T>(item: T | T[] | undefined | null): T[] {
  * @returns The text content or the default value.
  */
 export function getText(element: any, defaultValue = ""): string {
+  if (element === undefined || element === null) {
+    return defaultValue;
+  }
   if (typeof element === "string") {
     return element;
   }
-  if (
-    element &&
-    typeof element === "object" &&
-    element["#text"] !== undefined
-  ) {
-    // Check if #text exists and convert to string if it's a number or boolean
+  if (typeof element === "number" || typeof element === "boolean") {
+    return String(element); // Handle direct number/boolean elements
+  }
+  if (typeof element === "object" && element["#text"] !== undefined) {
+    // Check if #text exists and convert to string
     if (typeof element["#text"] === "string") {
       return element["#text"];
     }
+    // Also handle #text being a number or boolean
     if (
       typeof element["#text"] === "number" ||
       typeof element["#text"] === "boolean"

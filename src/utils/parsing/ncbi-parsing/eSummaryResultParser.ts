@@ -49,32 +49,39 @@ export async function standardizeESummaryDate(
   dateStr?: string,
   parentContext?: RequestContext,
 ): Promise<string | undefined> {
-  if (!dateStr) return undefined;
+  if (dateStr === undefined || dateStr === null) return undefined; // Check for null as well
+
+  const dateInputString = String(dateStr); // Ensure it's a string
+
   const currentContext =
     parentContext ||
     requestContextService.createRequestContext({
       operation: "standardizeESummaryDateInternal",
-      inputDate: dateStr,
+      inputDate: dateInputString, // Log the stringified version
     });
   try {
-    const parsedDate = await dateParser.parseDate(dateStr, currentContext);
+    // Pass the stringified version to the date parser
+    const parsedDate = await dateParser.parseDate(
+      dateInputString,
+      currentContext,
+    );
     if (parsedDate) {
       return parsedDate.toISOString().split("T")[0]; // Format as YYYY-MM-DD
     }
     logger.debug(
-      `standardizeESummaryDate: dateParser could not parse "${dateStr}", returning original.`,
+      `standardizeESummaryDate: dateParser could not parse "${dateInputString}", returning original.`,
       currentContext,
     );
   } catch (e) {
     logger.warning(
-      `standardizeESummaryDate: Error during dateParser.parseDate for "${dateStr}", returning original.`,
+      `standardizeESummaryDate: Error during dateParser.parseDate for "${dateInputString}", returning original.`,
       {
         ...currentContext,
         error: e instanceof Error ? e.message : String(e),
       },
     );
   }
-  return dateStr; // Return original string if parsing fails
+  return dateInputString; // Return original string (now definitely a string) if parsing fails
 }
 
 /**

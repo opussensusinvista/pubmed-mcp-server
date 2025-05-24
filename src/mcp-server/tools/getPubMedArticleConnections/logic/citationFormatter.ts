@@ -36,11 +36,17 @@ export async function handleCitationFormats(
   outputData: ToolOutputData,
   context: RequestContext,
 ): Promise<void> {
-  const eFetchParams = {
+  const eFetchParams: {
+    db: string;
+    id: string;
+    retmode: "xml";
+    rettype?: string;
+  } = {
     db: "pubmed",
     id: input.sourcePmid,
     retmode: "xml",
-    rettype: "abstract", // 'abstract' often contains enough for citations
+    // Omitting rettype to hopefully get the fullest XML record by default
+    // rettype: "abstract",
   };
   const tempUrl = new URL(
     "https://dummy.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
@@ -51,7 +57,11 @@ export async function handleCitationFormats(
       String(eFetchParams[key as keyof typeof eFetchParams]),
     ),
   );
-  outputData.eUtilityUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?${tempUrl.search.substring(1)}`;
+  // Update eUtilityUrl to reflect potentially removed rettype
+  const searchParamsString = new URLSearchParams(
+    eFetchParams as any,
+  ).toString();
+  outputData.eUtilityUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?${searchParamsString}`;
 
   const eFetchResult: any = await ncbiService.eFetch(eFetchParams, context);
 
