@@ -166,14 +166,14 @@ const EnvSchema = z.object({
   OAUTH_PROXY_DEFAULT_CLIENT_REDIRECT_URIS: z.string().optional(),
 
   // NCBI E-utilities Configuration
-  /** NCBI API Key. Essential for higher rate limits. */
-  NCBI_API_KEY: z.string().min(1, "NCBI_API_KEY is required."),
+  /** NCBI API Key. Optional, but highly recommended for higher rate limits. */
+  NCBI_API_KEY: z.string().optional(),
   /** Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION. */
   NCBI_TOOL_IDENTIFIER: z.string().optional(),
-  /** Administrator's email for NCBI contact. */
-  NCBI_ADMIN_EMAIL: z.string().email("NCBI_ADMIN_EMAIL must be a valid email address."),
-  /** Milliseconds to wait between NCBI requests. Default: 100 (for API key). */
-  NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().default(100),
+  /** Administrator's email for NCBI contact. Optional, but recommended if using an API key. */
+  NCBI_ADMIN_EMAIL: z.string().email("NCBI_ADMIN_EMAIL must be a valid email address.").optional(),
+  /** Milliseconds to wait between NCBI requests. Default: 100 (for API key), 334 (without API key). */
+  NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().optional(), // Default will be set conditionally
   /** Maximum number of retries for failed NCBI requests. Default: 3. */
   NCBI_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
 });
@@ -330,8 +330,8 @@ export const config = {
   ncbiToolIdentifier: env.NCBI_TOOL_IDENTIFIER || `${env.MCP_SERVER_NAME || pkg.name}/${env.MCP_SERVER_VERSION || pkg.version}`,
   /** NCBI Admin Email. From `NCBI_ADMIN_EMAIL`. */
   ncbiAdminEmail: env.NCBI_ADMIN_EMAIL,
-  /** NCBI Request Delay in MS. From `NCBI_REQUEST_DELAY_MS`. */
-  ncbiRequestDelayMs: env.NCBI_REQUEST_DELAY_MS,
+  /** NCBI Request Delay in MS. From `NCBI_REQUEST_DELAY_MS`. Dynamically set based on API key presence. */
+  ncbiRequestDelayMs: env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
   /** NCBI Max Retries. From `NCBI_MAX_RETRIES`. */
   ncbiMaxRetries: env.NCBI_MAX_RETRIES,
 
