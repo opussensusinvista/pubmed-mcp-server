@@ -25,7 +25,7 @@ Server behavior is dictated by environment variables. Refer to `src/config/index
 **PubMed Specific (NCBI E-utilities Integration):**
 
 - **`NCBI_API_KEY`**: Your NCBI API Key. Essential for higher rate limits and reliable access.
-- **`NCBI_TOOL_IDENTIFIER`**: `tool` parameter value for NCBI E-utility requests (e.g., `pubmed-mcp-server/1.0.1`). Defaults to `pubmed-mcp-server/<package.json version>`.
+- **`NCBI_TOOL_IDENTIFIER`**: `tool` parameter value for NCBI E-utility requests (e.g., `@cyanheads/pubmed-mcp-server/1.0.13`). Defaults to `@cyanheads/pubmed-mcp-server/<package.json version>`.
 - **`NCBI_ADMIN_EMAIL`**: `email` parameter value for NCBI E-utility requests (your administrative contact email).
 - **`NCBI_REQUEST_DELAY_MS`**: Milliseconds to wait between NCBI requests (e.g., `100` with API key, `334` without). Governs `ncbiRequestQueueManager.ts`.
 - **`NCBI_MAX_RETRIES`**: Maximum number of retries for failed NCBI requests.
@@ -207,7 +207,7 @@ import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 
 export async function yourToolLogic(
   input: YourToolInput,
-  parentRequestContext: RequestContext,
+  parentRequestContext: RequestContext
 ): Promise<CallToolResult> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
@@ -217,7 +217,7 @@ export async function yourToolLogic(
 
   logger.info(
     `Executing 'yourToolName'. Query: ${input.query}`,
-    operationContext,
+    operationContext
   );
 
   try {
@@ -229,7 +229,7 @@ export async function yourToolLogic(
         id: `item-${i + 1}`,
         title: `Result for ${input.query} #${i + 1}`,
         isActive: input.filterActive,
-      }),
+      })
     );
 
     const output = {
@@ -247,7 +247,7 @@ export async function yourToolLogic(
     logger.error(
       "Execution failed for 'yourToolName'",
       error,
-      operationContext,
+      operationContext
     );
     const mcpError =
       error instanceof McpError
@@ -258,7 +258,7 @@ export async function yourToolLogic(
             {
               originalErrorName: error.name,
               requestId: operationContext.requestId,
-            },
+            }
           );
     return {
       content: [
@@ -317,7 +317,7 @@ export function registerYourTool(server: McpServer): void {
             mcpToolContext: mcpProvidedContext, // Context from MCP SDK during call
           });
         return yourToolLogic(validatedInput, handlerRequestContext);
-      },
+      }
     );
     logger.notice(`Tool 'your_tool_name' registered.`, regContext);
   } catch (error) {
@@ -327,14 +327,14 @@ export function registerYourTool(server: McpServer): void {
         `Failed to register 'your_tool_name'`,
         {
           /* details */
-        },
+        }
       ),
       {
         operation,
         context: regContext,
         errorCode: BaseErrorCode.INITIALIZATION_FAILED,
         critical: true,
-      },
+      }
     );
   }
 }
@@ -356,7 +356,7 @@ import { registerYourTool } from "./tools/yourToolName/index.js"; // Import new 
 // ...
 export async function createMcpServerInstance(
   options: McpServerOptions,
-  serverInitContext: RequestContext,
+  serverInitContext: RequestContext
 ): Promise<McpServer> {
   // ...
   const server = new McpServer(options);
@@ -431,6 +431,8 @@ Refer to `src/mcp-server/tools/` and `src/mcp-server/resources/` for implementat
   - **`search_pubmed_articles`**: (`src/mcp-server/tools/searchPubMedArticles/`) Uses ESearch, ESummary.
   - **`fetch_pubmed_content`**: (`src/mcp-server/tools/fetchPubMedContent/`) Uses EFetch.
   - **`get_pubmed_article_connections`**: (`src/mcp-server/tools/getPubMedArticleConnections/`) Uses ELink, EFetch.
+  - **`pubmed_research_agent`**: (`src/mcp-server/tools/pubmedResearchAgent/`) Generates a standardized JSON research plan.
+  - **`generate_pubmed_chart`**: (`src/mcp-server/tools/generatePubMedChart/`) Generates SVG charts.
 - **Resources:**
   - **`echoResource`**: (`src/mcp-server/resources/echoResource/`) Example, not PubMed specific.
 
@@ -467,94 +469,136 @@ Refer to `src/mcp-server/tools/` and `src/mcp-server/resources/` for implementat
 ## X. Repository Tree
 
 ```plaintext
-# pubmed-mcp-server - Directory Structure
-# Generated on: 2025-05-24 04:10:14 (Update with `npm run tree` periodically)
-# Refer to docs/tree.md for the latest version.
-
-src
-├── config
+pubmed-mcp-server
+├── .github
+│   └── workflows
+│       └── publish.yml
+├── docs
+│   ├── api-references
+│   │   ├── jsdoc-standard-tags.md
+│   │   └── typedoc-reference.md
+│   ├── project-spec.md
+│   └── tree.md
+├── examples
+│   ├── fetch_pubmed_content_example.md
+│   ├── generate_pubmed_chart_example_bar.svg
+│   ├── generate_pubmed_chart_example_line.svg
+│   ├── generate_pubmed_chart_example_scatter.svg
+│   ├── get_pubmed_article_connections_1.md
+│   ├── get_pubmed_article_connections_2.md
+│   ├── pubmed_research_agent_example.md
+│   └── search_pubmed_articles_example.md
+├── scripts
+│   ├── clean.ts
+│   ├── fetch-openapi-spec.ts
+│   ├── make-executable.ts
+│   └── tree.ts
+├── src
+│   ├── config
+│   │   └── index.ts
+│   ├── mcp-server
+│   │   ├── resources
+│   │   │   └── echoResource
+│   │   │       ├── echoResourceLogic.ts
+│   │   │       ├── index.ts
+│   │   │       └── registration.ts
+│   │   ├── tools
+│   │   │   ├── fetchPubMedContent
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── generatePubMedChart
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── getPubMedArticleConnections
+│   │   │   │   ├── logic
+│   │   │   │   │   ├── citationFormatter.ts
+│   │   │   │   │   ├── elinkHandler.ts
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   └── types.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── pubmedResearchAgent
+│   │   │   │   ├── logic
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── inputSchema.ts
+│   │   │   │   │   ├── outputTypes.ts
+│   │   │   │   │   └── planOrchestrator.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   └── searchPubMedArticles
+│   │   │       ├── index.ts
+│   │   │       ├── logic.ts
+│   │   │       └── registration.ts
+│   │   ├── transports
+│   │   │   ├── authentication
+│   │   │   │   └── authMiddleware.ts
+│   │   │   ├── httpTransport.ts
+│   │   │   └── stdioTransport.ts
+│   │   └── server.ts
+│   ├── services
+│   │   ├── llm-providers
+│   │   │   ├── openRouter
+│   │   │   │   ├── index.ts
+│   │   │   │   └── openRouterProvider.ts
+│   │   │   ├── index.ts
+│   │   │   └── llmFactory.ts
+│   │   ├── NCBI
+│   │   │   ├── ncbiConstants.ts
+│   │   │   ├── ncbiCoreApiClient.ts
+│   │   │   ├── ncbiRequestQueueManager.ts
+│   │   │   ├── ncbiResponseHandler.ts
+│   │   │   └── ncbiService.ts
+│   │   └── index.ts
+│   ├── types-global
+│   │   ├── errors.ts
+│   │   └── pubmedXml.ts
+│   ├── utils
+│   │   ├── internal
+│   │   │   ├── errorHandler.ts
+│   │   │   ├── index.ts
+│   │   │   ├── logger.ts
+│   │   │   └── requestContext.ts
+│   │   ├── metrics
+│   │   │   ├── index.ts
+│   │   │   └── tokenCounter.ts
+│   │   ├── parsing
+│   │   │   ├── ncbi-parsing
+│   │   │   │   ├── eSummaryResultParser.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── pubmedArticleStructureParser.ts
+│   │   │   │   └── xmlGenericHelpers.ts
+│   │   │   ├── dateParser.ts
+│   │   │   ├── index.ts
+│   │   │   └── jsonParser.ts
+│   │   ├── security
+│   │   │   ├── idGenerator.ts
+│   │   │   ├── index.ts
+│   │   │   ├── rateLimiter.ts
+│   │   │   └── sanitization.ts
+│   │   └── index.ts
 │   └── index.ts
-├── index.ts
-├── mcp-server
-│   ├── resources
-│   │   └── echoResource
-│   │       ├── echoResourceLogic.ts
-│   │       ├── index.ts
-│   │       └── registration.ts
-│   ├── server.ts
-│   ├── tools
-│   │   ├── fetchPubMedContent
-│   │   │   ├── index.ts
-│   │   │   ├── logic.ts
-│   │   │   └── registration.ts
-│   │   ├── getPubMedArticleConnections
-│   │   │   ├── index.ts
-│   │   │   ├── logic
-│   │   │   │   ├── citationFormatter.ts
-│   │   │   │   ├── elinkHandler.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   └── types.ts
-│   │   │   ├── logic.ts
-│   │   │   └── registration.ts
-│   │   ├── pubmedResearchAgent
-│   │   │   ├── index.ts
-│   │   │   ├── logic
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── inputSchema.ts
-│   │   │   │   ├── outputTypes.ts
-│   │   │   │   └── planOrchestrator.ts
-│   │   │   ├── logic.ts
-│   │   │   └── registration.ts
-│   │   └── searchPubMedArticles
-│   │       ├── index.ts
-│   │       ├── logic.ts
-│   │       └── registration.ts
-│   └── transports
-│       ├── authentication
-│       │   └── authMiddleware.ts
-│       ├── httpTransport.ts
-│       └── stdioTransport.ts
-├── services
-│   ├── index.ts
-│   ├── llm-providers
-│   │   ├── index.ts
-│   │   ├── llmFactory.ts
-│   │   └── openRouter
-│   │       ├── index.ts
-│   │       └── openRouterProvider.ts
-│   └── NCBI
-│       ├── ncbiConstants.ts
-│       ├── ncbiCoreApiClient.ts
-│       ├── ncbiRequestQueueManager.ts
-│       ├── ncbiResponseHandler.ts
-│       └── ncbiService.ts
-├── types-global
-│   ├── errors.ts
-│   └── pubmedXml.ts
-└── utils
-    ├── index.ts
-    ├── internal
-    │   ├── errorHandler.ts
-    │   ├── index.ts
-    │   ├── logger.ts
-    │   └── requestContext.ts
-    ├── metrics
-    │   ├── index.ts
-    │   └── tokenCounter.ts
-    ├── parsing
-    │   ├── dateParser.ts
-    │   ├── index.ts
-    │   ├── jsonParser.ts
-    │   └── ncbi-parsing
-    │       ├── eSummaryResultParser.ts
-    │       ├── index.ts
-    │       ├── pubmedArticleStructureParser.ts
-    │       └── xmlGenericHelpers.ts
-    └── security
-        ├── idGenerator.ts
-        ├── index.ts
-        ├── rateLimiter.ts
-        └── sanitization.ts
+├── .clinerules
+├── .dockerignore
+├── .gitignore
+├── CHANGELOG.md
+├── CLAUDE.md
+├── Dockerfile
+├── LICENSE
+├── mcp.json
+├── NOTICE
+├── package-lock.json
+├── package.json
+├── README.md
+├── repomix.config.json
+├── smithery.yaml
+├── tsconfig.json
+├── tsconfig.typedoc.json
+├── tsdoc.json
+└── typedoc.json
 ```
 
 This guide is authoritative. Deviations require explicit approval. Keep this document synchronized with code evolution.

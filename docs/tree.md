@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 12:27:05
+Generated on: 2025-05-24 19:08:24
 
 ```
 pubmed-mcp-server
@@ -14,7 +14,14 @@ pubmed-mcp-server
 │   ├── project-spec.md
 │   └── tree.md
 ├── examples
-│   └── research_agent_example.json
+│   ├── fetch_pubmed_content_example.md
+│   ├── generate_pubmed_chart_example_bar.svg
+│   ├── generate_pubmed_chart_example_line.svg
+│   ├── generate_pubmed_chart_example_scatter.svg
+│   ├── get_pubmed_article_connections_1.md
+│   ├── get_pubmed_article_connections_2.md
+│   ├── pubmed_research_agent_example.md
+│   └── search_pubmed_articles_example.md
 ├── scripts
 │   ├── clean.ts
 │   ├── fetch-openapi-spec.ts
@@ -31,6 +38,10 @@ pubmed-mcp-server
 │   │   │       └── registration.ts
 │   │   ├── tools
 │   │   │   ├── fetchPubMedContent
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── generatePubMedChart
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts
@@ -112,6 +123,7 @@ pubmed-mcp-server
 ├── Dockerfile
 ├── LICENSE
 ├── mcp.json
+├── NOTICE
 ├── package-lock.json
 ├── package.json
 ├── README.md
