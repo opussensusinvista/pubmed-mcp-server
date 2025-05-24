@@ -106,8 +106,6 @@ Configure the PubMed MCP server's behavior using environment variables (typicall
 | `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                               | `3010`                                   |
 | `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                       | `127.0.0.1`                              |
 | `MCP_ALLOWED_ORIGINS`   | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                               | (none)                                   |
-| `MCP_SERVER_NAME`       | Optional server name (used in MCP initialization).                                                     | (from package.json)                      |
-| `MCP_SERVER_VERSION`    | Optional server version (used in MCP initialization).                                                  | (from package.json)                      |
 | `MCP_LOG_LEVEL`         | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                      | `debug`                                  |
 | `LOGS_DIR`              | Directory for log files.                                                                               | `logs/` (in project root)                |
 | `NODE_ENV`              | Runtime environment (`development`, `production`).                                                     | `development`                            |
@@ -132,7 +130,7 @@ The `src/` directory contains the core logic:
 - `mcp-server/`: The heart of the PubMed MCP server.
   - `server.ts`: Initializes the server instance and registers all tools and resources.
   - `resources/`: Implementations for MCP resources (e.g., server status, PubMed statistics).
-  - `tools/`: Implementations for MCP tools (like `searchPubMedArticles`, `fetchPubMedContent`).
+  - `tools/`: Implementations for MCP tools (like `searchPubMedArticles`, `fetchPubMedContent`, `getPubMedArticleConnections`).
   - `transports/`: Handles `stdio` and `http` (SSE) communication, including authentication for HTTP.
 - `services/`: Integrations with external services.
   - `NCBI/ncbiService.ts`: Manages all interactions with NCBI E-utilities, including API calls, rate limiting, and response parsing.
@@ -156,8 +154,6 @@ Adding new tools or resources is straightforward:
     - For resources: `server.resource(registrationName, template, metadata, handlerFunction)`
     - Always wrap your logic in `ErrorHandler.tryCatch` for robust error management.
 4.  **Export and Integrate**: Export the registration function from your new directory's `index.ts` and call it within `src/mcp-server/server.ts`.
-
-The existing `searchPubMedArticles` and `fetchPubMedContent` tools serve as excellent examples. The [.clinerules](.clinerules) file also provides in-depth guidance for development.
 
 ## 🌍 Learn More
 

@@ -498,13 +498,10 @@ This section details how to add the specific PubMed tools and resources. A commo
   - **Location**: `src/mcp-server/tools/fetchPubMedContent/`
   - **Description:** Retrieves detailed information for PMIDs with flexible content control (replaces `fetchArticleDetails`).
   - **Underlying E-utility:** `EFetch`.
-
-**PubMed Tools Still To Implement:**
-
-- **`getArticleRelationships`**:
-  - **Description:** Finds articles related to a PMID (cited by, similar) or retrieves citation formats.
+- **`get_pubmed_article_connections`**:
+  - **Location**: `src/mcp-server/tools/getPubMedArticleConnections/`
+  - **Description:** Finds articles related to a source PubMed ID (PMID) or retrieves formatted citations for it. Supports finding similar articles, articles that cite the source, articles referenced by the source (via NCBI ELink), or fetching data to generate citations in various styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting).
   - **Underlying E-utilities:** `ELink`, `EFetch`.
-  - **Key Logic:** Map `relationshipType` to appropriate ELink commands or EFetch for citations. Optionally enrich related PMIDs with details.
 
 ### Adding a PubMed Resource
 
@@ -551,7 +548,7 @@ This section details how to add the specific PubMed tools and resources. A commo
 - **Tools**: `src/mcp-server/tools/`
   - `src/mcp-server/tools/searchPubMedArticles/`
   - `src/mcp-server/tools/fetchPubMedContent/`
-  - `src/mcp-server/tools/getArticleRelationships/` (To be implemented)
+  - `src/mcp-server/tools/getPubMedArticleConnections/`
 - **Resources**: `src/mcp-server/resources/`
   - `src/mcp-server/resources/echoResource/` (Example)
   - `src/mcp-server/resources/serverInfo/` (To be implemented)
@@ -568,65 +565,83 @@ This section details how to add the specific PubMed tools and resources. A commo
 
 ```plaintext
 # pubmed-mcp-server - Directory Structure
-# Generated on: 2025-05-24T05:21:58.223Z (Update with actual generation date if using script)
+# Generated on: 2025-05-24 07:35:40 (Update with actual generation date if using script)
 
-config/
-  index.ts
-mcp-server/
-  resources/
-    echoResource/
-      echoResourceLogic.ts
-      index.ts
-      registration.ts
-  tools/
-    fetchPubMedContent/
-      index.ts
-      logic.ts
-      registration.ts
-    searchPubMedArticles/
-      index.ts
-      logic.ts
-      registration.ts
-  transports/
-    authentication/
-      authMiddleware.ts
-    httpTransport.ts
-    stdioTransport.ts
-  server.ts
-services/
-  llm-providers/
-    openRouter/
-      index.ts
-      openRouterProvider.ts
-    index.ts
-    llmFactory.ts
-  NCBI/
-    ncbiService.ts
-  index.ts
-types-global/
-  errors.ts
-  pubmedXml.ts
-utils/
-  internal/
-    errorHandler.ts
-    index.ts
-    logger.ts
-    requestContext.ts
-  metrics/
-    index.ts
-    tokenCounter.ts
-  parsing/
-    dateParser.ts
-    index.ts
-    jsonParser.ts
-    pubmedXmlParserHelpers.ts
-  security/
-    idGenerator.ts
-    index.ts
-    rateLimiter.ts
-    sanitization.ts
-  index.ts
-index.ts
+src
+├── config
+│   └── index.ts
+├── mcp-server
+│   ├── resources
+│   │   └── echoResource
+│   │       ├── echoResourceLogic.ts
+│   │       ├── index.ts
+│   │       └── registration.ts
+│   ├── tools
+│   │   ├── fetchPubMedContent
+│   │   │   ├── index.ts
+│   │   │   ├── logic.ts
+│   │   │   └── registration.ts
+│   │   ├── getPubMedArticleConnections
+│   │   │   ├── logic
+│   │   │   │   ├── citationFormatter.ts
+│   │   │   │   ├── elinkHandler.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── index.ts
+│   │   │   ├── logic.ts
+│   │   │   └── registration.ts
+│   │   └── searchPubMedArticles
+│   │       ├── index.ts
+│   │       ├── logic.ts
+│   │       └── registration.ts
+│   ├── transports
+│   │   ├── authentication
+│   │   │   └── authMiddleware.ts
+│   │   ├── httpTransport.ts
+│   │   └── stdioTransport.ts
+│   └── server.ts
+├── services
+│   ├── llm-providers
+│   │   ├── openRouter
+│   │   │   ├── index.ts
+│   │   │   └── openRouterProvider.ts
+│   │   ├── index.ts
+│   │   └── llmFactory.ts
+│   ├── NCBI
+│   │   ├── ncbiConstants.ts
+│   │   ├── ncbiCoreApiClient.ts
+│   │   ├── ncbiRequestQueueManager.ts
+│   │   ├── ncbiResponseHandler.ts
+│   │   └── ncbiService.ts
+│   └── index.ts
+├── types-global
+│   ├── errors.ts
+│   └── pubmedXml.ts
+├── utils
+│   ├── internal
+│   │   ├── errorHandler.ts
+│   │   ├── index.ts
+│   │   ├── logger.ts
+│   │   └── requestContext.ts
+│   ├── metrics
+│   │   ├── index.ts
+│   │   └── tokenCounter.ts
+│   ├── parsing
+│   │   ├── ncbi-parsing
+│   │   │   ├── eSummaryResultParser.ts
+│   │   │   ├── index.ts
+│   │   │   ├── pubmedArticleStructureParser.ts
+│   │   │   └── xmlGenericHelpers.ts
+│   │   ├── dateParser.ts
+│   │   ├── index.ts
+│   │   └── jsonParser.ts
+│   ├── security
+│   │   ├── idGenerator.ts
+│   │   ├── index.ts
+│   │   ├── rateLimiter.ts
+│   │   └── sanitization.ts
+│   └── index.ts
+└── index.ts
 ```
 
 Remember to keep this cheatsheet updated as the `pubmed-mcp-server` evolves!

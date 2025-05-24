@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 06:23:10
+Generated on: 2025-05-24 07:35:40
 
 ```
 pubmed-mcp-server
@@ -11,7 +11,6 @@ pubmed-mcp-server
 │   ├── api-references
 │   │   ├── jsdoc-standard-tags.md
 │   │   └── typedoc-reference.md
-│   ├── Entrez-EUtils-Documentation.pdf
 │   ├── project-spec.md
 │   └── tree.md
 ├── scripts
