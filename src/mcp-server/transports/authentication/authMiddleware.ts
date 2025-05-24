@@ -174,11 +174,18 @@ export function mcpAuthMiddleware(
     } else {
       // If scopes are strictly mandatory and not found or invalid format
       logger.warning(
-        "Authentication failed: JWT 'scp' or 'scope' claim is missing, not an array of strings, or not a valid space-separated string. Assigning default empty array.",
+        "Authentication failed: JWT 'scp' or 'scope' claim is missing, not an array of strings, or not a valid space-separated string. Assigning default empty array of scopes.",
         { ...context, jwtPayloadKeys: Object.keys(decoded) },
       );
-      scopesFromToken = []; // Default to empty array if scopes are mandatory but not found/invalid
-      // Or, if truly mandatory and must be non-empty:
+      // Default to empty array if scopes are not found or are in an invalid format.
+      // IMPORTANT: Downstream authorization logic MUST be aware of this default.
+      // If specific scopes are mandatory for certain operations, that logic needs to check
+      // for the presence and validity of required scopes in this `scopesFromToken` array.
+      // An empty array here means no specific scopes were granted by this token,
+      // which might restrict access depending on the authorization rules.
+      scopesFromToken = [];
+      // If truly mandatory and must be non-empty for *all* authenticated requests,
+      // an alternative would be to reject the token here:
       // res.status(401).json({ error: "Unauthorized: Invalid token, missing or invalid scopes." });
       // return;
     }

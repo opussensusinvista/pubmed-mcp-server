@@ -68,7 +68,7 @@ export const FetchPubMedContentInputSchema = z.object({
     .optional()
     .default("json")
     .describe(
-      "Specifies the final output format of the tool. 'json' (default) wraps the data in a standard JSON object. 'raw_text' attempts to return raw text for 'medline_text' or a JSON string of the XML structure for 'full_xml'. For other detailLevels, 'raw_text' defaults to 'json'.",
+      "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'.",
     ),
 });
 
@@ -76,9 +76,20 @@ export type FetchPubMedContentInput = z.infer<
   typeof FetchPubMedContentInputSchema
 >;
 
+/**
+ * Interface for parameters passed to the ncbiService.eFetch method.
+ */
+interface EFetchServiceParams {
+  db: string;
+  id: string;
+  retmode?: "xml" | "text";
+  rettype?: string;
+  // Allow other E-utility specific parameters, typically strings
+  [key: string]: string | undefined;
+}
+
 function parsePubMedArticleSet(
-  // xmlData is the root of the parsed XML document from EFetch
-  xmlData: { PubmedArticleSet?: XmlPubmedArticleSet } | any,
+  xmlData: unknown, // Changed from { PubmedArticleSet?: XmlPubmedArticleSet } | any
   input: FetchPubMedContentInput,
   parentContext: RequestContext,
 ): ParsedArticle[] {
@@ -88,7 +99,27 @@ function parsePubMedArticleSet(
     operation: "parsePubMedArticleSet",
   });
 
-  const articleSet = xmlData?.PubmedArticleSet;
+  // Type guard for xmlData
+  if (
+    !xmlData ||
+    typeof xmlData !== "object" ||
+    !("PubmedArticleSet" in xmlData)
+  ) {
+    logger.warning(
+      "Invalid or unexpected structure for xmlData in parsePubMedArticleSet.",
+      {
+        ...operationContext,
+        xmlDataType: typeof xmlData,
+        xmlDataPreview: sanitizeInputForLogging(
+          JSON.stringify(xmlData).substring(0, 200),
+        ),
+      },
+    );
+    return articles;
+  }
+
+  const typedXmlData = xmlData as { PubmedArticleSet?: XmlPubmedArticleSet }; // Cast after check
+  const articleSet = typedXmlData.PubmedArticleSet;
 
   if (!articleSet || !articleSet.PubmedArticle) {
     logger.warning(
@@ -96,7 +127,7 @@ function parsePubMedArticleSet(
       requestContextService.createRequestContext({
         ...operationContext,
         xmlDataPreview: sanitizeInputForLogging(
-          JSON.stringify(xmlData).substring(0, 200), // Log the root for context
+          JSON.stringify(typedXmlData).substring(0, 200),
         ),
       }),
     );
@@ -214,35 +245,29 @@ export async function fetchPubMedContentLogic(
 
   logger.info("Executing fetch_pubmed_content tool", toolLogicContext);
 
-  const eFetchParams: {
-    db: string;
-    id: string;
-    retmode?: string;
-    rettype?: string;
-    [key: string]: any;
-  } = {
+  const eFetchParams: EFetchServiceParams = {
     db: "pubmed",
     id: input.pmids.join(","),
   };
 
-  let retmode: "xml" | "text" = "xml";
+  let serviceRetmode: "xml" | "text" = "xml"; // Renamed to avoid conflict with local retmode variable if any
   let rettype: string | undefined;
   // responseContentType is determined by input.outputFormat at the end
 
   switch (input.detailLevel) {
     case "full_xml":
-      retmode = "xml";
+      serviceRetmode = "xml";
       break;
     case "medline_text":
-      retmode = "text";
+      serviceRetmode = "text";
       rettype = "medline";
       break;
     case "abstract_plus":
     case "citation_data":
-      retmode = "xml"; // Parsed by server, so fetch XML
+      serviceRetmode = "xml"; // Parsed by server, so fetch XML
       break;
   }
-  eFetchParams.retmode = retmode;
+  eFetchParams.retmode = serviceRetmode;
   if (rettype) eFetchParams.rettype = rettype;
 
   let eFetchUrl = "";
@@ -255,67 +280,41 @@ export async function fetchPubMedContentLogic(
     ).toString();
     eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
 
-    const eFetchResponseXml = await ncbiService.eFetch(
-      // Assuming eFetch returns the parsed XML object or raw text
-      eFetchParams,
+    // Determine if raw XML should be fetched
+    const shouldReturnRawXml =
+      input.detailLevel === "full_xml" && input.outputFormat === "raw_text";
+
+    const eFetchResponseData = await ncbiService.eFetch(
+      eFetchParams, // Now correctly typed
       toolLogicContext,
-      { retmode, rettype },
+      { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml },
     );
 
     let finalOutputText: string;
     let structuredResponseData: any; // Used for building the JSON response
 
     if (input.detailLevel === "medline_text") {
+      const medlineText = String(eFetchResponseData);
+      const foundPmidsInMedline = new Set<string>();
+      const pmidRegex = /^PMID- (\d+)/gm;
+      let match;
+      while ((match = pmidRegex.exec(medlineText)) !== null) {
+        foundPmidsInMedline.add(match[1]);
+      }
+      const notFoundPmids = input.pmids.filter(
+        (pmid) => !foundPmidsInMedline.has(pmid),
+      );
+
       structuredResponseData = {
         requestedPmids: input.pmids,
         articles: [
           {
+            // For medline_text, it's one block of text, so associate all input PMIDs
+            // though only found ones are truly in the text.
             pmids: input.pmids,
-            medlineText: String(eFetchResponseXml),
+            medlineText: medlineText,
           },
         ],
-        notFoundPmids: [], // Simplification
-        eFetchDetails: {
-          urls: [eFetchUrl],
-          requestMethod: input.pmids.length > 200 ? "POST" : "GET",
-        },
-      };
-      if (input.outputFormat === "raw_text") {
-        finalOutputText = String(eFetchResponseXml);
-      } else {
-        finalOutputText = JSON.stringify(structuredResponseData);
-      }
-    } else if (input.detailLevel === "full_xml") {
-      const articlesXml = ensureArray(
-        (eFetchResponseXml as any)?.PubmedArticleSet?.PubmedArticle || [],
-      );
-      const articlesPayload: { pmid: string; fullXmlContent: any }[] = [];
-      const foundPmidsInXml = new Set<string>();
-
-      for (const articleXml of articlesXml) {
-        let pmid = "unknown_pmid";
-        if (articleXml?.MedlineCitation) {
-          // Use the robust extractPmid utility
-          const extracted = extractPmid(articleXml.MedlineCitation);
-          if (extracted) {
-            pmid = extracted;
-          }
-        }
-
-        if (pmid !== "unknown_pmid") {
-          foundPmidsInXml.add(pmid);
-        }
-        articlesPayload.push({
-          pmid: pmid,
-          fullXmlContent: articleXml, // articleXml here is the <PubmedArticle> element
-        });
-      }
-      const notFoundPmids = input.pmids.filter(
-        (pmid) => !foundPmidsInXml.has(pmid),
-      );
-      structuredResponseData = {
-        requestedPmids: input.pmids,
-        articles: articlesPayload,
         notFoundPmids,
         eFetchDetails: {
           urls: [eFetchUrl],
@@ -323,21 +322,59 @@ export async function fetchPubMedContentLogic(
         },
       };
       if (input.outputFormat === "raw_text") {
-        // NOTE: This returns the JSON string representation of the parsed XML,
-        // not the raw XML string itself. True raw XML output would require
-        // ncbiService to return raw string or use an XML builder here.
-        logger.warning(
-          "outputFormat 'raw_text' for 'full_xml' detailLevel currently returns a JSON string of the parsed XML, not a raw XML string.",
-          toolLogicContext,
-        );
-        finalOutputText = JSON.stringify(eFetchResponseXml); // This is the parsed XML object from ncbiService
+        finalOutputText = String(eFetchResponseData);
       } else {
         finalOutputText = JSON.stringify(structuredResponseData);
       }
+    } else if (input.detailLevel === "full_xml") {
+      if (input.outputFormat === "raw_text") {
+        // eFetchResponseData is already the raw XML string due to returnRawXml: true
+        finalOutputText = String(eFetchResponseData);
+        // Optionally, wrap it in a minimal JSON structure if that's preferred for raw_text output consistency
+        // For now, returning the direct XML string as per user expectation for "raw_text"
+      } else {
+        // outputFormat is 'json', so eFetchResponseData is the parsed XML object
+        const articlesXml = ensureArray(
+          (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
+        );
+        const articlesPayload: { pmid: string; fullXmlContent: any }[] = [];
+        const foundPmidsInXml = new Set<string>();
+
+        for (const articleXml of articlesXml) {
+          let pmid = "unknown_pmid";
+          if (articleXml?.MedlineCitation) {
+            const extracted = extractPmid(articleXml.MedlineCitation);
+            if (extracted) {
+              pmid = extracted;
+            }
+          }
+          if (pmid !== "unknown_pmid") {
+            foundPmidsInXml.add(pmid);
+          }
+          articlesPayload.push({
+            pmid: pmid,
+            fullXmlContent: articleXml,
+          });
+        }
+        const notFoundPmids = input.pmids.filter(
+          (pmid) => !foundPmidsInXml.has(pmid),
+        );
+        structuredResponseData = {
+          requestedPmids: input.pmids,
+          articles: articlesPayload,
+          notFoundPmids,
+          eFetchDetails: {
+            urls: [eFetchUrl],
+            requestMethod: input.pmids.length > 200 ? "POST" : "GET",
+          },
+        };
+        finalOutputText = JSON.stringify(structuredResponseData);
+      }
     } else {
-      // abstract_plus or citation_data
+      // abstract_plus or citation_data (outputFormat is always 'json' effectively)
+      // eFetchResponseData is the parsed XML object
       const parsedArticles = parsePubMedArticleSet(
-        eFetchResponseXml as XmlPubmedArticleSet,
+        eFetchResponseData as XmlPubmedArticleSet,
         input,
         toolLogicContext,
       );
@@ -355,8 +392,8 @@ export async function fetchPubMedContentLogic(
       };
 
       if (input.detailLevel === "citation_data") {
-        structuredResponseData.articles =
-          structuredResponseData.articles.map((article: ParsedArticle) => ({
+        structuredResponseData.articles = structuredResponseData.articles.map(
+          (article: ParsedArticle) => ({
             pmid: article.pmid,
             title: article.title,
             authors: article.authors?.map((a) => ({
@@ -372,7 +409,10 @@ export async function fetchPubMedContentLogic(
               year: article.journalInfo?.publicationDate?.year,
             },
             doi: article.doi,
-          }));
+            // Conditionally include meshTerms if the input flag was set (it defaults to true)
+            ...(input.includeMeshTerms && { meshTerms: article.meshTerms }),
+          }),
+        );
       }
       // For abstract_plus and citation_data, outputFormat 'raw_text' doesn't make sense,
       // as the data is inherently structured. So, always output JSON.

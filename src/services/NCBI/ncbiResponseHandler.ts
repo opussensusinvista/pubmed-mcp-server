@@ -182,6 +182,8 @@ export class NcbiResponseHandler {
           { endpoint, responseSnippet: String(responseData).substring(0, 200) },
         );
       }
+
+      // Always parse for error checking, even if returning raw XML
       const parsedXml = this.xmlParser.parse(responseData);
 
       // Check for error indicators within the parsed XML structure
@@ -199,7 +201,7 @@ export class NcbiResponseHandler {
           {
             ...operationContext,
             errors: errorMessages,
-            parsedXml: sanitizeInputForLogging(parsedXml),
+            parsedXml: sanitizeInputForLogging(parsedXml), // Log the parsed structure for error diagnosis
           },
         );
         throw new McpError(
@@ -208,8 +210,21 @@ export class NcbiResponseHandler {
           { endpoint, ncbiErrors: errorMessages },
         );
       }
-      logger.debug("Successfully parsed XML response.", operationContext);
-      return parsedXml as T;
+
+      // If raw XML is requested and no errors were found, return the original string
+      if (options.returnRawXml) {
+        logger.debug(
+          "Successfully validated XML response. Returning raw XML string as requested.",
+          operationContext,
+        );
+        return responseData as T; // responseData is the raw XML string
+      }
+
+      logger.debug(
+        "Successfully parsed XML response. Returning parsed object.",
+        operationContext,
+      );
+      return parsedXml as T; // Return the parsed object by default
     }
 
     if (options.retmode === "json") {

@@ -5,18 +5,11 @@
  */
 
 import { ncbiService } from "../../../../services/NCBI/ncbiService.js";
-import type {
-  XmlPubmedArticle,
-  XmlAuthor, // For full author details from EFetch
-  // ParsedArticleAuthor, // From pubmedArticleStructureParser
-  // ParsedJournalInfo, // From pubmedArticleStructureParser
-  // ParsedArticleDate, // From pubmedArticleStructureParser
-} from "../../../../types-global/pubmedXml.js";
+import type { XmlPubmedArticle } from "../../../../types-global/pubmedXml.js";
 import {
   logger,
   RequestContext,
   requestContextService,
-  // sanitizeInputForLogging, // Not used directly here
 } from "../../../../utils/index.js";
 import {
   extractAuthors,
@@ -24,8 +17,6 @@ import {
   extractJournalInfo,
   extractPmid,
   getText,
-  // ensureArray, // Not directly used here, but available via index
-  // getAttribute, // Not directly used here
 } from "../../../../utils/parsing/ncbi-parsing/index.js";
 import type { GetPubMedArticleConnectionsInput } from "../registration.js";
 import type { ToolOutputData } from "./types.js";
@@ -46,22 +37,14 @@ export async function handleCitationFormats(
     id: input.sourcePmid,
     retmode: "xml",
     // Omitting rettype to hopefully get the fullest XML record by default
-    // rettype: "abstract",
   };
-  const tempUrl = new URL(
-    "https://dummy.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
-  );
-  Object.keys(eFetchParams).forEach((key) =>
-    tempUrl.searchParams.append(
-      key,
-      String(eFetchParams[key as keyof typeof eFetchParams]),
-    ),
-  );
-  // Update eUtilityUrl to reflect potentially removed rettype
+
+  const eFetchBaseUrl =
+    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
   const searchParamsString = new URLSearchParams(
-    eFetchParams as any,
+    eFetchParams as Record<string, string>, // Cast to Record<string, string> for URLSearchParams
   ).toString();
-  outputData.eUtilityUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?${searchParamsString}`;
+  outputData.eUtilityUrl = `${eFetchBaseUrl}?${searchParamsString}`;
 
   const eFetchResult: any = await ncbiService.eFetch(eFetchParams, context);
 

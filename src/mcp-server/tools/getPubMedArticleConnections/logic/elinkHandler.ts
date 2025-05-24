@@ -66,9 +66,13 @@ export async function handleELinkRelationships(
     eLinkResultString: JSON.stringify(eLinkResult, null, 2),
   });
 
-  const firstELinkResult =
-    eLinkResult?.eLinkResult?.[0] || eLinkResult?.eLinkResult;
-  const linkSet = firstELinkResult?.LinkSet?.[0] || firstELinkResult?.LinkSet;
+  // Use ensureArray for robust handling of potentially single or array eLinkResult
+  const eLinkResultsArray = ensureArray(eLinkResult?.eLinkResult);
+  const firstELinkResult = eLinkResultsArray[0]; // Get the first (or only) eLinkResult object
+
+  // Use ensureArray for LinkSet as well
+  const linkSetsArray = ensureArray(firstELinkResult?.LinkSet);
+  const linkSet = linkSetsArray[0]; // Get the first (or only) LinkSet object
 
   let foundPmids: { pmid: string; score?: number }[] = [];
 

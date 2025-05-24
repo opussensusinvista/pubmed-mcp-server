@@ -22,4 +22,5 @@ export interface NcbiRequestOptions {
   retmode?: "xml" | "json" | "text"; // Desired response format
   rettype?: string; // Specific type of data to return (e.g., "abstract", "medline")
   usePost?: boolean; // Hint to use HTTP POST for large payloads (e.g., many IDs)
+  returnRawXml?: boolean; // If true and retmode is 'xml', returns the raw XML string instead of parsed object (after error checking)
 }

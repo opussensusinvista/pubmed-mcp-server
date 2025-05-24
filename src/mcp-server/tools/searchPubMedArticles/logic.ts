@@ -104,6 +104,24 @@ export type SearchPubMedArticlesInput = z.infer<
 >;
 
 /**
+ * Interface for parameters passed to the ncbiService.eSearch or eSummary methods.
+ */
+interface ESearchServiceParams {
+  db: string;
+  term?: string;
+  retmax?: number;
+  sort?: string;
+  usehistory?: "y" | "n";
+  WebEnv?: string;
+  query_key?: string;
+  id?: string;
+  version?: string;
+  retmode?: string;
+  // Allow other E-utility specific parameters
+  [key: string]: string | number | undefined;
+}
+
+/**
  * Logic for the searchPubMedArticles tool.
  * Constructs and executes ESearch and optionally ESummary queries via NcbiService,
  * then formats the results into a CallToolResult.
@@ -153,14 +171,7 @@ export async function searchPubMedArticlesLogic(
 
   const currentFetchBriefSummaries = input.fetchBriefSummaries ?? 0;
 
-  const eSearchParams: {
-    db: string;
-    term: string;
-    retmax?: number;
-    sort?: string;
-    usehistory?: "y" | "n";
-    [key: string]: any;
-  } = {
+  const eSearchParams: ESearchServiceParams = {
     db: "pubmed",
     term: effectiveQuery,
     retmax: input.maxResults,
@@ -211,16 +222,7 @@ export async function searchPubMedArticlesLogic(
     let briefSummaries: ParsedBriefSummary[] = [];
 
     if (currentFetchBriefSummaries > 0 && pmids.length > 0) {
-      const eSummaryParams: {
-        db: string;
-        id?: string; // Make id optional if using history
-        version: string;
-        retmode: string;
-        WebEnv?: string;
-        query_key?: string;
-        retmax?: number; // Add retmax for ESummary when using history
-        [key: string]: any;
-      } = {
+      const eSummaryParams: ESearchServiceParams = {
         db: "pubmed",
         version: "2.0",
         retmode: "xml",
