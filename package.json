@@ -1,6 +1,6 @@
 {
   "name": "@cyanheads/pubmed-mcp-server",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "A Model Context Protocol (MCP) server enabling AI agents to intelligently search, retrieve, and analyze biomedical literature from PubMed via NCBI E-utilities. Built on the mcp-ts-template for robust, production-ready performance.",
   "main": "dist/index.js",
   "files": [

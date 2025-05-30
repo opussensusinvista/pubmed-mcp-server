@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.15] - 2025-05-30
+
+### Changed
+
+- **Configuration & Documentation**:
+  - Updated `README.md`:
+    - Removed `NCBI_ADMIN_EMAIL`, `NCBI_REQUEST_DELAY_MS`, and `NCBI_MAX_RETRIES` from the environment variable table.
+    - Changed the default value for `NCBI_TOOL_IDENTIFIER` from `@cyanheads/pubmed-mcp-server/<version>` to `@cyanheads/pubmed-mcp-server`.
+    - Removed `NCBI_ADMIN_EMAIL` from the example MCP client settings.
+  - Updated `mcp.json`:
+    - Removed `NCBI_ADMIN_EMAIL` and `NCBI_TOOL_IDENTIFIER` from the default environment variable settings for the server.
+  - Updated `smithery.yaml`:
+    - Changed the default value for `NCBI_TOOL_IDENTIFIER` to `@cyanheads/pubmed-mcp-server`.
+- **Build**:
+  - Bumped project version to `1.0.15` in `package.json`.
+  - Updated `README.md` version badge to `1.0.15`.
+
 ## [1.0.14] - 2025-05-24
 
 ### Changed

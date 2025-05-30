@@ -2,7 +2,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.12.1-green.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.0.14-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.0.15-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -117,20 +117,17 @@ npm install @cyanheads/pubmed-mcp-server
 
 Configure the server using environment variables. These environmental variables are set within your MCP client config/settings (e.g. `claude_desktop_config.json` for Claude Desktop)
 
-| Variable                | Description                                                                              | Default                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `MCP_TRANSPORT_TYPE`    | Transport mechanism: `stdio` or `http`.                                                  | `stdio`                                  |
-| `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                 | `3010`                                   |
-| `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                         | `127.0.0.1`                              |
-| `MCP_ALLOWED_ORIGINS`   | Comma-separated list of allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).         | (none)                                   |
-| `MCP_LOG_LEVEL`         | Logging level (`debug`, `info`, `notice`, `warning`, `error`, `crit`, `alert`, `emerg`). | `debug`                                  |
-| `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Minimum 32-character secret key for JWT authentication. | (none)                                   |
-| `NCBI_API_KEY`          | **Recommended.** Your NCBI API Key for higher rate limits and reliable access.           | (none)                                   |
-| `NCBI_TOOL_IDENTIFIER`  | Tool identifier for NCBI E-utility requests.                                             | `@cyanheads/pubmed-mcp-server/<version>` |
-| `NCBI_ADMIN_EMAIL`      | **Required.** Administrative contact email for NCBI E-utility requests.                  | (none)                                   |
-| `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests.                                              | `100` (with API key), `334` (without)    |
-| `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                      | `3`                                      |
-| `LOGS_DIR`              | Directory for log file storage.                                                          | `logs/`                                  |
+| Variable               | Description                                                                              | Default                        |
+| ---------------------- | ---------------------------------------------------------------------------------------- | ------------------------------ |
+| `MCP_TRANSPORT_TYPE`   | Transport mechanism: `stdio` or `http`.                                                  | `stdio`                        |
+| `MCP_HTTP_PORT`        | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                 | `3010`                         |
+| `MCP_HTTP_HOST`        | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                         | `127.0.0.1`                    |
+| `MCP_ALLOWED_ORIGINS`  | Comma-separated list of allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).         | (none)                         |
+| `MCP_LOG_LEVEL`        | Logging level (`debug`, `info`, `notice`, `warning`, `error`, `crit`, `alert`, `emerg`). | `debug`                        |
+| `MCP_AUTH_SECRET_KEY`  | **Required for HTTP transport.** Minimum 32-character secret key for JWT authentication. | (none)                         |
+| `NCBI_API_KEY`         | **Recommended.** Your NCBI API Key for higher rate limits and reliable access.           | (none)                         |
+| `NCBI_TOOL_IDENTIFIER` | Tool identifier for NCBI E-utility requests.                                             | `@cyanheads/pubmed-mcp-server` |
+| `LOGS_DIR`             | Directory for log file storage.                                                          | `logs/`                        |
 
 ### MCP Client Settings
 
@@ -143,8 +140,7 @@ Add to your MCP client settings (e.g., `cline_mcp_settings.json`):
       "command": "node",
       "args": ["/path/to/your/pubmed-mcp-server/dist/index.js"],
       "env": {
-        "NCBI_API_KEY": "your_ncbi_api_key_here",
-        "NCBI_ADMIN_EMAIL": "your.email@domain.com"
+        "NCBI_API_KEY": "your_ncbi_api_key_here"
       },
       "disabled": false,
       "autoApprove": []
