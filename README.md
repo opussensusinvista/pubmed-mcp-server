@@ -1,16 +1,17 @@
-# PubMed MCP Server Pubmed
+# PubMed MCP Server
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Model Context Protocol SDK](https://img.shields.io/badge/MCP%20SDK-1.12.0-green.svg)](https://github.com/modelcontextprotocol/typescript-sdk)
-[![MCP Spec Version](https://img.shields.io/badge/MCP%20Spec-2025--03--26-lightgrey.svg)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)
+[![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.12.1-green.svg)](https://modelcontextprotocol.io/)
 [![Version](https://img.shields.io/badge/Version-1.0.14-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Status](https://img.shields.io/badge/Status-Beta-orange.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
+[![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
 
-**Unlock the power of biomedical literature for your AI agents with the PubMed MCP Server!**
+**Empower your AI agents and research tools with seamless PubMed integration!**
 
-This server acts as a bridge, connecting your AI to NCBI's PubMed and E-utilities through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). It empowers language models to seamlessly search, retrieve, and analyze biomedical articles and data. Built with TypeScript and adhering to the **MCP 2025-03-26 specification**, it's designed for robustness and includes production-grade utilities.
+An MCP (Model Context Protocol) server providing comprehensive access to PubMed's biomedical literature database. Enables LLMs and AI agents to search, retrieve, analyze, and visualize scientific publications through NCBI's E-utilities API with advanced research workflow capabilities.
+
+Built on the [`cyanheads/mcp-ts-template`](https://github.com/cyanheads/mcp-ts-template), this server follows a modular architecture with robust error handling, logging, and security features.
 
 ## 🚀 Core Capabilities: PubMed Tools 🛠️
 
@@ -26,152 +27,222 @@ This server equips your AI with specialized tools to interact with PubMed:
 
 ---
 
-## ✨ Key Features Beyond Tools
+## Table of Contents
 
-| Feature Category               | Description                                                                                                                                                                  |
-| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **🔌 MCP Compliant**           | Fully functional server supporting `stdio` and `http` (SSE) transports.                                                                                                      |
-| **🚀 Production-Ready Utils**  | Includes robust logging, error handling, ID generation, rate limiting, request context tracking, and input sanitization.                                                     |
-| **🔒 Secure & Type-Safe**      | Built with TypeScript & Zod for strong type checking and input validation. Manages NCBI API keys, implements rate limiting, and features JWT-based auth middleware for HTTP. |
-| **⚙️ Advanced Error Handling** | Consistent error categorization, detailed logging, and centralized handling, including specific error types for NCBI interactions.                                           |
-| **📚 Well-Documented**         | Comprehensive JSDoc comments, API references, and project specifications.                                                                                                    |
-| **🤖 Agent-Friendly**          | Includes a `.clinerules` developer cheatsheet tailored for LLM coding agents using this server.                                                                              |
-| **🛠️ Developer Utilities**     | Scripts for cleaning builds, setting executable permissions, generating directory trees, and fetching OpenAPI specifications.                                                |
+| [Overview](#overview) | [Features](#features) | [Installation](#installation) |
 
-## 🚀 Quick Start
+| [Configuration](#configuration) | [Project Structure](#project-structure) |
 
-Get the PubMed MCP server running in minutes:
+| [Tools](#tools) | [Resources](#resources) | [Development](#development) | [License](#license) |
 
-1.  **Clone the repository:**
+## Overview
 
-    ```bash
-    git clone https://github.com/cyanheads/pubmed-mcp-server.git
-    cd pubmed-mcp-server
-    ```
+The PubMed MCP Server acts as a bridge, allowing applications (MCP Clients) that understand the Model Context Protocol (MCP) – like advanced AI assistants (LLMs), IDE extensions, or custom research tools – to interact directly and efficiently with PubMed's vast biomedical literature database.
 
-2.  **Install dependencies:**
+Instead of complex API integration or manual searches, your tools can leverage this server to:
 
-    ```bash
-    npm install
-    ```
+- **Automate research workflows**: Search literature, fetch full article metadata, track citations, and generate research plans programmatically.
+- **Gain research insights**: Access detailed publication data, author information, journal details, MeSH terms, and citation networks without leaving the host application.
+- **Integrate PubMed into AI-driven research**: Enable LLMs to conduct literature reviews, analyze research trends, and support evidence-based decision making.
+- **Visualize research data**: Generate charts and visualizations from publication metadata and search results.
 
-3.  **Configure Environment Variables (`.env` file):**
-    Create a `.env` file in the project root. Key variables:
+Built on the robust `mcp-ts-template`, this server provides a standardized, secure, and efficient way to expose PubMed functionality via the MCP standard. It achieves this by integrating with NCBI's E-utilities API, ensuring compliance with rate limits and providing comprehensive error handling.
 
-    ```env
-    # REQUIRED FOR HTTP TRANSPORT
-    MCP_AUTH_SECRET_KEY=generate_a_strong_random_32_plus_char_secret_key
+> **Developer Note**: This repository includes a [.clinerules](.clinerules) file that serves as a developer cheat sheet for your LLM coding agent with quick reference for the codebase patterns, file locations, and code snippets.
 
-    # RECOMMENDED FOR NCBI E-UTILITIES (for higher rate limits)
-    # NCBI_API_KEY=your_ncbi_api_key_here
-    # NCBI_ADMIN_EMAIL=your_email@example.com # Recommended if using an API key
-    # NCBI_TOOL_IDENTIFIER=@cyanheads/pubmed-mcp-server/1.0.13 # Optional: Tool identifier for NCBI (defaults to current version)
-    ```
+## Features
 
-    For all options, see the [Configuration](#⚙️-configuration) section below or the [Developer Cheatsheet (.clinerules)](./.clinerules).
+### Core Utilities
 
-    New example files for each tool are available in the `examples/` directory (e.g., `examples/search_pubmed_articles_example.md`, `examples/generate_pubmed_chart_example_bar.svg`).
+Leverages the robust utilities provided by the `mcp-ts-template`:
 
-4.  **Build the project:**
+- **Logging**: Structured, configurable logging (file rotation, console, MCP notifications) with sensitive data redaction.
+- **Error Handling**: Centralized error processing, standardized error types (`McpError`), and automatic logging.
+- **Configuration**: Environment variable loading (`dotenv`) with comprehensive validation.
+- **Input Validation/Sanitization**: Uses `zod` for schema validation and custom sanitization logic.
+- **Request Context**: Tracking and correlation of operations via unique request IDs.
+- **Type Safety**: Strong typing enforced by TypeScript and Zod schemas.
+- **HTTP Transport Option**: Built-in Express server with SSE, session management, CORS support, and JWT authentication.
+- **Rate Limiting**: Built-in request queuing and delay management for NCBI API compliance.
 
-    ```bash
-    npm run build
-    # Or use 'npm run rebuild' for a clean install (deletes node_modules, logs, dist)
-    ```
+### PubMed Integration
 
-5.  **Format the code (Optional but Recommended):**
+- **NCBI E-utilities Integration**: Comprehensive access to ESearch, EFetch, ELink, and ESummary APIs with automatic XML parsing.
+- **Advanced Search Capabilities**: Complex query construction with date ranges, publication types, author filters, and MeSH term support.
+- **Full Article Metadata**: Retrieve complete publication data including abstracts, authors, affiliations, journal information, DOIs, and citation data.
+- **Citation Network Analysis**: Find related articles, citing articles, and reference lists through ELink integration.
+- **Research Planning**: Generate structured research plans with automated literature search strategies.
+- **Data Visualization**: Create SVG charts from publication metadata (bar charts, line graphs, scatter plots).
+- **Multiple Output Formats**: Support for JSON, MEDLINE text, full XML, and formatted citations (RIS, BibTeX, APA, MLA).
+- **Batch Processing**: Efficient handling of multiple PMIDs with pagination support.
 
-    ```bash
-    npm run format
-    ```
+## Installation
 
-6.  **Run the Server:**
+### Prerequisites
 
-    - **Via Stdio (Default):** Many MCP host applications will run this automatically using `stdio`. To run manually for testing:
-      ```bash
-      npm start
-      # or 'npm run start:stdio'
-      ```
-    - **Via HTTP (SSE):** (Ensure `MCP_TRANSPORT_TYPE=http` and `MCP_AUTH_SECRET_KEY` are set in your `.env`)
-      ```bash
-      npm run start:http
-      ```
-      This starts an HTTP server (default: `http://127.0.0.1:3010`) using Server-Sent Events.
+- [Node.js (>=18.0.0)](https://nodejs.org/)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- **NCBI API Key** (recommended for higher rate limits) - [Get one here](https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/)
 
-## ⚙️ Configuration
+### Install via npm (recommended)
 
-### Server Configuration (Environment Variables)
+```bash
+npm install @cyanheads/pubmed-mcp-server
+```
 
-Configure the PubMed MCP server's behavior using environment variables (typically in a `.env` file).
+### Alternatively Install from Source
 
-| Variable                | Description                                                                                            | Default                                  |
-| :---------------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------- |
-| `MCP_TRANSPORT_TYPE`    | Server transport: `stdio` or `http`.                                                                   | `stdio`                                  |
-| `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                               | `3010`                                   |
-| `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                       | `127.0.0.1`                              |
-| `MCP_ALLOWED_ORIGINS`   | Comma-separated allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).                               | (none)                                   |
-| `MCP_LOG_LEVEL`         | Server logging level (`debug`, `info`, `warning`, `error`, etc.).                                      | `debug`                                  |
-| `LOGS_DIR`              | Directory for log files.                                                                               | `logs/` (in project root)                |
-| `NODE_ENV`              | Runtime environment (`development`, `production`).                                                     | `development`                            |
-| `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Secret key (min 32 chars) for signing/verifying auth tokens (JWT).    | (none - **MUST be set in production**)   |
-| `NCBI_API_KEY`          | **Optional, but highly recommended.** Your NCBI API Key for higher rate limits (10/sec vs 3/sec).      | (none)                                   |
-| `NCBI_ADMIN_EMAIL`      | **Optional, but recommended if using an API key.** Your email for NCBI contact.                        | (none)                                   |
-| `NCBI_TOOL_IDENTIFIER`  | Optional. Tool identifier sent to NCBI.                                                                | `@cyanheads/pubmed-mcp-server/<version>` |
-| `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests. Dynamically set (e.g., 100ms with API key, 334ms without). | (see `src/config/index.ts`)              |
-| `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                                    | `3`                                      |
+1. Clone the repository:
 
-**Note on HTTP Port Retries:** If the `MCP_HTTP_PORT` is busy, the server automatically tries the next port (up to 15 times).
+   ```bash
+   git clone https://github.com/cyanheads/pubmed-mcp-server.git
+   cd pubmed-mcp-server
+   ```
 
-**Security Note for HTTP Transport:** When using `MCP_TRANSPORT_TYPE=http`, authentication is **mandatory** as per the MCP specification. This server includes JWT-based authentication middleware. You **MUST** set a strong, unique `MCP_AUTH_SECRET_KEY` in your production environment.
+2. Install dependencies:
 
-For a **comprehensive list of all available environment variables**, their descriptions, and default values, please review the configuration loader at `src/config/index.ts`.
+   ```bash
+   npm install
+   ```
 
-## 🏗️ Project Structure Overview
+3. Build the project:
+   ```bash
+   npm run build
+   *or npm run rebuild*
+   ```
 
-The `src/` directory contains the core logic:
+## Configuration
 
-- `config/`: Environment variable loading and package information.
-- `mcp-server/`: The heart of the PubMed MCP server.
-  - `server.ts`: Initializes the server instance and registers all tools and resources.
-  - `resources/`: Implementations for MCP resources (e.g., server status, PubMed statistics).
-  - `tools/`: Implementations for MCP tools (like `searchPubMedArticles`, `fetchPubMedContent`, `getPubMedArticleConnections`).
-  - `transports/`: Handles `stdio` and `http` (SSE) communication, including authentication for HTTP.
-- `services/`: Integrations with external services.
-  - `NCBI/ncbiService.ts`: Manages all interactions with NCBI E-utilities, including API calls, rate limiting, and response parsing.
-  - `llm-providers/`: (Optional) For integrating LLM capabilities directly within the server.
-- `types-global/`: Shared TypeScript definitions, especially for errors and MCP types.
-- `utils/`: A comprehensive suite of reusable utilities for logging, error handling, security, parsing, metrics, and more.
+### Environment Variables
 
-For a detailed file tree, run: `npm run tree` or see [Directory Tree](./docs/tree.md).
+Configure the server using environment variables. These environmental variables are set within your MCP client config/settings (e.g. `claude_desktop_config.json` for Claude Desktop)
 
-## 🧩 Extending with More PubMed Capabilities
+| Variable                | Description                                                                              | Default                                  |
+| ----------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `MCP_TRANSPORT_TYPE`    | Transport mechanism: `stdio` or `http`.                                                  | `stdio`                                  |
+| `MCP_HTTP_PORT`         | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                 | `3010`                                   |
+| `MCP_HTTP_HOST`         | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                         | `127.0.0.1`                              |
+| `MCP_ALLOWED_ORIGINS`   | Comma-separated list of allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).         | (none)                                   |
+| `MCP_LOG_LEVEL`         | Logging level (`debug`, `info`, `notice`, `warning`, `error`, `crit`, `alert`, `emerg`). | `debug`                                  |
+| `MCP_AUTH_SECRET_KEY`   | **Required for HTTP transport.** Minimum 32-character secret key for JWT authentication. | (none)                                   |
+| `NCBI_API_KEY`          | **Recommended.** Your NCBI API Key for higher rate limits and reliable access.           | (none)                                   |
+| `NCBI_TOOL_IDENTIFIER`  | Tool identifier for NCBI E-utility requests.                                             | `@cyanheads/pubmed-mcp-server/<version>` |
+| `NCBI_ADMIN_EMAIL`      | **Required.** Administrative contact email for NCBI E-utility requests.                  | (none)                                   |
+| `NCBI_REQUEST_DELAY_MS` | Milliseconds to wait between NCBI requests.                                              | `100` (with API key), `334` (without)    |
+| `NCBI_MAX_RETRIES`      | Maximum number of retries for failed NCBI requests.                                      | `3`                                      |
+| `LOGS_DIR`              | Directory for log file storage.                                                          | `logs/`                                  |
 
-Adding new tools or resources is straightforward:
+### MCP Client Settings
 
-1.  **Directory Setup**: Create a new directory under `src/mcp-server/tools/yourNewTool/` or `src/mcp-server/resources/yourNewResource/`.
-2.  **Implement Core Logic (`logic.ts`)**:
-    - Define Zod schemas for input validation.
-    - Write the function that interacts with `src/services/NCBI/ncbiService.ts` (e.g., `ncbiService.eLink(...)`).
-    - Parse the NCBI response and format it according to MCP specifications (`CallToolResult` or `ReadResourceResult`).
-3.  **Register the Capability (`registration.ts`)**:
-    - For tools: `server.tool(name, description, zodSchemaShape, handlerFunction)`
-    - For resources: `server.resource(registrationName, template, metadata, handlerFunction)`
-    - Always wrap your logic in `ErrorHandler.tryCatch` for robust error management.
-4.  **Export and Integrate**: Export the registration function from your new directory's `index.ts` and call it within `src/mcp-server/server.ts`.
+Add to your MCP client settings (e.g., `cline_mcp_settings.json`):
 
-## 🌍 Learn More
+```json
+{
+  "mcpServers": {
+    "pubmed-mcp-server": {
+      "command": "node",
+      "args": ["/path/to/your/pubmed-mcp-server/dist/index.js"],
+      "env": {
+        "NCBI_API_KEY": "your_ncbi_api_key_here",
+        "NCBI_ADMIN_EMAIL": "your.email@domain.com"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
+```
 
-- **[Model Context Protocol Official Site](https://modelcontextprotocol.io/)**
-- **[MCP Specification (2025-03-26)](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/specification/2025-03-26/changelog.mdx)**
-- **[TypeScript SDK for MCP](https://github.com/modelcontextprotocol/typescript-sdk)**
-- **[NCBI E-utilities Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25501/)**
+**Note**: You can see [mcp.json](mcp.json) for an example MCP client configuration file that includes the PubMed MCP Server.
 
-## 📜 License
+## Project Structure
 
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+The codebase follows a modular structure within the `src/` directory:
+
+```
+src/
+├── index.ts              # Entry point: Initializes and starts the server
+├── config/               # Configuration loading (env vars, package info)
+│   └── index.ts
+├── mcp-server/           # Core MCP server logic and capability registration
+│   ├── server.ts         # Server setup, capability registration
+│   ├── transports/       # Transport handling (stdio, http)
+│   ├── resources/        # MCP Resource implementations
+│   └── tools/            # MCP Tool implementations (subdirs per tool)
+├── services/             # External service integrations
+│   ├── NCBI/            # NCBI E-utilities API client and parsing
+│   └── llm-providers/   # LLM provider integrations (optional)
+├── types-global/         # Shared TypeScript type definitions
+└── utils/                # Common utility functions (logger, error handler, etc.)
+```
+
+For a detailed file tree, run `npm run tree` or see [docs/tree.md](docs/tree.md).
+
+## Tools
+
+The PubMed MCP Server provides a comprehensive suite of tools for biomedical literature research, callable via the Model Context Protocol.
+
+| Tool Name                        | Description                                                            | Key Arguments                                                                                             |
+| :------------------------------- | :--------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| `search_pubmed_articles`         | Searches PubMed for articles using queries, filters, and date ranges.  | `queryTerm`, `maxResults?`, `sortBy?`, `dateRange?`, `filterByPublicationTypes?`, `fetchBriefSummaries?`  |
+| `fetch_pubmed_content`           | Fetches detailed article information using PMIDs or search history.    | `pmids?`, `queryKey?`, `webEnv?`, `detailLevel?`, `includeMeshTerms?`, `includeGrantInfo?`                |
+| `get_pubmed_article_connections` | Finds related articles, citations, and references for a given PMID.    | `sourcePmid`, `relationshipType?`, `maxRelatedResults?`, `citationStyles?`                                |
+| `pubmed_research_agent`          | Generates structured research plans with literature search strategies. | `project_title_suggestion`, `primary_research_goal`, `research_keywords`, `organism_focus?`, `p1_*`, etc. |
+| `generate_pubmed_chart`          | Creates customizable SVG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `colorField?`, `seriesField?`, `sizeField?`      |
+
+_Note: All tools support comprehensive error handling and return structured JSON responses._
+
+## Examples
+
+Comprehensive usage examples are available in the [`examples/`](examples/) directory:
+
+- [Search PubMed Articles](examples/search_pubmed_articles_example.md)
+- [Fetch Article Content](examples/fetch_pubmed_content_example.md)
+- [Article Connections](examples/get_pubmed_article_connections_1.md)
+- [Research Planning](examples/pubmed_research_agent_example.md)
+- [Chart Generation](examples/) - Various SVG chart examples
+
+## Development
+
+### Build and Test
+
+```bash
+# Build the project (compile TS to JS in dist/ and make executable)
+npm run build
+
+# Test the server locally using the MCP inspector tool (stdio transport)
+npm run inspector
+
+# Test the server locally using the MCP inspector tool (http transport)
+npm run inspector:http
+
+# Clean build artifacts
+npm run clean
+
+# Generate a file tree representation for documentation
+npm run tree
+
+# Clean build artifacts and then rebuild the project
+npm run rebuild
+
+# Format code with Prettier
+npm run format
+
+# Start the server using stdio (default)
+npm start
+# Or explicitly:
+npm run start:stdio
+
+# Start the server using HTTP transport
+npm run start:http
+```
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
-  Empowering AI with PubMed | Built on the <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>
+Built with the <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>
 </div>
