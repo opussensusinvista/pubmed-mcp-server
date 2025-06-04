@@ -23,7 +23,7 @@ This server equips your AI with specialized tools to interact with PubMed:
 | [`fetch_pubmed_content`](./src/mcp-server/tools/fetchPubMedContent/)                    | Retrieves detailed information for PubMed articles. Can use a list of PMIDs or ESearch history (queryKey/webEnv) with pagination. (See [Example](./examples/fetch_pubmed_content_example.md))                                                  | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Supports direct PMID list or `queryKey`/`webEnv` from ESearch history.<br/>- Supports `retstart`/`retmax` for pagination with history.<br/>- Uses NCBI EFetch. |
 | [`get_pubmed_article_connections`](./src/mcp-server/tools/getPubMedArticleConnections/) | Finds related articles (cited by, similar, references) or formats citations for a PMID. (See [Ex.1](./examples/get_pubmed_article_connections_1.md), [Ex.2](./examples/get_pubmed_article_connections_2.md))                                   | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results.                                                                                                                                                                                                                                                          |
 | [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                  | Generates a standardized JSON research plan outline from component details. (See [Example](./examples/pubmed_research_agent_example.md))                                                                                                       | - Accepts granular inputs for all research phases.<br/>- Optionally embeds instructive prompts for agent execution.<br/>- Structures rough ideas into a formal, machine-readable plan for further processing.                                                                                                                                                                                        |
-| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (SVG) from given input data. (See [Bar](./examples/generate_pubmed_chart_example_bar.svg), [Line](./examples/generate_pubmed_chart_example_line.svg), [Scatter](./examples/generate_pubmed_chart_example_scatter.svg)) | - Supports 'bar', 'line', and 'scatter' chart types.<br/>- Takes data values and field specifications for axes and encoding.<br/>- Constructs a Vega-Lite specification internally and renders it as an SVG.                                                                                                                                                                                         |
+| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data. (See [Bar](./examples/generate_pubmed_chart_example_bar.svg), [Line](./examples/generate_pubmed_chart_example_line.svg), [Scatter](./examples/generate_pubmed_chart_example_scatter.svg)) | - Supports 'bar', 'line', and 'scatter' chart types.<br/>- Takes data values and field specifications for axes and encoding.<br/>- Constructs a Vega-Lite specification internally and renders it as a PNG.                                                                                                                                                                                          |
 
 ---
 
@@ -72,7 +72,7 @@ Leverages the robust utilities provided by the `mcp-ts-template`:
 - **Full Article Metadata**: Retrieve complete publication data including abstracts, authors, affiliations, journal information, DOIs, and citation data.
 - **Citation Network Analysis**: Find related articles, citing articles, and reference lists through ELink integration.
 - **Research Planning**: Generate structured research plans with automated literature search strategies.
-- **Data Visualization**: Create SVG charts from publication metadata (bar charts, line graphs, scatter plots).
+- **Data Visualization**: Create PNG charts from publication metadata (bar charts, line graphs, scatter plots).
 - **Multiple Output Formats**: Support for JSON, MEDLINE text, full XML, and formatted citations (RIS, BibTeX, APA, MLA).
 - **Batch Processing**: Efficient handling of multiple PMIDs with pagination support.
 
@@ -184,7 +184,7 @@ The PubMed MCP Server provides a comprehensive suite of tools for biomedical lit
 | `fetch_pubmed_content`           | Fetches detailed article information using PMIDs or search history.    | `pmids?`, `queryKey?`, `webEnv?`, `detailLevel?`, `includeMeshTerms?`, `includeGrantInfo?`                |
 | `get_pubmed_article_connections` | Finds related articles, citations, and references for a given PMID.    | `sourcePmid`, `relationshipType?`, `maxRelatedResults?`, `citationStyles?`                                |
 | `pubmed_research_agent`          | Generates structured research plans with literature search strategies. | `project_title_suggestion`, `primary_research_goal`, `research_keywords`, `organism_focus?`, `p1_*`, etc. |
-| `generate_pubmed_chart`          | Creates customizable SVG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `colorField?`, `seriesField?`, `sizeField?`      |
+| `generate_pubmed_chart`          | Creates customizable PNG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `colorField?`, `seriesField?`, `sizeField?`      |
 
 _Note: All tools support comprehensive error handling and return structured JSON responses._
 
@@ -196,7 +196,7 @@ Comprehensive usage examples are available in the [`examples/`](examples/) direc
 - [Fetch Article Content](examples/fetch_pubmed_content_example.md)
 - [Article Connections](examples/get_pubmed_article_connections_1.md)
 - [Research Planning](examples/pubmed_research_agent_example.md)
-- [Chart Generation](examples/) - Various SVG chart examples
+- [Chart Generation](examples/) - Generated chart examples (bar, line, scatter) are available in the `examples/` directory.
 
 ## Development
 
