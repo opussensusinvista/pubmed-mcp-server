@@ -52,10 +52,10 @@ export const GeneratePubMedChartInputSchema = z.object({
       "Required. An array of data objects used to plot the chart. Each object represents a data point or bar, structured as key-value pairs (e.g., [{ 'year': '2020', 'articles': 150 }, { 'year': '2021', 'articles': 180 }]). Must contain at least one data object.",
     ),
   outputFormat: z
-    .enum(["svg"])
-    .default("svg")
+    .enum(["png"]) // Changed from svg to png
+    .default("png") // Changed default to png
     .describe(
-      "Specifies the output format for the chart. Currently, only 'svg' (Scalable Vector Graphics) is supported and is the default.",
+      "Specifies the output format for the chart. Currently, only 'png' (Portable Network Graphics) is supported and is the default.",
     ),
 
   xField: z
@@ -145,10 +145,10 @@ export async function generatePubMedChartLogic(
     operationContext,
   );
 
-  if (input.outputFormat !== "svg") {
+  if (input.outputFormat !== "png") { // Changed from svg to png
     const unsupportedFormatError = new McpError(
       BaseErrorCode.VALIDATION_ERROR,
-      `Unsupported output format: ${input.outputFormat}. Currently, only 'svg' is supported.`,
+      `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`, // Changed message
       { requestedFormat: input.outputFormat },
     );
     logger.warning(unsupportedFormatError.message, operationContext);
@@ -273,16 +273,27 @@ export async function generatePubMedChartLogic(
 
     const compiledVegaSpec = vegaLite.compile(vegaLiteSpec).spec;
     const view = new vega.View(vega.parse(compiledVegaSpec), {
-      renderer: "none",
+      renderer: "canvas", // Explicitly set renderer to 'canvas'
     });
-    const svgString = await view.toSVG();
+    // const svgString = await view.toSVG(); // Old SVG method
 
-    const imageBuffer = Buffer.from(svgString, "utf-8");
+    // New PNG method
+    // Initialize the view to ensure canvas is ready
+    await view.runAsync(); // Initialize and run the view
+    const canvas = await view.toCanvas(); // Render to canvas
+
+    // Cast to 'any' to access toBuffer, assuming it's a Node Canvas instance at runtime
+    const imageBuffer = await (canvas as any).toBuffer("image/png"); // Get PNG buffer from canvas
     const base64Data = imageBuffer.toString("base64");
-    const dataUriSvg = `data:image/svg+xml;base64,${base64Data}`;
 
     return {
-      content: [{ type: "text" as const, text: dataUriSvg }],
+      content: [
+        {
+          type: "image" as const,
+          data: base64Data,
+          mimeType: "image/png" as const, // Changed MIME type to image/png
+        },
+      ],
       isError: false,
     };
   } catch (error: any) {

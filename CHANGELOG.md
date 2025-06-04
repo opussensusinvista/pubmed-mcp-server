@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.16] - 2025-06-04
+
+### Changed
+- **Tool `generatePubMedChart`**:
+  - Modified the tool to output PNG images by default instead of SVG to improve compatibility with various MCP clients.
+  - Updated the `outputFormat` in the Zod schema (`src/mcp-server/tools/generatePubMedChart/logic.ts`) to default to "png" and reflect PNG as the primary supported format.
+  - Changed the `mimeType` in the MCP response to "image/png".
+  - Updated Vega view initialization to explicitly use `renderer: "canvas"` and call `await view.runAsync()` before `view.toCanvas()` for robust server-side rendering.
+- **Dependencies**:
+  - Added `canvas` npm package (`^2.11.2` or similar, check `package.json`) as a direct dependency to support server-side PNG generation.
+  - Updated various other dependencies (see `package-lock.json` for details).
+- **Build**:
+  - Bumped project version to `1.0.16` in `package.json` and `README.md`.
+
 ## [1.0.15] - 2025-05-30
 
 ### Changed
