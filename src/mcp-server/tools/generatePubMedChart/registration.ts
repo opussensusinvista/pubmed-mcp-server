@@ -23,11 +23,11 @@ export function registerGeneratePubMedChartTool(server: McpServer): void {
   try {
     server.tool(
       "generate_pubmed_chart",
-      "Generates a customizable chart (SVG) from structured data. " +
+      "Generates a customizable chart (PNG) from structured data. " +
         "Supports 'bar', 'line', and 'scatter' plots. " +
         "Requires data values and field mappings for axes. " +
         "Optional parameters allow for titles, dimensions, and color/size/series encoding. " +
-        "Internally uses Vega-Lite to produce an SVG image.",
+        "Internally uses Vega-Lite and a canvas renderer to produce a Base64-encoded PNG image.",
       GeneratePubMedChartInputSchema.shape,
       async (
         validatedInput: GeneratePubMedChartInput,

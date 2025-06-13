@@ -209,7 +209,7 @@ export const PubMedResearchAgentInputSchema = z.object({
     ),
 
   // Meta-parameter from previous iterations, still useful
-  include_detailed_prompts_for_agent: z // Renamed from include_edge_cases_and_challenges_in_plan
+  include_detailed_prompts_for_agent: z
     .boolean()
     .optional()
     .default(false) // Default to false, meaning the tool primarily structures the detailed input.

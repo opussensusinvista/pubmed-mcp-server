@@ -56,7 +56,7 @@ function allPropertiesUndefined(obj: Record<string, any>): boolean {
   return Object.values(obj).every((value) => value === undefined);
 }
 
-// Helper function to recursively remove keys with empty object values
+// Helper function to recursively remove keys with empty object or empty array values
 function removeEmptyObjectsRecursively(obj: any): any {
   // Base cases for recursion
   if (typeof obj !== "object" || obj === null) {
@@ -64,19 +64,22 @@ function removeEmptyObjectsRecursively(obj: any): any {
   }
 
   if (Array.isArray(obj)) {
-    // If it's an array, recurse on each element
-    // And filter out any elements that become empty objects after recursion
-    return obj.map(removeEmptyObjectsRecursively).filter((item) => {
-      if (
-        typeof item === "object" &&
-        item !== null &&
-        !Array.isArray(item) &&
-        Object.keys(item).length === 0
-      ) {
-        return false; // Filter out empty objects from arrays
-      }
-      return true;
-    });
+    // If it's an array, recurse on each element and filter out empty objects/arrays
+    const newArr = obj
+      .map(removeEmptyObjectsRecursively)
+      .filter((item) => {
+        if (item === null || item === undefined) return false;
+        if (Array.isArray(item) && item.length === 0) return false; // Filter out empty arrays
+        if (
+          typeof item === "object" &&
+          !Array.isArray(item) &&
+          Object.keys(item).length === 0
+        ) {
+          return false; // Filter out empty objects
+        }
+        return true;
+      });
+    return newArr;
   }
 
   // If it's an object, create a new object with non-empty properties
@@ -85,18 +88,26 @@ function removeEmptyObjectsRecursively(obj: any): any {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = removeEmptyObjectsRecursively(obj[key]);
 
-      // Check if the recursed value is an empty object
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value) &&
-        Object.keys(value).length === 0
-      ) {
-        // It's an empty object, so we don't add this key-value pair to newObj
+      // Skip null or undefined values
+      if (value === null || value === undefined) {
         continue;
       }
 
-      // If value is not an empty object (or not an object at all), add it
+      // Skip empty arrays
+      if (Array.isArray(value) && value.length === 0) {
+        continue;
+      }
+
+      // Skip empty objects
+      if (
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        Object.keys(value).length === 0
+      ) {
+        continue;
+      }
+
+      // If value is not empty, add it
       newObj[key] = value;
     }
   }
