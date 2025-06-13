@@ -110,32 +110,15 @@ const EnvSchema = z.object({
       "MCP_AUTH_SECRET_KEY must be at least 32 characters long for security reasons.",
     )
     .optional(),
+  /** Authentication mode ('jwt' or 'oauth'). Default: 'jwt'. */
+  MCP_AUTH_MODE: z.enum(["jwt", "oauth"]).default("jwt"),
 
-  /** Optional. Application URL for OpenRouter integration. */
-  OPENROUTER_APP_URL: z
-    .string()
-    .url("OPENROUTER_APP_URL must be a valid URL (e.g., http://localhost:3000)")
-    .optional(),
-  /** Optional. Application name for OpenRouter. Defaults to MCP_SERVER_NAME or package name. */
-  OPENROUTER_APP_NAME: z.string().optional(),
-  /** Optional. API key for OpenRouter services. */
-  OPENROUTER_API_KEY: z.string().optional(),
-  /** Default LLM model. Default: "google/gemini-2.5-flash-preview:thinking". */
-  LLM_DEFAULT_MODEL: z
-    .string()
-    .default("google/gemini-2.5-flash-preview-05-20"),
-  /** Optional. Default LLM temperature (0.0-2.0). */
-  LLM_DEFAULT_TEMPERATURE: z.coerce.number().min(0).max(2).optional(),
-  /** Optional. Default LLM top_p (0.0-1.0). */
-  LLM_DEFAULT_TOP_P: z.coerce.number().min(0).max(1).optional(),
-  /** Optional. Default LLM max tokens (positive integer). */
-  LLM_DEFAULT_MAX_TOKENS: z.coerce.number().int().positive().optional(),
-  /** Optional. Default LLM top_k (non-negative integer). */
-  LLM_DEFAULT_TOP_K: z.coerce.number().int().nonnegative().optional(),
-  /** Optional. Default LLM min_p (0.0-1.0). */
-  LLM_DEFAULT_MIN_P: z.coerce.number().min(0).max(1).optional(),
-  /** Optional. API key for Google Gemini services. */
-  GEMINI_API_KEY: z.string().optional(),
+  /** OAuth: The expected issuer of the JWT. */
+  OAUTH_ISSUER_URL: z.string().url().optional(),
+  /** OAuth: The expected audience of the JWT. */
+  OAUTH_AUDIENCE: z.string().optional(),
+  /** OAuth: The URI of the JWKS endpoint. */
+  OAUTH_JWKS_URI: z.string().url().optional(),
 
   /** Optional. OAuth provider authorization endpoint URL. */
   OAUTH_PROXY_AUTHORIZATION_URL: z
@@ -304,27 +287,14 @@ export const config = {
     .filter(Boolean),
   /** Auth secret key (JWTs, http transport). From `MCP_AUTH_SECRET_KEY`. CRITICAL. */
   mcpAuthSecretKey: env.MCP_AUTH_SECRET_KEY,
-
-  /** OpenRouter App URL. From `OPENROUTER_APP_URL`. Default: "http://localhost:3000". */
-  openrouterAppUrl: env.OPENROUTER_APP_URL || "http://localhost:3000",
-  /** OpenRouter App Name. From `OPENROUTER_APP_NAME`. Defaults to `mcpServerName`. */
-  openrouterAppName: env.OPENROUTER_APP_NAME || pkg.name || "MCP TS App",
-  /** OpenRouter API Key. From `OPENROUTER_API_KEY`. */
-  openrouterApiKey: env.OPENROUTER_API_KEY,
-  /** Default LLM model. From `LLM_DEFAULT_MODEL`. */
-  llmDefaultModel: env.LLM_DEFAULT_MODEL,
-  /** Default LLM temperature. From `LLM_DEFAULT_TEMPERATURE`. */
-  llmDefaultTemperature: env.LLM_DEFAULT_TEMPERATURE,
-  /** Default LLM top_p. From `LLM_DEFAULT_TOP_P`. */
-  llmDefaultTopP: env.LLM_DEFAULT_TOP_P,
-  /** Default LLM max tokens. From `LLM_DEFAULT_MAX_TOKENS`. */
-  llmDefaultMaxTokens: env.LLM_DEFAULT_MAX_TOKENS,
-  /** Default LLM top_k. From `LLM_DEFAULT_TOP_K`. */
-  llmDefaultTopK: env.LLM_DEFAULT_TOP_K,
-  /** Default LLM min_p. From `LLM_DEFAULT_MIN_P`. */
-  llmDefaultMinP: env.LLM_DEFAULT_MIN_P,
-  /** Gemini API Key. From `GEMINI_API_KEY`. */
-  geminiApiKey: env.GEMINI_API_KEY,
+  /** Auth mode ('jwt' or 'oauth'). From `MCP_AUTH_MODE`. */
+  mcpAuthMode: env.MCP_AUTH_MODE,
+  /** OAuth Issuer URL. From `OAUTH_ISSUER_URL`. */
+  oauthIssuerUrl: env.OAUTH_ISSUER_URL,
+  /** OAuth Audience. From `OAUTH_AUDIENCE`. */
+  oauthAudience: env.OAUTH_AUDIENCE,
+  /** OAuth JWKS URI. From `OAUTH_JWKS_URI`. */
+  oauthJwksUri: env.OAUTH_JWKS_URI,
 
   // NCBI Configuration
   /** NCBI API Key. From `NCBI_API_KEY`. */

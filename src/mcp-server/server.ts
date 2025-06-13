@@ -14,15 +14,14 @@
  * @module src/mcp-server/server
  */
 
+import { ServerType } from "@hono/node-server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { config } from "../config/index.js";
+import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
-// import { registerEchoResource } from "./resources/echoResource/index.js"; // To be removed after resource implementations.
 import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
-// Removed: import { registerFetchImageTestTool } from "./tools/imageTest/index.js";
-import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js"; // Added import
+import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js";
 import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
-import { registerPubMedResearchAgentTool } from "./tools/pubmedResearchAgent/index.js"; // Added import
+import { registerPubMedResearchAgentTool } from "./tools/pubmedResearchAgent/index.js";
 import { registerSearchPubMedArticlesTool } from "./tools/searchPubMedArticles/index.js";
 import { startHttpTransport } from "./transports/httpTransport.js";
 import { connectStdioTransport } from "./transports/stdioTransport.js";
@@ -49,6 +48,12 @@ async function createMcpServerInstance(): Promise<McpServer> {
     operation: "createMcpServerInstance",
   });
   logger.info("Initializing MCP server instance", context);
+
+  requestContextService.configure({
+    appName: config.mcpServerName,
+    appVersion: config.mcpServerVersion,
+    environment,
+  });
 
   logger.debug("Instantiating McpServer with capabilities", {
     ...context,
@@ -77,10 +82,9 @@ async function createMcpServerInstance(): Promise<McpServer> {
     logger.debug("Registering resources and tools...", context);
     // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
     await registerFetchPubMedContentTool(server);
-    // Removed: await registerFetchImageTestTool(server);
-    await registerGeneratePubMedChartTool(server); // Added new tool registration
+    await registerGeneratePubMedChartTool(server);
     await registerGetPubMedArticleConnectionsTool(server);
-    await registerPubMedResearchAgentTool(server); // Added new tool registration
+    await registerPubMedResearchAgentTool(server);
     await registerSearchPubMedArticlesTool(server);
     // Add other tool/resource registrations here
     logger.info("Resources and tools registered successfully", context);
@@ -104,11 +108,11 @@ async function createMcpServerInstance(): Promise<McpServer> {
  * - Transport Connection: Calls dedicated functions for chosen transport.
  * - Server Instance Lifecycle: Single instance for 'stdio', per-session for 'http'.
  *
- * @returns Resolves with `McpServer` for 'stdio', or `void` for 'http'.
+ * @returns Resolves with `McpServer` for 'stdio', `http.Server` for 'http', or `void` if http transport manages its own lifecycle without returning a server.
  * @throws {Error} If transport type is unsupported or setup fails.
  * @private
  */
-async function startTransport(): Promise<McpServer | void> {
+async function startTransport(): Promise<McpServer | ServerType | void> {
   const transportType = config.mcpTransportType;
   const context = requestContextService.createRequestContext({
     operation: "startTransport",
@@ -118,9 +122,12 @@ async function startTransport(): Promise<McpServer | void> {
 
   if (transportType === "http") {
     logger.debug("Delegating to startHttpTransport...", context);
-    // For HTTP, startHttpTransport manages its own lifecycle and server instances per session.
-    await startHttpTransport(createMcpServerInstance, context);
-    return; // HTTP server runs indefinitely, no single server instance returned here.
+    // For HTTP, startHttpTransport now returns the http.Server instance.
+    const httpServerInstance = await startHttpTransport(
+      createMcpServerInstance,
+      context,
+    );
+    return httpServerInstance;
   }
 
   if (transportType === "stdio") {
@@ -131,7 +138,7 @@ async function startTransport(): Promise<McpServer | void> {
     const server = await createMcpServerInstance();
     logger.debug("Delegating to connectStdioTransport...", context);
     await connectStdioTransport(server, context);
-    return server; // Return the single server instance for stdio.
+    return server; // Return the single McpServer instance for stdio.
   }
 
   // Should not be reached if config validation is effective.
@@ -152,10 +159,12 @@ async function startTransport(): Promise<McpServer | void> {
  * - Manages server startup, leading to a server ready for MCP messages.
  * - Handles critical startup failures, ensuring appropriate process exit.
  *
- * @returns For 'stdio', resolves with `McpServer`. For 'http', runs indefinitely.
+ * @returns For 'stdio', resolves with `McpServer`. For 'http', resolves with `http.Server`.
  *   Rejects on critical failure, leading to process exit.
  */
-export async function initializeAndStartServer(): Promise<void | McpServer> {
+export async function initializeAndStartServer(): Promise<
+  void | McpServer | ServerType
+> {
   const context = requestContextService.createRequestContext({
     operation: "initializeAndStartServer",
   });

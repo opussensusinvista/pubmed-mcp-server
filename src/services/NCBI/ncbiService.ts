@@ -27,13 +27,6 @@ export class NcbiService {
     this.queueManager = new NcbiRequestQueueManager();
     this.apiClient = new NcbiCoreApiClient();
     this.responseHandler = new NcbiResponseHandler();
-
-    logger.debug(
-      "NcbiService initialized with new modular architecture",
-      requestContextService.createRequestContext({
-        service: "NcbiService",
-      }),
-    );
   }
 
   private async performNcbiRequest<T = any>(
@@ -111,4 +104,18 @@ export class NcbiService {
   }
 }
 
-export const ncbiService = new NcbiService();
+let ncbiServiceInstance: NcbiService;
+
+export function getNcbiService(): NcbiService {
+  if (!ncbiServiceInstance) {
+    ncbiServiceInstance = new NcbiService();
+    logger.debug(
+      "NcbiService lazily initialized.",
+      requestContextService.createRequestContext({
+        service: "NcbiService",
+        operation: "getNcbiServiceInstance",
+      }),
+    );
+  }
+  return ncbiServiceInstance;
+}
