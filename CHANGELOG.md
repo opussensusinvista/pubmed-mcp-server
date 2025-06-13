@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2025-06-13
+
+### Changed
+
+- **Logging**:
+  - Refactored the `Logger` in `src/utils/internal/logger.ts` to support configurable output modes. It can now log to either standard file outputs (`error.log`, `combined.log`, etc.) or directly to `stdout` as structured JSON. This is controlled by the new `LOG_OUTPUT_MODE` environment variable. (Fixes [#3](https://github.com/cyanheads/pubmed-mcp-server/issues/3))
+- **Configuration**:
+  - Added `LOG_OUTPUT_MODE` to the environment schema in `src/config/index.ts`. Valid values are "file" (default) or "stdout".
+- **Documentation**:
+  - Updated `.clinerules` and `CLAUDE.md` to include the full source code of the refactored logger, providing better context for development.
+  - Updated the directory tree in `.clinerules` and `CLAUDE.md`.
+- **Build**:
+  - Bumped project version to `1.1.2` in `package.json`.
+  - Removed the unused `start:client-cli` script from `package.json`.
+
 ## [1.1.1] - 2025-06-13
 
 ### Changed

@@ -101,12 +101,8 @@ export type McpNotificationSender = (
   loggerName?: string,
 ) => void;
 
-// The logsPath from config is already resolved and validated by src/config/index.ts
-const resolvedLogsDir = config.logsPath;
-const isLogsDirSafe = !!resolvedLogsDir; // If logsPath is set, it's considered safe by config logic.
-
 /**
- * Creates the Winston console log format.
+ * Creates the Winston console log format for interactive TTY sessions.
  * @returns The Winston log format for console output.
  * @private
  */
@@ -181,62 +177,61 @@ export class Logger {
       return;
     }
 
-    // Set initialized to true at the beginning of the initialization process.
     this.initialized = true;
-
     this.currentMcpLevel = level;
     this.currentWinstonLevel = mcpToWinstonLevel[level];
 
-    // The logs directory (config.logsPath / resolvedLogsDir) is expected to be created and validated
-    // by the configuration module (src/config/index.ts) before logger initialization.
-    // If isLogsDirSafe is true, we assume resolvedLogsDir exists and is usable.
-    // No redundant directory creation logic here.
-
-    const fileFormat = winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.errors({ stack: true }),
-      winston.format.json(),
-    );
-
     const transports: TransportStream[] = [];
-    const fileTransportOptions = {
-      format: fileFormat,
-      maxsize: this.LOG_FILE_MAX_SIZE,
-      maxFiles: this.LOG_MAX_FILES,
-      tailable: true,
-    };
 
-    if (isLogsDirSafe) {
+    if (config.logOutputMode === "stdout") {
       transports.push(
-        new winston.transports.File({
-          filename: path.join(resolvedLogsDir, "error.log"),
-          level: "error",
-          ...fileTransportOptions,
-        }),
-        new winston.transports.File({
-          filename: path.join(resolvedLogsDir, "warn.log"),
-          level: "warn",
-          ...fileTransportOptions,
-        }),
-        new winston.transports.File({
-          filename: path.join(resolvedLogsDir, "info.log"),
-          level: "info",
-          ...fileTransportOptions,
-        }),
-        new winston.transports.File({
-          filename: path.join(resolvedLogsDir, "debug.log"),
-          level: "debug",
-          ...fileTransportOptions,
-        }),
-        new winston.transports.File({
-          filename: path.join(resolvedLogsDir, "combined.log"),
-          ...fileTransportOptions,
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.errors({ stack: true }),
+            winston.format.json(),
+          ),
         }),
       );
     } else {
-      if (process.stdout.isTTY) {
-        console.warn(
-          "File logging disabled as logsPath is not configured or invalid.",
+      const resolvedLogsDir = config.logsPath;
+      if (resolvedLogsDir) {
+        const fileFormat = winston.format.combine(
+          winston.format.timestamp(),
+          winston.format.errors({ stack: true }),
+          winston.format.json(),
+        );
+        const fileTransportOptions = {
+          format: fileFormat,
+          maxsize: this.LOG_FILE_MAX_SIZE,
+          maxFiles: this.LOG_MAX_FILES,
+          tailable: true,
+        };
+        transports.push(
+          new winston.transports.File({
+            filename: path.join(resolvedLogsDir, "error.log"),
+            level: "error",
+            ...fileTransportOptions,
+          }),
+          new winston.transports.File({
+            filename: path.join(resolvedLogsDir, "warn.log"),
+            level: "warn",
+            ...fileTransportOptions,
+          }),
+          new winston.transports.File({
+            filename: path.join(resolvedLogsDir, "info.log"),
+            level: "info",
+            ...fileTransportOptions,
+          }),
+          new winston.transports.File({
+            filename: path.join(resolvedLogsDir, "debug.log"),
+            level: "debug",
+            ...fileTransportOptions,
+          }),
+          new winston.transports.File({
+            filename: path.join(resolvedLogsDir, "combined.log"),
+            ...fileTransportOptions,
+          }),
         );
       }
     }
@@ -247,7 +242,6 @@ export class Logger {
       exitOnError: false,
     });
 
-    // Configure console transport after Winston logger is created
     const consoleStatus = this._configureConsoleTransport();
 
     const initialContext: RequestContext = {
@@ -255,19 +249,18 @@ export class Logger {
       requestId: "logger-init-deferred",
       timestamp: new Date().toISOString(),
     };
-    // Removed logging of logsDirCreatedMessage as it's no longer set
+
     if (consoleStatus.message) {
       this.info(consoleStatus.message, initialContext);
     }
 
-    this.initialized = true; // Ensure this is set after successful setup
     this.info(
-      `Logger initialized. File logging level: ${this.currentWinstonLevel}. MCP logging level: ${this.currentMcpLevel}. Console logging: ${consoleStatus.enabled ? "enabled" : "disabled"}`,
+      `Logger initialized. Mode: ${config.logOutputMode}. File logging level: ${this.currentWinstonLevel}. MCP logging level: ${this.currentMcpLevel}.`,
       {
         loggerSetup: true,
         requestId: "logger-post-init",
         timestamp: new Date().toISOString(),
-        logsPathUsed: resolvedLogsDir,
+        logsPathUsed: config.logsPath,
       },
     );
   }
@@ -316,7 +309,6 @@ export class Logger {
     this.currentMcpLevel = newLevel;
     this.currentWinstonLevel = mcpToWinstonLevel[newLevel];
     if (this.winstonLogger) {
-      // Ensure winstonLogger is defined
       this.winstonLogger.level = this.currentWinstonLevel;
     }
 
@@ -346,6 +338,13 @@ export class Logger {
     enabled: boolean;
     message: string | null;
   } {
+    if (config.logOutputMode === "stdout") {
+      return {
+        enabled: true,
+        message: "Stdout logging is enabled by configuration.",
+      };
+    }
+
     if (!this.winstonLogger) {
       return {
         enabled: false,
@@ -364,16 +363,18 @@ export class Logger {
       const consoleFormat = createWinstonConsoleFormat();
       this.winstonLogger.add(
         new winston.transports.Console({
-          level: "debug", // Console always logs debug if enabled
+          level: "debug",
           format: consoleFormat,
         }),
       );
-      message = "Console logging enabled (level: debug, stdout is TTY).";
+      message =
+        "Interactive console logging enabled (level: debug, stdout is TTY).";
     } else if (!shouldHaveConsole && consoleTransport) {
       this.winstonLogger.remove(consoleTransport);
-      message = "Console logging disabled (level not debug or stdout not TTY).";
+      message =
+        "Interactive console logging disabled (level not debug or stdout not TTY).";
     } else {
-      message = "Console logging status unchanged.";
+      message = "Interactive console logging status unchanged.";
     }
     return { enabled: shouldHaveConsole, message };
   }
@@ -420,7 +421,7 @@ export class Logger {
   ): void {
     if (!this.ensureInitialized()) return;
     if (mcpLevelSeverity[level] > mcpLevelSeverity[this.currentMcpLevel]) {
-      return; // Do not log if message level is less severe than currentMcpLevel
+      return;
     }
 
     const logData: Record<string, unknown> = { ...context };
@@ -438,7 +439,6 @@ export class Logger {
         mcpDataPayload.context = context;
       if (error) {
         mcpDataPayload.error = { message: error.message };
-        // Include stack trace in debug mode for MCP notifications, truncated for brevity
         if (this.currentMcpLevel === "debug" && error.stack) {
           mcpDataPayload.error.stack = error.stack.substring(
             0,
@@ -459,7 +459,7 @@ export class Logger {
           originalLevel: level,
           originalMessage: msg,
           sendError: errorMessage,
-          mcpPayload: JSON.stringify(mcpDataPayload).substring(0, 500), // Log a preview
+          mcpPayload: JSON.stringify(mcpDataPayload).substring(0, 500),
         };
         this.winstonLogger!.error(
           "Failed to send MCP log notification",

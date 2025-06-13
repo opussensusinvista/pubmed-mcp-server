@@ -65,20 +65,18 @@ function removeEmptyObjectsRecursively(obj: any): any {
 
   if (Array.isArray(obj)) {
     // If it's an array, recurse on each element and filter out empty objects/arrays
-    const newArr = obj
-      .map(removeEmptyObjectsRecursively)
-      .filter((item) => {
-        if (item === null || item === undefined) return false;
-        if (Array.isArray(item) && item.length === 0) return false; // Filter out empty arrays
-        if (
-          typeof item === "object" &&
-          !Array.isArray(item) &&
-          Object.keys(item).length === 0
-        ) {
-          return false; // Filter out empty objects
-        }
-        return true;
-      });
+    const newArr = obj.map(removeEmptyObjectsRecursively).filter((item) => {
+      if (item === null || item === undefined) return false;
+      if (Array.isArray(item) && item.length === 0) return false; // Filter out empty arrays
+      if (
+        typeof item === "object" &&
+        !Array.isArray(item) &&
+        Object.keys(item).length === 0
+      ) {
+        return false; // Filter out empty objects
+      }
+      return true;
+    });
     return newArr;
   }
 

@@ -145,7 +145,8 @@ export async function generatePubMedChartLogic(
     operationContext,
   );
 
-  if (input.outputFormat !== "png") { // Changed from svg to png
+  if (input.outputFormat !== "png") {
+    // Changed from svg to png
     const unsupportedFormatError = new McpError(
       BaseErrorCode.VALIDATION_ERROR,
       `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`, // Changed message

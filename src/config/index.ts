@@ -92,6 +92,8 @@ const EnvSchema = z.object({
   MCP_LOG_LEVEL: z.string().default("debug"),
   /** Directory for log files. Defaults to "logs" in project root. */
   LOGS_DIR: z.string().default(path.join(projectRoot, "logs")),
+  /** Defines the logging output mode. "file" for logs in LOGS_DIR, "stdout" for console logging. */
+  LOG_OUTPUT_MODE: z.enum(["file", "stdout"]).default("file"),
   /** Runtime environment (e.g., "development", "production"). Default: "development". */
   NODE_ENV: z.string().default("development"),
   /** MCP communication transport ("stdio" or "http"). Default: "stdio". */
@@ -248,15 +250,18 @@ const ensureDirectory = (
 // --- End Directory Ensurance Function ---
 
 // --- Logs Directory Handling ---
-const validatedLogsPath = ensureDirectory(env.LOGS_DIR, projectRoot, "logs");
+let validatedLogsPath: string | null = null;
+if (env.LOG_OUTPUT_MODE === "file") {
+  validatedLogsPath = ensureDirectory(env.LOGS_DIR, projectRoot, "logs");
 
-if (!validatedLogsPath) {
-  if (process.stdout.isTTY) {
-    console.error(
-      "FATAL: Logs directory configuration is invalid or could not be created. Please check permissions and path. Exiting.",
-    );
+  if (!validatedLogsPath) {
+    if (process.stdout.isTTY) {
+      console.error(
+        "FATAL: Log mode is 'file' but logs directory is invalid or could not be created. Please check LOGS_DIR, permissions, and path. Exiting.",
+      );
+    }
+    process.exit(1); // Exit if file logging is configured but directory is not usable
   }
-  process.exit(1); // Exit if logs directory is not usable
 }
 // --- End Logs Directory Handling ---
 
@@ -271,7 +276,9 @@ export const config = {
   mcpServerVersion: env.MCP_SERVER_VERSION || pkg.version,
   /** Logging level. From `MCP_LOG_LEVEL` env var. Default: "debug". */
   logLevel: env.MCP_LOG_LEVEL,
-  /** Absolute path to the logs directory. From `LOGS_DIR` env var. */
+  /** Defines the logging output mode ('file' or 'stdout'). From `LOG_OUTPUT_MODE`. */
+  logOutputMode: env.LOG_OUTPUT_MODE,
+  /** Absolute path to the logs directory (if logOutputMode is 'file'). From `LOGS_DIR`. */
   logsPath: validatedLogsPath,
   /** Runtime environment. From `NODE_ENV` env var. Default: "development". */
   environment: env.NODE_ENV,

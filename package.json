@@ -1,6 +1,6 @@
 {
   "name": "@cyanheads/pubmed-mcp-server",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A Model Context Protocol (MCP) server enabling AI agents to intelligently search, retrieve, and analyze biomedical literature from PubMed via NCBI E-utilities. Built on the mcp-ts-template for robust, production-ready performance.",
   "main": "dist/index.js",
   "files": [
@@ -29,8 +29,7 @@
     "tree": "ts-node --esm scripts/tree.ts",
     "fetch-spec": "ts-node --esm scripts/fetch-openapi-spec.ts",
     "format": "prettier --write \"**/*.{ts,js,json,md,html,css}\"",
-    "inspector": "mcp-inspector --config mcp.json --server pubmed-mcp-server",
-    "start:client-cli": "node dist/mcp-client/cli/mcp-client-cli.js"
+    "inspector": "mcp-inspector --config mcp.json --server pubmed-mcp-server"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.4",
