@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2025-06-13
+
+### Changed
+
+- **Tool `generatePubMedChart`**:
+  - Updated the tool's description in `src/mcp-server/tools/generatePubMedChart/registration.ts` to clarify that it generates PNG images via a canvas renderer, not SVG.
+- **Tool `pubmedResearchAgent`**:
+  - Refactored the `removeEmptyObjectsRecursively` helper in `src/mcp-server/tools/pubmedResearchAgent/logic/planOrchestrator.ts` to more robustly clean the research plan by removing both empty objects and empty arrays from the final output.
+- **Build**:
+  - Bumped project version to `1.1.1` in `package.json`.
+
 ## [1.1.0] - 2025-06-13
 
 ### Added
