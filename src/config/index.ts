@@ -83,88 +83,130 @@ try {
  * Provides type safety, validation, defaults, and clear error messages.
  * @private
  */
-const EnvSchema = z.object({
-  /** Optional. The desired name for the MCP server. Defaults to `package.json` name. */
-  MCP_SERVER_NAME: z.string().optional(),
-  /** Optional. The version of the MCP server. Defaults to `package.json` version. */
-  MCP_SERVER_VERSION: z.string().optional(),
-  /** Minimum logging level. See `McpLogLevel` in logger utility. Default: "debug". */
-  MCP_LOG_LEVEL: z.string().default("debug"),
-  /** Directory for log files. Defaults to "logs" in project root. */
-  LOGS_DIR: z.string().default(path.join(projectRoot, "logs")),
-  /** Defines the logging output mode. "file" for logs in LOGS_DIR, "stdout" for console logging. */
-  LOG_OUTPUT_MODE: z.enum(["file", "stdout"]).default("file"),
-  /** Runtime environment (e.g., "development", "production"). Default: "development". */
-  NODE_ENV: z.string().default("development"),
-  /** MCP communication transport ("stdio" or "http"). Default: "stdio". */
-  MCP_TRANSPORT_TYPE: z.enum(["stdio", "http"]).default("stdio"),
-  /** HTTP server port (if MCP_TRANSPORT_TYPE is "http"). Default: 3010. */
-  MCP_HTTP_PORT: z.coerce.number().int().positive().default(3010),
-  /** HTTP server host (if MCP_TRANSPORT_TYPE is "http"). Default: "127.0.0.1". */
-  MCP_HTTP_HOST: z.string().default("127.0.0.1"),
-  /** Optional. Comma-separated allowed origins for CORS (HTTP transport). */
-  MCP_ALLOWED_ORIGINS: z.string().optional(),
-  /** Optional. Secret key (min 32 chars) for auth tokens (HTTP transport). CRITICAL for production. */
-  MCP_AUTH_SECRET_KEY: z
-    .string()
-    .min(
-      32,
-      "MCP_AUTH_SECRET_KEY must be at least 32 characters long for security reasons.",
-    )
-    .optional(),
-  /** Authentication mode ('jwt' or 'oauth'). Default: 'jwt'. */
-  MCP_AUTH_MODE: z.enum(["jwt", "oauth"]).default("jwt"),
+const EnvSchema = z
+  .object({
+    /** Optional. The desired name for the MCP server. Defaults to `package.json` name. */
+    MCP_SERVER_NAME: z.string().optional(),
+    /** Optional. The version of the MCP server. Defaults to `package.json` version. */
+    MCP_SERVER_VERSION: z.string().optional(),
+    /** Minimum logging level. See `McpLogLevel` in logger utility. Default: "debug". */
+    MCP_LOG_LEVEL: z.string().default("debug"),
+    /** Directory for log files. Defaults to "logs" in project root. */
+    LOGS_DIR: z.string().default(path.join(projectRoot, "logs")),
+    /** Defines the logging output mode. "file" for logs in LOGS_DIR, "stdout" for console logging. */
+    LOG_OUTPUT_MODE: z.enum(["file", "stdout"]).default("file"),
+    /** Runtime environment (e.g., "development", "production"). Default: "development". */
+    NODE_ENV: z.string().default("development"),
+    /** MCP communication transport ("stdio" or "http"). Default: "stdio". */
+    MCP_TRANSPORT_TYPE: z.enum(["stdio", "http"]).default("stdio"),
+    /** HTTP server port (if MCP_TRANSPORT_TYPE is "http"). Default: 3010. */
+    MCP_HTTP_PORT: z.coerce.number().int().positive().default(3010),
+    /** HTTP server host (if MCP_TRANSPORT_TYPE is "http"). Default: "127.0.0.1". */
+    MCP_HTTP_HOST: z.string().default("127.0.0.1"),
+    /** Optional. Comma-separated allowed origins for CORS (HTTP transport). */
+    MCP_ALLOWED_ORIGINS: z.string().optional(),
+    /** Optional. Secret key (min 32 chars) for auth tokens (HTTP transport). CRITICAL for production. */
+    MCP_AUTH_SECRET_KEY: z
+      .string()
+      .min(
+        32,
+        "MCP_AUTH_SECRET_KEY must be at least 32 characters long for security reasons.",
+      )
+      .optional(),
+    /** Authentication mode ('jwt' or 'oauth'). Default: 'jwt'. */
+    MCP_AUTH_MODE: z.enum(["jwt", "oauth"]).default("jwt"),
 
-  /** OAuth: The expected issuer of the JWT. */
-  OAUTH_ISSUER_URL: z.string().url().optional(),
-  /** OAuth: The expected audience of the JWT. */
-  OAUTH_AUDIENCE: z.string().optional(),
-  /** OAuth: The URI of the JWKS endpoint. */
-  OAUTH_JWKS_URI: z.string().url().optional(),
+    /** OAuth: The expected issuer of the JWT. */
+    OAUTH_ISSUER_URL: z.string().url().optional(),
+    /** OAuth: The expected audience of the JWT. */
+    OAUTH_AUDIENCE: z.string().optional(),
+    /** OAuth: The URI of the JWKS endpoint. */
+    OAUTH_JWKS_URI: z.string().url().optional(),
 
-  /** Optional. OAuth provider authorization endpoint URL. */
-  OAUTH_PROXY_AUTHORIZATION_URL: z
-    .string()
-    .url("OAUTH_PROXY_AUTHORIZATION_URL must be a valid URL.")
-    .optional(),
-  /** Optional. OAuth provider token endpoint URL. */
-  OAUTH_PROXY_TOKEN_URL: z
-    .string()
-    .url("OAUTH_PROXY_TOKEN_URL must be a valid URL.")
-    .optional(),
-  /** Optional. OAuth provider revocation endpoint URL. */
-  OAUTH_PROXY_REVOCATION_URL: z
-    .string()
-    .url("OAUTH_PROXY_REVOCATION_URL must be a valid URL.")
-    .optional(),
-  /** Optional. OAuth provider issuer URL. */
-  OAUTH_PROXY_ISSUER_URL: z
-    .string()
-    .url("OAUTH_PROXY_ISSUER_URL must be a valid URL.")
-    .optional(),
-  /** Optional. OAuth service documentation URL. */
-  OAUTH_PROXY_SERVICE_DOCUMENTATION_URL: z
-    .string()
-    .url("OAUTH_PROXY_SERVICE_DOCUMENTATION_URL must be a valid URL.")
-    .optional(),
-  /** Optional. Comma-separated default OAuth client redirect URIs. */
-  OAUTH_PROXY_DEFAULT_CLIENT_REDIRECT_URIS: z.string().optional(),
+    /** Optional. OAuth provider authorization endpoint URL. */
+    OAUTH_PROXY_AUTHORIZATION_URL: z
+      .string()
+      .url("OAUTH_PROXY_AUTHORIZATION_URL must be a valid URL.")
+      .optional(),
+    /** Optional. OAuth provider token endpoint URL. */
+    OAUTH_PROXY_TOKEN_URL: z
+      .string()
+      .url("OAUTH_PROXY_TOKEN_URL must be a valid URL.")
+      .optional(),
+    /** Optional. OAuth provider revocation endpoint URL. */
+    OAUTH_PROXY_REVOCATION_URL: z
+      .string()
+      .url("OAUTH_PROXY_REVOCATION_URL must be a valid URL.")
+      .optional(),
+    /** Optional. OAuth provider issuer URL. */
+    OAUTH_PROXY_ISSUER_URL: z
+      .string()
+      .url("OAUTH_PROXY_ISSUER_URL must be a valid URL.")
+      .optional(),
+    /** Optional. OAuth service documentation URL. */
+    OAUTH_PROXY_SERVICE_DOCUMENTATION_URL: z
+      .string()
+      .url("OAUTH_PROXY_SERVICE_DOCUMENTATION_URL must be a valid URL.")
+      .optional(),
+    /** Optional. Comma-separated default OAuth client redirect URIs. */
+    OAUTH_PROXY_DEFAULT_CLIENT_REDIRECT_URIS: z.string().optional(),
 
-  // NCBI E-utilities Configuration
-  /** NCBI API Key. Optional, but highly recommended for higher rate limits. */
-  NCBI_API_KEY: z.string().optional(),
-  /** Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION. */
-  NCBI_TOOL_IDENTIFIER: z.string().optional(),
-  /** Administrator's email for NCBI contact. Optional, but recommended if using an API key. */
-  NCBI_ADMIN_EMAIL: z
-    .string()
-    .email("NCBI_ADMIN_EMAIL must be a valid email address.")
-    .optional(),
-  /** Milliseconds to wait between NCBI requests. Default: 100 (for API key), 334 (without API key). */
-  NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().optional(), // Default will be set conditionally
-  /** Maximum number of retries for failed NCBI requests. Default: 3. */
-  NCBI_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
-});
+    // NCBI E-utilities Configuration
+    /** NCBI API Key. Optional, but highly recommended for higher rate limits. */
+    NCBI_API_KEY: z.string().optional(),
+    /** Tool identifier sent to NCBI. Defaults to MCP_SERVER_NAME/MCP_SERVER_VERSION. */
+    NCBI_TOOL_IDENTIFIER: z.string().optional(),
+    /** Administrator's email for NCBI contact. Optional, but recommended if using an API key. */
+    NCBI_ADMIN_EMAIL: z
+      .string()
+      .email("NCBI_ADMIN_EMAIL must be a valid email address.")
+      .optional(),
+    /** Milliseconds to wait between NCBI requests. Default: 100 (for API key), 334 (without API key). */
+    NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().optional(), // Default will be set conditionally
+    /** Maximum number of retries for failed NCBI requests. Default: 3. */
+    NCBI_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
+  })
+  .superRefine((data, ctx) => {
+    // Rule 1: MCP_AUTH_SECRET_KEY is required for http transport in production with jwt auth
+    if (
+      data.NODE_ENV === "production" &&
+      data.MCP_TRANSPORT_TYPE === "http" &&
+      data.MCP_AUTH_MODE === "jwt" &&
+      !data.MCP_AUTH_SECRET_KEY
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["MCP_AUTH_SECRET_KEY"],
+        message:
+          "MCP_AUTH_SECRET_KEY is required for 'jwt' auth with 'http' transport in a 'production' environment.",
+      });
+    }
+
+    // Rule 2: Core OAuth variables are required when MCP_AUTH_MODE is 'oauth'
+    if (data.MCP_AUTH_MODE === "oauth") {
+      if (!data.OAUTH_ISSUER_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["OAUTH_ISSUER_URL"],
+          message: "OAUTH_ISSUER_URL is required when MCP_AUTH_MODE is 'oauth'.",
+        });
+      }
+      if (!data.OAUTH_AUDIENCE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["OAUTH_AUDIENCE"],
+          message: "OAUTH_AUDIENCE is required when MCP_AUTH_MODE is 'oauth'.",
+        });
+      }
+      if (!data.OAUTH_JWKS_URI) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["OAUTH_JWKS_URI"],
+          message: "OAUTH_JWKS_URI is required when MCP_AUTH_MODE is 'oauth'.",
+        });
+      }
+    }
+  });
 
 const parsedEnv = EnvSchema.safeParse(process.env);
 

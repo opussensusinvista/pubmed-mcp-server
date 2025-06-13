@@ -38,6 +38,10 @@ export interface RateLimitEntry {
 /**
  * A generic rate limiter class using an in-memory store.
  * Controls frequency of operations based on unique keys.
+ *
+ * @scalability Note: This is an in-memory store. For horizontal scaling across
+ * multiple processes or machines, this state would need to be moved to a shared,
+ * distributed store like Redis or a database.
  */
 export class RateLimiter {
   /**

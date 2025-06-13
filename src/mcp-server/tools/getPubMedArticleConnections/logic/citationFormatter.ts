@@ -270,8 +270,8 @@ function formatAsAPA(
   const year = journalInfo?.publicationDate?.year || "n.d.";
   const apaTitle = titleText.charAt(0).toUpperCase() + titleText.slice(1); // APA typically sentence case for article titles.
 
-  const journal = journalInfo?.title ? `<em>${journalInfo.title}</em>` : "N/A";
-  const volume = journalInfo?.volume ? `<em>${journalInfo.volume}</em>` : "";
+  const journal = journalInfo?.title || "N/A";
+  const volume = journalInfo?.volume || "";
   const issue = journalInfo?.issue ? `(${journalInfo.issue})` : "";
   const pages = journalInfo?.pages || "";
   const doiLink = doi ? ` https://doi.org/${doi}` : "";
@@ -334,7 +334,7 @@ function formatAsMLA(
   }
 
   const title = titleText ? `"${titleText}."` : "N/A.";
-  const journal = journalInfo?.title ? `<em>${journalInfo.title}</em>` : "N/A";
+  const journal = journalInfo?.title || "N/A";
 
   let publicationDateString = journalInfo?.publicationDate?.year || "";
   if (journalInfo?.publicationDate?.month && journalInfo.publicationDate.year) {

@@ -8,6 +8,12 @@ import * as vega from "vega";
 import * as vegaLite from "vega-lite";
 import { z } from "zod";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
+
+// IMPORTANT DEPLOYMENT NOTE:
+// This tool uses the 'canvas' package to render PNG images on the server.
+// The 'canvas' package has native system dependencies (e.g., cairo, pango, libjpeg).
+// Ensure these are installed on the deployment environment.
+// See: https://www.npmjs.com/package/canvas#compiling
 import {
   logger,
   RequestContext,

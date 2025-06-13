@@ -316,8 +316,10 @@ export async function fetchPubMedContentLogic(
   input: FetchPubMedContentInput,
   parentRequestContext: RequestContext,
 ): Promise<CallToolResult> {
-  // Manual validation for conditions superRefine should catch,
-  // as SDK might call handler even with refinement issues.
+  // Manual validation to safeguard against a known issue where the MCP SDK
+  // may not fully propagate Zod's `.superRefine` validation failures before
+  // invoking the tool handler. This block ensures the tool fails early with
+  // a clear error instead of proceeding with an invalid state.
   if (input.queryKey && !input.webEnv) {
     return {
       content: [

@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2025-06-13
+
+### Fixed
+
+- **Configuration**: Hardened environment variable validation in `src/config/index.ts` by using Zod's `.superRefine()` to ensure `MCP_AUTH_SECRET_KEY` is present for JWT auth in production and that all required OAuth variables are set when `MCP_AUTH_MODE` is 'oauth'.
+- **Tool `fetch_pubmed_content`**: Improved the manual validation block in `src/mcp-server/tools/fetchPubMedContent/logic.ts` as a necessary safeguard against an issue I encountered where the MCP SDK may not fully propagate Zod `.superRefine` validation failures.
+- **Tool `get_pubmed_article_connections`**: Corrected the APA and MLA citation formatters in `src/mcp-server/tools/getPubMedArticleConnections/logic/citationFormatter.ts` to remove `<em>` HTML tags, ensuring clean, plain-text output.
+
+### Changed
+
+- **Documentation**:
+  - Added a prominent comment in `src/mcp-server/tools/generatePubMedChart/logic.ts` to document the native system dependencies required by the `canvas` package.
+  - Added comments to `src/mcp-server/transports/httpTransport.ts` and `src/utils/security/rateLimiter.ts` to explicitly state that their in-memory stores are a limitation for multi-instance deployments.
+
 ## [1.1.2] - 2025-06-13
 
 ### Changed

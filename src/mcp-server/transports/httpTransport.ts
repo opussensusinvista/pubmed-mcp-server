@@ -79,6 +79,11 @@ const MAX_PORT_RETRIES = 15;
  * Stores active `StreamableHTTPServerTransport` instances from the SDK, keyed by their session ID.
  * This is essential for routing subsequent HTTP requests (GET, DELETE, non-initialize POST)
  * to the correct stateful session transport instance.
+ *
+ * @scalability Note: This is an in-memory store. For horizontal scaling across
+ * multiple processes or machines, this state would need to be moved to a shared,
+ * distributed store like Redis or a database.
+ *
  * @type {Record<string, StreamableHTTPServerTransport>}
  * @private
  */
@@ -87,6 +92,10 @@ const httpTransports: Record<string, StreamableHTTPServerTransport> = {};
 /**
  * Stores the last activity timestamp for each session, keyed by session ID.
  * Used for garbage collecting stale/abandoned sessions.
+ *
+ * @scalability Note: This is an in-memory store. Like `httpTransports`, this
+ * would need to be moved to a distributed store for multi-instance deployments.
+ *
  * @type {Record<string, number>}
  * @private
  */
