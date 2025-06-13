@@ -4,7 +4,7 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/citationFormatter
  */
 
-import { ncbiService } from "../../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../../services/NCBI/ncbiService.js";
 import type { XmlPubmedArticle } from "../../../../types-global/pubmedXml.js";
 import {
   logger,
@@ -46,6 +46,7 @@ export async function handleCitationFormats(
   ).toString();
   outputData.eUtilityUrl = `${eFetchBaseUrl}?${searchParamsString}`;
 
+  const ncbiService = getNcbiService();
   const eFetchResult: any = await ncbiService.eFetch(eFetchParams, context);
 
   if (!eFetchResult?.PubmedArticleSet?.PubmedArticle?.[0]) {

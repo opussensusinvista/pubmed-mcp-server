@@ -30,13 +30,8 @@ export class NcbiRequestQueueManager {
   private lastRequestTime = 0;
 
   constructor() {
-    logger.debug(
-      "NcbiRequestQueueManager initialized",
-      requestContextService.createRequestContext({
-        service: "NcbiRequestQueueManager",
-        requestDelay: config.ncbiRequestDelayMs,
-      }),
-    );
+    // Constructor should not have side-effects like logging.
+    // The service that uses this manager can log its creation if needed.
   }
 
   /**

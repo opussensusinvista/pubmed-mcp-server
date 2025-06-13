@@ -7,7 +7,7 @@
 
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { ncbiService } from "../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../services/NCBI/ncbiService.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   ESearchResponseContainer,
@@ -133,6 +133,7 @@ export async function searchPubMedArticlesLogic(
   input: SearchPubMedArticlesInput,
   parentRequestContext: RequestContext,
 ): Promise<CallToolResult> {
+  const ncbiService = getNcbiService();
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
     operation: "searchPubMedArticlesLogic",

@@ -4,7 +4,7 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/elinkHandler
  */
 
-import { ncbiService } from "../../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../../services/NCBI/ncbiService.js";
 import type {
   ESummaryResult,
   ParsedBriefSummary,
@@ -58,6 +58,7 @@ export async function handleELinkRelationships(
   );
   outputData.eUtilityUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?${tempUrl.search.substring(1)}`;
 
+  const ncbiService = getNcbiService();
   const eLinkResult: any = await ncbiService.eLink(eLinkParams, context);
 
   // Log the full eLinkResult for debugging

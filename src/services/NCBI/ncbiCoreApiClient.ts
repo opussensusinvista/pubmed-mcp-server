@@ -26,15 +26,6 @@ export class NcbiCoreApiClient {
     this.axiosInstance = axios.create({
       timeout: 30000, // 30 seconds timeout for NCBI requests
     });
-
-    logger.debug(
-      "NcbiCoreApiClient initialized",
-      requestContextService.createRequestContext({
-        service: "NcbiCoreApiClient",
-        ncbiBaseUrl: NCBI_EUTILS_BASE_URL,
-        maxRetries: config.ncbiMaxRetries,
-      }),
-    );
   }
 
   /**

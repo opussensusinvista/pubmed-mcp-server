@@ -43,12 +43,6 @@ export class NcbiResponseHandler {
         return arrayTags.includes(jpath);
       },
     });
-    logger.debug(
-      "NcbiResponseHandler initialized",
-      requestContextService.createRequestContext({
-        service: "NcbiResponseHandler",
-      }),
-    );
   }
 
   private extractNcbiErrorMessages(parsedXml: any): string[] {
