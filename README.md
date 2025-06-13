@@ -2,7 +2,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.12.1-green.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.0.16-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.1.2-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -17,13 +17,13 @@ Built on the [`cyanheads/mcp-ts-template`](https://github.com/cyanheads/mcp-ts-t
 
 This server equips your AI with specialized tools to interact with PubMed:
 
-| Tool Name                                                                               | Description                                                                                                                                                                                                                                    | Key Features                                                                                                                                                                                                                                                                                                                                                                                         |
-| :-------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`search_pubmed_articles`](./src/mcp-server/tools/searchPubMedArticles/)                | Searches PubMed for articles based on your query. (See [Example](./examples/search_pubmed_articles_example.md))                                                                                                                                | - Filter by max results, sort order, date range, publication types.<br/>- Uses NCBI ESearch for PMIDs.<br/>- Optionally fetches brief summaries (title, authors, source, dates) via ESummary.                                                                                                                                                                                                        |
-| [`fetch_pubmed_content`](./src/mcp-server/tools/fetchPubMedContent/)                    | Retrieves detailed information for PubMed articles. Can use a list of PMIDs or ESearch history (queryKey/webEnv) with pagination. (See [Example](./examples/fetch_pubmed_content_example.md))                                                  | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Supports direct PMID list or `queryKey`/`webEnv` from ESearch history.<br/>- Supports `retstart`/`retmax` for pagination with history.<br/>- Uses NCBI EFetch. |
-| [`get_pubmed_article_connections`](./src/mcp-server/tools/getPubMedArticleConnections/) | Finds related articles (cited by, similar, references) or formats citations for a PMID. (See [Ex.1](./examples/get_pubmed_article_connections_1.md), [Ex.2](./examples/get_pubmed_article_connections_2.md))                                   | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results.                                                                                                                                                                                                                                                          |
-| [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                  | Generates a standardized JSON research plan outline from component details. (See [Example](./examples/pubmed_research_agent_example.md))                                                                                                       | - Accepts granular inputs for all research phases.<br/>- Optionally embeds instructive prompts for agent execution.<br/>- Structures rough ideas into a formal, machine-readable plan for further processing.                                                                                                                                                                                        |
-| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data. (See [Bar](./examples/generate_pubmed_chart_example_bar.svg), [Line](./examples/generate_pubmed_chart_example_line.svg), [Scatter](./examples/generate_pubmed_chart_example_scatter.svg)) | - Supports 'bar', 'line', and 'scatter' chart types.<br/>- Takes data values and field specifications for axes and encoding.<br/>- Constructs a Vega-Lite specification internally and renders it as a PNG.                                                                                                                                                                                          |
+| Tool Name                                                                               | Description                                                                                                                                                                                                  | Key Features                                                                                                                                                                                                                                                                                                                                                                                         |
+| :-------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`search_pubmed_articles`](./src/mcp-server/tools/searchPubMedArticles/)                | Searches PubMed for articles based on your query. (See [Example](./examples/search_pubmed_articles_example.md))                                                                                              | - Filter by max results, sort order, date range, publication types.<br/>- Uses NCBI ESearch for PMIDs.<br/>- Optionally fetches brief summaries (title, authors, source, dates) via ESummary.                                                                                                                                                                                                        |
+| [`fetch_pubmed_content`](./src/mcp-server/tools/fetchPubMedContent/)                    | Retrieves detailed information for PubMed articles. Can use a list of PMIDs or ESearch history (queryKey/webEnv) with pagination. (See [Example](./examples/fetch_pubmed_content_example.md))                | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Supports direct PMID list or `queryKey`/`webEnv` from ESearch history.<br/>- Supports `retstart`/`retmax` for pagination with history.<br/>- Uses NCBI EFetch. |
+| [`get_pubmed_article_connections`](./src/mcp-server/tools/getPubMedArticleConnections/) | Finds related articles (cited by, similar, references) or formats citations for a PMID. (See [Ex.1](./examples/get_pubmed_article_connections_1.md), [Ex.2](./examples/get_pubmed_article_connections_2.md)) | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results.                                                                                                                                                                                                                                                          |
+| [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                  | Generates a standardized JSON research plan outline from component details. (See [Example](./examples/pubmed_research_agent_example.md))                                                                     | - Accepts granular inputs for all research phases.<br/>- Optionally embeds instructive prompts for agent execution.<br/>- Structures rough ideas into a formal, machine-readable plan for further processing.                                                                                                                                                                                        |
+| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data. (See [Examples](./examples/))                                                                                                                           | - Supports 'bar', 'line', and 'scatter' chart types.<br/>- Takes data values and field specifications for axes and encoding.<br/>- Constructs a Vega-Lite specification internally and renders it as a PNG using a canvas renderer.                                                                                                                                                                  |
 
 ---
 
@@ -56,14 +56,15 @@ Built on the robust `mcp-ts-template`, this server provides a standardized, secu
 
 Leverages the robust utilities provided by the `mcp-ts-template`:
 
-- **Logging**: Structured, configurable logging (file rotation, console, MCP notifications) with sensitive data redaction.
+- **Logging**: Structured, configurable logging (file rotation, stdout JSON, MCP notifications) with sensitive data redaction.
 - **Error Handling**: Centralized error processing, standardized error types (`McpError`), and automatic logging.
 - **Configuration**: Environment variable loading (`dotenv`) with comprehensive validation.
 - **Input Validation/Sanitization**: Uses `zod` for schema validation and custom sanitization logic.
-- **Request Context**: Tracking and correlation of operations via unique request IDs.
+- **Request Context**: Tracking and correlation of operations via unique request IDs using `AsyncLocalStorage`.
 - **Type Safety**: Strong typing enforced by TypeScript and Zod schemas.
-- **HTTP Transport Option**: Built-in Express server with SSE, session management, CORS support, and JWT authentication.
-- **Rate Limiting**: Built-in request queuing and delay management for NCBI API compliance.
+- **HTTP Transport**: High-performance HTTP server using **Hono**, featuring session management with garbage collection, CORS, and IP-based rate limiting.
+- **Authentication**: Robust authentication layer supporting JWT and OAuth 2.1, with fine-grained scope enforcement.
+- **Deployment**: Multi-stage `Dockerfile` for creating small, secure production images with native dependency support.
 
 ### PubMed Integration
 
@@ -82,6 +83,7 @@ Leverages the robust utilities provided by the `mcp-ts-template`:
 
 - [Node.js (>=18.0.0)](https://nodejs.org/)
 - [npm](https://www.npmjs.com/) (comes with Node.js)
+- [Docker](https://www.docker.com/) (optional, for containerized deployment)
 - **NCBI API Key** (recommended for higher rate limits) - [Get one here](https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/)
 
 ### Install via npm (recommended)
@@ -124,10 +126,12 @@ Configure the server using environment variables. These environmental variables 
 | `MCP_HTTP_HOST`        | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                         | `127.0.0.1`                    |
 | `MCP_ALLOWED_ORIGINS`  | Comma-separated list of allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).         | (none)                         |
 | `MCP_LOG_LEVEL`        | Logging level (`debug`, `info`, `notice`, `warning`, `error`, `crit`, `alert`, `emerg`). | `debug`                        |
-| `MCP_AUTH_SECRET_KEY`  | **Required for HTTP transport.** Minimum 32-character secret key for JWT authentication. | (none)                         |
+| `LOG_OUTPUT_MODE`      | Logging output mode: `file` or `stdout`.                                                 | `file`                         |
+| `MCP_AUTH_MODE`        | Authentication mode for HTTP: `jwt` or `oauth`.                                          | `jwt`                          |
+| `MCP_AUTH_SECRET_KEY`  | **Required for `jwt` auth.** Minimum 32-character secret key for JWT authentication.     | (none)                         |
 | `NCBI_API_KEY`         | **Recommended.** Your NCBI API Key for higher rate limits and reliable access.           | (none)                         |
 | `NCBI_TOOL_IDENTIFIER` | Tool identifier for NCBI E-utility requests.                                             | `@cyanheads/pubmed-mcp-server` |
-| `LOGS_DIR`             | Directory for log file storage.                                                          | `logs/`                        |
+| `LOGS_DIR`             | Directory for log file storage (if `LOG_OUTPUT_MODE=file`).                              | `logs/`                        |
 
 ### MCP Client Settings
 
@@ -166,8 +170,7 @@ src/
 │   ├── resources/        # MCP Resource implementations
 │   └── tools/            # MCP Tool implementations (subdirs per tool)
 ├── services/             # External service integrations
-│   ├── NCBI/            # NCBI E-utilities API client and parsing
-│   └── llm-providers/   # LLM provider integrations (optional)
+│   └── NCBI/             # NCBI E-utilities API client and parsing
 ├── types-global/         # Shared TypeScript type definitions
 └── utils/                # Common utility functions (logger, error handler, etc.)
 ```
