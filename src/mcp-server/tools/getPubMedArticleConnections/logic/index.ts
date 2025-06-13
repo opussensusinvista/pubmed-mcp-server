@@ -4,7 +4,7 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/index
  */
 
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js"; // McpMessageContent removed
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { BaseErrorCode, McpError } from "../../../../types-global/errors.js";
 import {
   logger,
@@ -28,7 +28,7 @@ export async function handleGetPubMedArticleConnections(
   context: RequestContext,
 ): Promise<CallToolResult> {
   const toolLogicContext = requestContextService.createRequestContext({
-    parentRequestId: context.requestId, // Link to parent context
+    parentRequestId: context.requestId,
     operation: "handleGetPubMedArticleConnections",
     toolName: "get_pubmed_article_connections",
     input: sanitizeInputForLogging(input),
@@ -45,8 +45,8 @@ export async function handleGetPubMedArticleConnections(
     relatedArticles: [],
     citations: {},
     retrievedCount: 0,
-    eUtilityUrl: undefined, // Initialize
-    message: undefined, // Initialize
+    eUtilityUrl: undefined,
+    message: undefined,
   };
 
   try {
@@ -60,14 +60,12 @@ export async function handleGetPubMedArticleConnections(
         await handleCitationFormats(input, outputData, toolLogicContext);
         break;
       default:
-        // This case should ideally be caught by Zod schema validation beforehand
         throw new McpError(
           BaseErrorCode.VALIDATION_ERROR,
           `Unsupported relationshipType: ${input.relationshipType}`,
           { receivedType: input.relationshipType },
         );
     }
-    // Ensure message is set if no specific error but also no results from handlers
     if (
       outputData.retrievedCount === 0 &&
       !outputData.message &&
@@ -87,7 +85,6 @@ export async function handleGetPubMedArticleConnections(
         ? error.message
         : "An unexpected error occurred while processing the request.";
 
-    // Ensure critical details from McpError are passed through if available
     const errorDetails =
       error instanceof McpError
         ? error.details
@@ -106,6 +103,13 @@ export async function handleGetPubMedArticleConnections(
     ];
     return { content, isError: true };
   }
+
+  logger.notice("Successfully executed get_pubmed_article_connections tool.", {
+    ...toolLogicContext,
+    relationshipType: input.relationshipType,
+    retrievedCount: outputData.retrievedCount,
+    citationsGenerated: Object.keys(outputData.citations).length,
+  });
 
   const responseContent: CallToolResult["content"] = [
     { type: "text", text: JSON.stringify(outputData) },

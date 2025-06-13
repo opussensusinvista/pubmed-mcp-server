@@ -128,8 +128,6 @@ export const GeneratePubMedChartInputSchema = z.object({
     .describe(
       "Optional. Specifies the data type of the `sizeField`. Options: 'quantitative', 'ordinal'. Defaults to 'quantitative' if `sizeField` is provided and this is omitted.",
     ),
-  // shapeField: z.string().optional().describe("Optional field for encoding point shape in scatter plots."), // Future enhancement
-  // shapeFieldType: z.enum(["nominal", "ordinal"]).optional().describe("Type of the shape field."), // Future enhancement
 });
 
 export type GeneratePubMedChartInput = z.infer<
@@ -152,10 +150,9 @@ export async function generatePubMedChartLogic(
   );
 
   if (input.outputFormat !== "png") {
-    // Changed from svg to png
     const unsupportedFormatError = new McpError(
       BaseErrorCode.VALIDATION_ERROR,
-      `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`, // Changed message
+      `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`,
       { requestedFormat: input.outputFormat },
     );
     logger.warning(unsupportedFormatError.message, operationContext);
@@ -177,21 +174,19 @@ export async function generatePubMedChartLogic(
   }
 
   try {
-    let vegaLiteSpec: any = {
+    const vegaLiteSpec: any = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       title: input.title,
       width: input.width,
       height: input.height,
       data: { values: input.dataValues },
-      encoding: {}, // To be populated by chart type specific logic
+      encoding: {},
     };
 
-    // Default field types if not provided
     const yEncType = input.yFieldType || "quantitative";
     const colorEncType = input.colorFieldType || "nominal";
     const seriesEncType = input.seriesFieldType || "nominal";
     const sizeEncType = input.sizeFieldType || "quantitative";
-
     let xEncType: string;
 
     switch (input.chartType) {
@@ -233,13 +228,11 @@ export async function generatePubMedChartLogic(
           },
         };
         if (input.seriesField) {
-          // For line charts, seriesField is typically used for color
           vegaLiteSpec.encoding.color = {
             field: input.seriesField,
             type: seriesEncType,
           };
         } else if (input.colorField) {
-          // Allow direct colorField as well
           vegaLiteSpec.encoding.color = {
             field: input.colorField,
             type: colorEncType,
@@ -248,7 +241,7 @@ export async function generatePubMedChartLogic(
         break;
       case "scatter":
         xEncType = input.xFieldType || "quantitative";
-        vegaLiteSpec.mark = "point"; // "circle" is also an option
+        vegaLiteSpec.mark = "point";
         vegaLiteSpec.encoding = {
           x: {
             field: input.xField,
@@ -273,32 +266,33 @@ export async function generatePubMedChartLogic(
             type: sizeEncType,
           };
         }
-        // Add shape encoding here if shapeField is implemented
         break;
-      // No default case needed as chartType is an enum and Zod validates it.
     }
 
     const compiledVegaSpec = vegaLite.compile(vegaLiteSpec).spec;
     const view = new vega.View(vega.parse(compiledVegaSpec), {
-      renderer: "canvas", // Explicitly set renderer to 'canvas'
+      renderer: "canvas",
     });
-    // const svgString = await view.toSVG(); // Old SVG method
 
-    // New PNG method
-    // Initialize the view to ensure canvas is ready
-    await view.runAsync(); // Initialize and run the view
-    const canvas = await view.toCanvas(); // Render to canvas
+    await view.runAsync();
+    const canvas = await view.toCanvas();
 
-    // Cast to 'any' to access toBuffer, assuming it's a Node Canvas instance at runtime
-    const imageBuffer = await (canvas as any).toBuffer("image/png"); // Get PNG buffer from canvas
+    const imageBuffer = await (canvas as any).toBuffer("image/png");
     const base64Data = imageBuffer.toString("base64");
+
+    logger.notice("Successfully generated chart.", {
+      ...operationContext,
+      chartType: input.chartType,
+      outputFormat: input.outputFormat,
+      dataPoints: input.dataValues.length,
+    });
 
     return {
       content: [
         {
           type: "image" as const,
           data: base64Data,
-          mimeType: "image/png" as const, // Changed MIME type to image/png
+          mimeType: "image/png" as const,
         },
       ],
       isError: false,

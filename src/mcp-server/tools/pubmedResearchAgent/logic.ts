@@ -14,12 +14,11 @@ import {
   sanitizeInputForLogging,
 } from "../../../utils/index.js";
 import {
-  generateFullResearchPlanOutline, // Re-export for registration
+  generateFullResearchPlanOutline,
   PubMedResearchAgentInput,
-  PubMedResearchAgentInputSchema, // Re-export for registration
+  PubMedResearchAgentInputSchema,
 } from "./logic/index.js";
 
-// Re-export schema and input type for easy access by registration.ts
 export { PubMedResearchAgentInput, PubMedResearchAgentInputSchema };
 
 export async function pubmedResearchAgentLogic(
@@ -45,6 +44,11 @@ export async function pubmedResearchAgentLogic(
       operationContext,
     );
 
+    logger.notice("Successfully generated research plan outline.", {
+      ...operationContext,
+      projectTitle: input.project_title_suggestion,
+    });
+
     return {
       content: [
         { type: "text", text: JSON.stringify(researchPlanOutline, null, 2) },
@@ -61,14 +65,14 @@ export async function pubmedResearchAgentLogic(
       error instanceof McpError
         ? error
         : new McpError(
-            BaseErrorCode.INTERNAL_ERROR, // Using a generic internal error
+            BaseErrorCode.INTERNAL_ERROR,
             `'pubmed_research_agent' tool failed during plan outline generation: ${
               error.message || "Internal server error."
             }`,
             {
               originalErrorName: error.name,
               requestId: operationContext.requestId,
-              inputKeywords: input.research_keywords, // Adding some input context to error
+              inputKeywords: input.research_keywords,
             },
           );
     return {

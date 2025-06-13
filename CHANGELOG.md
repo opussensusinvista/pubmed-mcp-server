@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2025-06-13
+
+### Changed
+
+- **Tooling Refactor**:
+  - Refactored the registration functions for all tools (`fetchPubMedContent`, `generatePubMedChart`, `getPubMedArticleConnections`, `pubmedResearchAgent`, `searchPubMedArticles`) to use a consistent `async`/`await` and `ErrorHandler.tryCatch` pattern. This improves startup robustness and standardizes error handling during server initialization.
+  - Enhanced logging across all tools to include a `logger.notice` call upon successful execution, providing better operational visibility.
+  - In `fetchPubMedContent`, removed a redundant manual validation block, relying instead on a `safeParse` check against the Zod schema for a cleaner, more reliable implementation.
+  - Cleaned up minor code quality issues, including removing unnecessary comments and type casts across multiple tool logic files.
+
 ## [1.1.3] - 2025-06-13
 
 ### Fixed

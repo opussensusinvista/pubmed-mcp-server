@@ -117,7 +117,6 @@ interface ESearchServiceParams {
   id?: string;
   version?: string;
   retmode?: string;
-  // Allow other E-utility specific parameters
   [key: string]: string | number | undefined;
 }
 
@@ -232,9 +231,8 @@ export async function searchPubMedArticlesLogic(
       if (esResult.WebEnv && esResult.QueryKey) {
         eSummaryParams.WebEnv = esResult.WebEnv;
         eSummaryParams.query_key = esResult.QueryKey;
-        eSummaryParams.retmax = currentFetchBriefSummaries; // Use history with retmax
+        eSummaryParams.retmax = currentFetchBriefSummaries;
       } else {
-        // Fallback to using explicit IDs if history is not available (should not happen if usehistory='y' was successful)
         const pmidsForSummary = pmids
           .slice(0, currentFetchBriefSummaries)
           .join(",");
@@ -287,14 +285,21 @@ export async function searchPubMedArticlesLogic(
       effectiveESearchTerm: effectiveQuery,
       totalFound,
       retrievedPmidCount,
-      pmids, // These are the PMIDs from ESearch, limited by input.maxResults
-      briefSummaries, // These should now be limited by currentFetchBriefSummaries
+      pmids,
+      briefSummaries,
       eSearchUrl,
       eSummaryUrl:
         currentFetchBriefSummaries > 0 && pmids.length > 0
           ? eSummaryUrl
           : undefined,
     };
+
+    logger.notice("Successfully executed searchPubMedArticles tool.", {
+      ...toolLogicContext,
+      totalFound,
+      retrievedPmidCount,
+      summariesFetched: briefSummaries.length,
+    });
 
     return {
       content: [{ type: "text", text: JSON.stringify(resultPayload) }],

@@ -168,7 +168,7 @@ interface EFetchServiceParams {
 }
 
 function parsePubMedArticleSet(
-  xmlData: unknown, // Changed from { PubmedArticleSet?: XmlPubmedArticleSet } | any
+  xmlData: unknown,
   input: FetchPubMedContentInput,
   parentContext: RequestContext,
 ): ParsedArticle[] {
@@ -178,7 +178,6 @@ function parsePubMedArticleSet(
     operation: "parsePubMedArticleSet",
   });
 
-  // Type guard for xmlData
   if (
     !xmlData ||
     typeof xmlData !== "object" ||
@@ -197,43 +196,24 @@ function parsePubMedArticleSet(
     return articles;
   }
 
-  const typedXmlData = xmlData as { PubmedArticleSet?: XmlPubmedArticleSet }; // Cast after check
+  const typedXmlData = xmlData as { PubmedArticleSet?: XmlPubmedArticleSet };
   const articleSet = typedXmlData.PubmedArticleSet;
 
   if (!articleSet || !articleSet.PubmedArticle) {
     logger.warning(
       "PubmedArticleSet or PubmedArticle array not found in EFetch XML response.",
-      requestContextService.createRequestContext({
+      {
         ...operationContext,
         xmlDataPreview: sanitizeInputForLogging(
           JSON.stringify(typedXmlData).substring(0, 200),
         ),
-      }),
+      },
     );
     return articles;
   }
 
   const pubmedArticlesXml = ensureArray(articleSet.PubmedArticle);
-
-  logger.debug("Result of ensureArray(articleSet.PubmedArticle):", {
-    ...operationContext,
-    pubmedArticlesXmlPreview: sanitizeInputForLogging(
-      JSON.stringify(pubmedArticlesXml).substring(0, 500),
-    ),
-    isPubmedArticlesXmlArray: Array.isArray(pubmedArticlesXml),
-    pubmedArticlesXmlLength: Array.isArray(pubmedArticlesXml)
-      ? pubmedArticlesXml.length
-      : undefined,
-  });
-
-  if (Array.isArray(pubmedArticlesXml) && pubmedArticlesXml.length > 0) {
-    logger.debug("First item of pubmedArticlesXml:", {
-      ...operationContext,
-      firstItemPreview: sanitizeInputForLogging(
-        JSON.stringify(pubmedArticlesXml[0]).substring(0, 500),
-      ),
-    });
-  }
+  const totalArticlesInXml = pubmedArticlesXml.length;
 
   for (const articleXml of pubmedArticlesXml) {
     if (!articleXml || typeof articleXml !== "object") {
@@ -259,14 +239,15 @@ function parsePubMedArticleSet(
     }
 
     const pmid = extractPmid(medlineCitation);
-    logger.debug("Extracted PMID from MedlineCitation:", {
-      ...operationContext,
-      extractedPmid: pmid,
-      medlineCitationPreview: sanitizeInputForLogging(
-        JSON.stringify(medlineCitation).substring(0, 200),
-      ),
-    });
-    if (!pmid) continue;
+    if (!pmid) {
+      logger.warning("Could not extract PMID from MedlineCitation, skipping.", {
+        ...operationContext,
+        medlineCitationPreview: sanitizeInputForLogging(
+          JSON.stringify(medlineCitation).substring(0, 200),
+        ),
+      });
+      continue;
+    }
 
     const articleNode = medlineCitation.Article;
     const parsedArticle: ParsedArticle = {
@@ -309,6 +290,16 @@ function parsePubMedArticleSet(
 
     articles.push(parsedArticle);
   }
+
+  logger.debug(
+    `Successfully parsed ${articles.length} of ${totalArticlesInXml} articles from XML.`,
+    {
+      ...operationContext,
+      parsedCount: articles.length,
+      totalInXml: totalArticlesInXml,
+    },
+  );
+
   return articles;
 }
 
@@ -316,11 +307,21 @@ export async function fetchPubMedContentLogic(
   input: FetchPubMedContentInput,
   parentRequestContext: RequestContext,
 ): Promise<CallToolResult> {
-  // Manual validation to safeguard against a known issue where the MCP SDK
-  // may not fully propagate Zod's `.superRefine` validation failures before
-  // invoking the tool handler. This block ensures the tool fails early with
-  // a clear error instead of proceeding with an invalid state.
-  if (input.queryKey && !input.webEnv) {
+  const toolLogicContext = requestContextService.createRequestContext({
+    parentRequestId: parentRequestContext.requestId,
+    operation: "fetchPubMedContentLogic",
+    input: sanitizeInputForLogging(input),
+  });
+
+  // Manual validation safeguard
+  const validationResult = FetchPubMedContentInputSchema.safeParse(input);
+  if (!validationResult.success) {
+    const errorMessage =
+      validationResult.error.errors[0]?.message || "Invalid input";
+    logger.warning(
+      `Input validation failed pre-check: ${errorMessage}`,
+      toolLogicContext,
+    );
     return {
       content: [
         {
@@ -328,86 +329,8 @@ export async function fetchPubMedContentLogic(
           text: JSON.stringify({
             error: {
               code: BaseErrorCode.VALIDATION_ERROR,
-              message: "webEnv is required if queryKey is provided.",
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
-  }
-  if (!input.queryKey && input.webEnv) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: BaseErrorCode.VALIDATION_ERROR,
-              message: "queryKey is required if webEnv is provided.",
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
-  }
-  if (
-    input.pmids &&
-    input.pmids.length > 0 &&
-    (input.queryKey || input.webEnv)
-  ) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: BaseErrorCode.VALIDATION_ERROR,
-              message:
-                "Cannot use pmids and queryKey/webEnv simultaneously. Please choose one method.",
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
-  }
-  if (
-    (input.retstart !== undefined || input.retmax !== undefined) &&
-    !(input.queryKey && input.webEnv)
-  ) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: BaseErrorCode.VALIDATION_ERROR,
-              message:
-                "retstart/retmax can only be used with queryKey and webEnv.",
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
-  }
-  // SuperRefine also checks: if ((!data.pmids || data.pmids.length === 0) && !(data.queryKey && data.webEnv))
-  // This should ideally be caught before handler, but as a safeguard:
-  if (
-    (!input.pmids || input.pmids.length === 0) &&
-    !(input.queryKey && input.webEnv)
-  ) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: BaseErrorCode.VALIDATION_ERROR,
-              message:
-                "Either pmids (non-empty array) or both queryKey and webEnv must be provided.",
+              message: errorMessage,
+              details: validationResult.error.flatten(),
             },
           }),
         },
@@ -417,12 +340,6 @@ export async function fetchPubMedContentLogic(
   }
 
   const ncbiService = getNcbiService();
-  const toolLogicContext = requestContextService.createRequestContext({
-    parentRequestId: parentRequestContext.requestId,
-    operation: "fetchPubMedContentLogic",
-    input: sanitizeInputForLogging(input),
-  });
-
   logger.info("Executing fetch_pubmed_content tool", toolLogicContext);
 
   const eFetchParams: EFetchServiceParams = { db: "pubmed" };
@@ -431,7 +348,7 @@ export async function fetchPubMedContentLogic(
   if (input.queryKey && input.webEnv) {
     usingHistory = true;
     eFetchParams.query_key = input.queryKey;
-    eFetchParams.WebEnv = input.webEnv; // NCBI uses WebEnv with capital E
+    eFetchParams.WebEnv = input.webEnv;
     if (input.retstart !== undefined) {
       eFetchParams.retstart = String(input.retstart);
     }
@@ -441,11 +358,9 @@ export async function fetchPubMedContentLogic(
   } else if (input.pmids && input.pmids.length > 0) {
     eFetchParams.id = input.pmids.join(",");
   }
-  // The superRefine ensures that either pmids or (queryKey & webEnv) is provided.
 
-  let serviceRetmode: "xml" | "text" = "xml"; // Renamed to avoid conflict with local retmode variable if any
+  let serviceRetmode: "xml" | "text" = "xml";
   let rettype: string | undefined;
-  // responseContentType is determined by input.outputFormat at the end
 
   switch (input.detailLevel) {
     case "full_xml":
@@ -457,7 +372,7 @@ export async function fetchPubMedContentLogic(
       break;
     case "abstract_plus":
     case "citation_data":
-      serviceRetmode = "xml"; // Parsed by server, so fetch XML
+      serviceRetmode = "xml";
       break;
   }
   eFetchParams.retmode = serviceRetmode;
@@ -469,11 +384,10 @@ export async function fetchPubMedContentLogic(
     const eFetchBase =
       "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
     const eFetchQueryString = new URLSearchParams(
-      eFetchParams as Record<string, string>, // Cast to Record<string, string> for URLSearchParams
+      eFetchParams as Record<string, string>,
     ).toString();
     eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
 
-    // Determine if raw XML should be fetched
     const shouldReturnRawXml =
       input.detailLevel === "full_xml" && input.outputFormat === "raw_text";
 
@@ -484,7 +398,8 @@ export async function fetchPubMedContentLogic(
     );
 
     let finalOutputText: string;
-    let structuredResponseData: any; // Used for building the JSON response
+    let structuredResponseData: any;
+    let articlesCount = 0;
 
     if (input.detailLevel === "medline_text") {
       const medlineText = String(eFetchResponseData);
@@ -494,6 +409,7 @@ export async function fetchPubMedContentLogic(
       while ((match = pmidRegex.exec(medlineText)) !== null) {
         foundPmidsInMedline.add(match[1]);
       }
+      articlesCount = foundPmidsInMedline.size;
 
       let notFoundPmids: string[] = [];
       if (input.pmids && input.pmids.length > 0) {
@@ -521,50 +437,32 @@ export async function fetchPubMedContentLogic(
               : "GET",
         },
       };
-      if (input.outputFormat === "raw_text") {
-        finalOutputText = String(eFetchResponseData);
-      } else {
-        finalOutputText = JSON.stringify(structuredResponseData);
-      }
+      finalOutputText =
+        input.outputFormat === "raw_text"
+          ? medlineText
+          : JSON.stringify(structuredResponseData);
     } else if (input.detailLevel === "full_xml") {
       if (input.outputFormat === "raw_text") {
-        // eFetchResponseData is already the raw XML string due to returnRawXml: true
         finalOutputText = String(eFetchResponseData);
-        // Optionally, wrap it in a minimal JSON structure if that's preferred for raw_text output consistency
-        // For now, returning the direct XML string as per user expectation for "raw_text"
+        articlesCount = (finalOutputText.match(/<PubmedArticle>/g) || []).length;
       } else {
-        // outputFormat is 'json', so eFetchResponseData is the parsed XML object
         const articlesXml = ensureArray(
           (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
         );
+        articlesCount = articlesXml.length;
         const articlesPayload: { pmid: string; fullXmlContent: any }[] = [];
         const foundPmidsInXml = new Set<string>();
 
         for (const articleXml of articlesXml) {
-          let pmid = "unknown_pmid";
-          if (articleXml?.MedlineCitation) {
-            const extracted = extractPmid(articleXml.MedlineCitation);
-            if (extracted) {
-              pmid = extracted;
-            }
-          }
-          if (pmid !== "unknown_pmid") {
-            foundPmidsInXml.add(pmid);
-          }
-          articlesPayload.push({
-            pmid: pmid,
-            fullXmlContent: articleXml,
-          });
+          const pmid = extractPmid(articleXml.MedlineCitation) || "unknown_pmid";
+          if (pmid !== "unknown_pmid") foundPmidsInXml.add(pmid);
+          articlesPayload.push({ pmid, fullXmlContent: articleXml });
         }
 
-        let notFoundPmids: string[] | string = [];
-        if (input.pmids && input.pmids.length > 0) {
-          notFoundPmids = input.pmids.filter(
-            (pmid) => !foundPmidsInXml.has(pmid),
-          );
-        } else if (usingHistory) {
-          notFoundPmids = "N/A (used history query)";
-        }
+        const notFoundPmids =
+          input.pmids && input.pmids.length > 0
+            ? input.pmids.filter((pmid) => !foundPmidsInXml.has(pmid))
+            : "N/A (used history query)";
 
         structuredResponseData = {
           requestedPmids: input.pmids || "N/A (used history query)",
@@ -581,21 +479,19 @@ export async function fetchPubMedContentLogic(
         finalOutputText = JSON.stringify(structuredResponseData);
       }
     } else {
-      // abstract_plus or citation_data (outputFormat is always 'json' effectively)
-      // eFetchResponseData is the parsed XML object
+      // abstract_plus or citation_data
       const parsedArticles = parsePubMedArticleSet(
         eFetchResponseData as XmlPubmedArticleSet,
         input,
         toolLogicContext,
       );
+      articlesCount = parsedArticles.length;
       const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
 
-      let notFoundPmids: string[] | string = [];
-      if (input.pmids && input.pmids.length > 0) {
-        notFoundPmids = input.pmids.filter((pmid) => !foundPmids.has(pmid));
-      } else if (usingHistory) {
-        notFoundPmids = "N/A (used history query)";
-      }
+      const notFoundPmids =
+        input.pmids && input.pmids.length > 0
+          ? input.pmids.filter((pmid) => !foundPmids.has(pmid))
+          : "N/A (used history query)";
 
       structuredResponseData = {
         requestedPmids: input.pmids || "N/A (used history query)",
@@ -628,23 +524,23 @@ export async function fetchPubMedContentLogic(
               year: article.journalInfo?.publicationDate?.year,
             },
             doi: article.doi,
-            // Conditionally include meshTerms if the input flag was set (it defaults to true)
             ...(input.includeMeshTerms && { meshTerms: article.meshTerms }),
           }),
         );
       }
-      // For abstract_plus and citation_data, outputFormat 'raw_text' doesn't make sense,
-      // as the data is inherently structured. So, always output JSON.
       finalOutputText = JSON.stringify(structuredResponseData);
     }
 
+    logger.notice("Successfully executed fetch_pubmed_content tool.", {
+      ...toolLogicContext,
+      detailLevel: input.detailLevel,
+      outputFormat: input.outputFormat,
+      articlesReturned: articlesCount,
+      usingHistory,
+    });
+
     return {
-      content: [
-        {
-          type: "text",
-          text: finalOutputText,
-        },
-      ],
+      content: [{ type: "text", text: finalOutputText }],
       isError: false,
     };
   } catch (error: any) {

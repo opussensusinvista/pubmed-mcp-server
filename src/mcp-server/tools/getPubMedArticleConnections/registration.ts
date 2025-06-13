@@ -6,12 +6,12 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { BaseErrorCode, McpError } from "../../../types-global/errors.js"; // Import McpError
+import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   ErrorHandler,
-  RequestContext,
+  logger,
   requestContextService,
-} from "../../../utils/index.js"; // Import requestContextService
+} from "../../../utils/index.js";
 import { handleGetPubMedArticleConnections } from "./logic.js";
 
 /**
@@ -33,7 +33,7 @@ export const GetPubMedArticleConnectionsInputSchema = z.object({
     ])
     .default("pubmed_similar_articles")
     .describe(
-      "Specifies the type of connection or action: \n- 'pubmed_similar_articles': Finds articles similar to the source PMID (uses ELink `cmd=neighbor`). \n- 'pubmed_citedin': Finds articles in PubMed that cite the source PMID (uses ELink `linkname=pubmed_pubmed_citedin`). \n- 'pubmed_references': Finds articles in PubMed referenced by the source PMID (uses ELink `linkname=pubmed_pubmed_refs`). \n- 'citation_formats': Retrieves data for the source PMID and formats it into specified citation styles (uses EFetch).",
+      "Specifies the type of connection or action: \n- 'pubmed_similar_articles': Finds articles similar to the source PMID (uses ELink `cmd=neighbor`). \n- 'pubmed_citedin': Finds articles in PubMed that cite the source PMID (uses ELink `linkname=pubmed_pubmed_citedin`). \n- 'pubmed_references': Finds articles in PubMed referenced by the source PMID (uses ELink `linkname=pubmed_pubmed_refs`). \n- 'citation_formats': Retrieves data for the source PMID and formats it into specified citation styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting).",
     ),
   maxRelatedResults: z
     .number()
@@ -64,54 +64,46 @@ export type GetPubMedArticleConnectionsInput = z.infer<
 /**
  * Registers the 'get_pubmed_article_connections' tool with the given MCP server instance.
  * @param {McpServer} server - The MCP server instance.
- * @param {RequestContext} registrationContext - The context for this registration operation.
  */
-export function registerGetPubMedArticleConnectionsTool(
+export async function registerGetPubMedArticleConnectionsTool(
   server: McpServer,
-): void {
+): Promise<void> {
   const operation = "registerGetPubMedArticleConnectionsTool";
   const registrationContext = requestContextService.createRequestContext({
     operation,
   });
 
-  try {
-    server.tool(
-      "get_pubmed_article_connections",
-      "Finds articles related to a source PubMed ID (PMID) or retrieves formatted citations for it. Supports finding similar articles, articles that cite the source, articles referenced by the source (via NCBI ELink), or fetching data to generate citations in various styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting). Returns a JSON object detailing the connections or formatted citations.",
-      GetPubMedArticleConnectionsInputSchema.shape, // Pass .shape
-      async (
-        validatedInput: GetPubMedArticleConnectionsInput,
-        toolContext: any, // Let TypeScript infer this, similar to other tools
-      ) => {
-        // Create a new rich context for the logic handler
-        const richLogicContext = requestContextService.createRequestContext({
-          parentRequestId: registrationContext.requestId, // Link to registration context
-          operation: "getPubMedArticleConnectionsToolHandler",
-          mcpToolContext: toolContext, // Include MCP-provided context
-        });
-        return await handleGetPubMedArticleConnections(
-          validatedInput,
-          richLogicContext, // Pass the newly created rich context
-        );
-      },
-    );
-    // Consistent with other tools, explicit success logging here might be omitted,
-    // relying on ErrorHandler for issues or higher-level logging.
-  } catch (error) {
-    ErrorHandler.handleError(
-      new McpError( // Create an McpError for consistent handling
-        BaseErrorCode.INITIALIZATION_FAILED,
-        "Failed to register 'get_pubmed_article_connections' tool.",
-        {
-          originalError: error instanceof Error ? error.message : String(error),
+  await ErrorHandler.tryCatch(
+    () => {
+      server.tool(
+        "get_pubmed_article_connections",
+        "Finds articles related to a source PubMed ID (PMID) or retrieves formatted citations for it. Supports finding similar articles, articles that cite the source, articles referenced by the source (via NCBI ELink), or fetching data to generate citations in various styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting). Returns a JSON object detailing the connections or formatted citations.",
+        GetPubMedArticleConnectionsInputSchema.shape,
+        async (
+          validatedInput: GetPubMedArticleConnectionsInput,
+          toolContext: any,
+        ) => {
+          const richLogicContext = requestContextService.createRequestContext({
+            parentRequestId: registrationContext.requestId,
+            operation: "getPubMedArticleConnectionsToolHandler",
+            mcpToolContext: toolContext,
+          });
+          return handleGetPubMedArticleConnections(
+            validatedInput,
+            richLogicContext,
+          );
         },
-      ),
-      {
-        operation,
-        context: registrationContext, // Use the context of the registration operation
-        errorCode: BaseErrorCode.INITIALIZATION_FAILED,
-        critical: true, // Registration failure is critical
-      },
-    );
-  }
+      );
+      logger.notice(
+        "Tool 'get_pubmed_article_connections' registered.",
+        registrationContext,
+      );
+    },
+    {
+      operation,
+      context: registrationContext,
+      errorCode: BaseErrorCode.INITIALIZATION_FAILED,
+      critical: true,
+    },
+  );
 }

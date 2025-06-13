@@ -16,56 +16,45 @@ import {
   generatePubMedChartLogic,
 } from "./logic.js";
 
-export function registerGeneratePubMedChartTool(server: McpServer): void {
+export async function registerGeneratePubMedChartTool(
+  server: McpServer,
+): Promise<void> {
   const operation = "registerGeneratePubMedChartTool";
   const regContext = requestContextService.createRequestContext({ operation });
 
-  try {
-    server.tool(
-      "generate_pubmed_chart",
-      "Generates a customizable chart (PNG) from structured data. " +
-        "Supports 'bar', 'line', and 'scatter' plots. " +
-        "Requires data values and field mappings for axes. " +
-        "Optional parameters allow for titles, dimensions, and color/size/series encoding. " +
-        "Internally uses Vega-Lite and a canvas renderer to produce a Base64-encoded PNG image.",
-      GeneratePubMedChartInputSchema.shape,
-      async (
-        validatedInput: GeneratePubMedChartInput,
-        mcpProvidedContext: any,
-      ) => {
-        const handlerRequestContext =
-          requestContextService.createRequestContext({
-            parentRequestId: regContext.requestId,
-            operation: "generatePubMedChartToolHandler",
-            mcpToolContext: mcpProvidedContext,
-          });
-        return generatePubMedChartLogic(validatedInput, handlerRequestContext);
-      },
-    );
-    logger.notice(
-      `Tool 'generate_pubmed_chart' registered with updated schema (added scatter).`,
-      regContext,
-    );
-  } catch (error) {
-    const mcpError =
-      error instanceof McpError
-        ? error
-        : new McpError(
-            BaseErrorCode.INITIALIZATION_FAILED,
-            `Failed to register 'generate_pubmed_chart': ${error instanceof Error ? error.message : String(error)}`,
-            {
-              originalErrorName:
-                error instanceof Error ? error.name : "UnknownError",
-              details:
-                "Error during server.tool() call for generate_pubmed_chart.",
-            },
+  await ErrorHandler.tryCatch(
+    () => {
+      server.tool(
+        "generate_pubmed_chart",
+        "Generates a customizable chart (PNG) from structured data. " +
+          "Supports 'bar', 'line', and 'scatter' plots. " +
+          "Requires data values and field mappings for axes. " +
+          "Optional parameters allow for titles, dimensions, and color/size/series encoding. " +
+          "Internally uses Vega-Lite and a canvas renderer to produce a Base64-encoded PNG image.",
+        GeneratePubMedChartInputSchema.shape,
+        async (
+          validatedInput: GeneratePubMedChartInput,
+          mcpProvidedContext: any,
+        ) => {
+          const handlerRequestContext =
+            requestContextService.createRequestContext({
+              parentRequestId: regContext.requestId,
+              operation: "generatePubMedChartToolHandler",
+              mcpToolContext: mcpProvidedContext,
+            });
+          return generatePubMedChartLogic(
+            validatedInput,
+            handlerRequestContext,
           );
-
-    ErrorHandler.handleError(mcpError, {
+        },
+      );
+      logger.notice("Tool 'generate_pubmed_chart' registered.", regContext);
+    },
+    {
       operation,
       context: regContext,
       errorCode: BaseErrorCode.INITIALIZATION_FAILED,
       critical: true,
-    });
-  }
+    },
+  );
 }
