@@ -2,9 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-06-13
+
+### Added
+
+- **HTTP Transport Layer**:
+  - Migrated the HTTP transport from Express to **Hono**, a modern, lightweight, and high-performance web framework. This improves request handling efficiency and reduces dependency overhead.
+  - Implemented session management with a garbage collector to automatically clean up stale or abandoned sessions, improving server stability and resource management (`src/mcp-server/transports/httpTransport.ts`).
+  - Added IP-based rate limiting to the HTTP transport to prevent abuse and ensure fair usage.
+- **Authentication & Authorization**:
+  - Introduced a new, more robust authentication layer supporting both **JWT** and **OAuth 2.1** (`MCP_AUTH_MODE` environment variable).
+  - Implemented `oauthMiddleware.ts` for validating OAuth 2.1 Bearer Tokens against a remote JWKS.
+  - Created `authContext.ts` using `AsyncLocalStorage` to securely pass authentication information (like client ID and scopes) through the request lifecycle without prop drilling.
+  - Added `authUtils.ts` with a `withRequiredScopes` utility for enforcing fine-grained, scope-based access control within tool and resource handlers.
+- **Dockerfile**:
+  - Added a multi-stage `Dockerfile` to create a smaller, more secure production image. This includes separate stages for dependency installation, building, and the final runtime, significantly reducing the final image size.
+  - The Dockerfile now includes steps to properly handle native dependencies like `canvas`.
+  - Example command for testing: `docker build -t pubmed-mcp-server . && docker run --rm -it -p 3010:3010 pubmed-mcp-server`.
+
+### Changed
+
+- **NCBI Service**:
+  - Refactored `ncbiService.ts` to use a lazy initialization pattern (`getNcbiService`). This improves startup performance by deferring the creation of the service instance until it's first needed.
+- **Server Shutdown Logic**:
+  - Improved the graceful shutdown logic in `src/index.ts` to correctly handle the termination of both STDIO and the new Hono-based HTTP server, ensuring all resources are released properly.
+- **Dependencies**:
+  - Added `hono`, `@hono/node-server`, `jose`, and `@node-oauth/oauth2-server` to support the new transport and authentication layers.
+  - Updated various other dependencies to their latest versions.
+- **Build**:
+  - Bumped project version to `1.1.0` in `package.json`.
+
+### Removed
+
+- **LLM Services**:
+  - Removed the entire `src/services/llm-providers/` directory, including the `llmFactory.ts` and `openRouterProvider.ts`. This streamlines the server's focus on its core competency of interacting with PubMed, removing direct LLM integration from this project. This was a relic from the original `mcp-ts-template` and is no longer needed.
+
 ## [1.0.16] - 2025-06-04
 
 ### Changed
+
 - **Tool `generatePubMedChart`**:
   - Modified the tool to output PNG images by default instead of SVG to improve compatibility with various MCP clients.
   - Updated the `outputFormat` in the Zod schema (`src/mcp-server/tools/generatePubMedChart/logic.ts`) to default to "png" and reflect PNG as the primary supported format.

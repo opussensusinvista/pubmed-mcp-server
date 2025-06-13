@@ -1,12 +1,13 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-05-24 19:38:54
+Generated on: 2025-06-13 08:53:02
 
 ```
 pubmed-mcp-server
 ├── .github
-│   └── workflows
-│       └── publish.yml
+│   ├── workflows
+│   │   └── publish.yml
+│   └── FUNDING.yml
 ├── docs
 │   ├── api-references
 │   │   ├── jsdoc-standard-tags.md
@@ -69,24 +70,21 @@ pubmed-mcp-server
 │   │   │       └── registration.ts
 │   │   ├── transports
 │   │   │   ├── authentication
-│   │   │   │   └── authMiddleware.ts
+│   │   │   │   ├── authContext.ts
+│   │   │   │   ├── authMiddleware.ts
+│   │   │   │   ├── authUtils.ts
+│   │   │   │   ├── oauthMiddleware.ts
+│   │   │   │   └── types.ts
 │   │   │   ├── httpTransport.ts
 │   │   │   └── stdioTransport.ts
 │   │   └── server.ts
 │   ├── services
-│   │   ├── llm-providers
-│   │   │   ├── openRouter
-│   │   │   │   ├── index.ts
-│   │   │   │   └── openRouterProvider.ts
-│   │   │   ├── index.ts
-│   │   │   └── llmFactory.ts
-│   │   ├── NCBI
-│   │   │   ├── ncbiConstants.ts
-│   │   │   ├── ncbiCoreApiClient.ts
-│   │   │   ├── ncbiRequestQueueManager.ts
-│   │   │   ├── ncbiResponseHandler.ts
-│   │   │   └── ncbiService.ts
-│   │   └── index.ts
+│   │   └── NCBI
+│   │       ├── ncbiConstants.ts
+│   │       ├── ncbiCoreApiClient.ts
+│   │       ├── ncbiRequestQueueManager.ts
+│   │       ├── ncbiResponseHandler.ts
+│   │       └── ncbiService.ts
 │   ├── types-global
 │   │   ├── errors.ts
 │   │   └── pubmedXml.ts

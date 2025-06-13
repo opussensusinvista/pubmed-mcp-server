@@ -37,9 +37,6 @@ backups/
 # Documentation (unless needed in the image)
 docs/
 
-# Scripts (unless needed in the image)
-scripts/
-
 # Test files (if any)
 test/
 tests/
