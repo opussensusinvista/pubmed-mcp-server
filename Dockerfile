@@ -83,4 +83,6 @@ ENV MCP_HTTP_HOST=0.0.0.0
 EXPOSE 3010
 
 # Command to run the application
-CMD ["node", "dist/index.js"]
+# Note: We use npx to run the installed package directly.
+# The 'bin' script in package.json will be executed.
+CMD ["npx", "@cyanheads/pubmed-mcp-server"]

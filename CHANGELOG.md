@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Execution & Deployment**:
+  - Switched the primary execution method to `npx @cyanheads/pubmed-mcp-server` for simplified setup and execution.
+  - Updated `Dockerfile`, `mcp.json`, and `smithery.yaml` to use the `npx` command, ensuring consistency across all deployment methods.
 - **Tool `generatePubMedChart`**:
   - Majorly refactored the `generatePubMedChart` tool to use `Chart.js` and `chartjs-node-canvas` instead of `vega-lite` and `vega`. This removes the heavy `vega` dependencies and uses a more direct, server-side canvas rendering approach.
   - The tool now supports a wider range of chart types: `bar`, `line`, `scatter`, `pie`, `doughnut`, `bubble`, `radar`, and `polarArea`.
@@ -13,6 +16,8 @@ All notable changes to this project will be documented in this file.
 - **Dependencies**:
   - Removed `vega` and `vega-lite` from `package.json`.
   - Added `chart.js` and `chartjs-node-canvas` to `package.json`.
+- **Documentation**:
+  - Updated `README.md` and `CLAUDE.md` to reflect the new `npx` execution command and updated tool capabilities.
 - **Examples**:
   - Deleted the old SVG examples for charts.
   - Added a new directory `examples/generate_pubmed_chart/` containing multiple PNG examples for different chart types.

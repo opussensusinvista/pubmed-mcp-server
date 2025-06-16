@@ -51,10 +51,15 @@ Server behavior is dictated by environment variables. Refer to `src/config/index
 
 ### C. Server Execution Commands
 
+- **Run with NPX (recommended)**:
+  ```bash
+  npx @cyanheads/pubmed-mcp-server
+  ```
 - **Format Code**: `npm run format`
-- **Build Project**: `npm run build`
-- **Run (Stdio Transport)**: `npm run start:stdio`
-- **Run (HTTP Transport)**: `npm run start:http` (Ensure `MCP_AUTH_SECRET_KEY`, `NCBI_API_KEY`, `NCBI_ADMIN_EMAIL` are correctly set in the environment).
+- **Build Project**: `npm run rebuild`
+  **Note**: These start commands are only to be used if the user has stated the server fails to start on their end.
+- **Run from Source (Stdio Transport)**: `npm run start:stdio`
+- **Run from Source (HTTP Transport)**: `npm run start:http` (Ensure `MCP_AUTH_SECRET_KEY`, `NCBI_API_KEY`, `NCBI_ADMIN_EMAIL` are correctly set in the environment).
 
 ## II. Model Context Protocol (MCP) Overview (Spec: 2025-03-26)
 
@@ -207,7 +212,7 @@ import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 
 export async function yourToolLogic(
   input: YourToolInput,
-  parentRequestContext: RequestContext,
+  parentRequestContext: RequestContext
 ): Promise<CallToolResult> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
@@ -217,7 +222,7 @@ export async function yourToolLogic(
 
   logger.info(
     `Executing 'yourToolName'. Query: ${input.query}`,
-    operationContext,
+    operationContext
   );
 
   try {
@@ -229,7 +234,7 @@ export async function yourToolLogic(
         id: `item-${i + 1}`,
         title: `Result for ${input.query} #${i + 1}`,
         isActive: input.filterActive,
-      }),
+      })
     );
 
     const output = {
@@ -247,7 +252,7 @@ export async function yourToolLogic(
     logger.error(
       "Execution failed for 'yourToolName'",
       error,
-      operationContext,
+      operationContext
     );
     const mcpError =
       error instanceof McpError
@@ -258,7 +263,7 @@ export async function yourToolLogic(
             {
               originalErrorName: error.name,
               requestId: operationContext.requestId,
-            },
+            }
           );
     return {
       content: [
@@ -317,7 +322,7 @@ export function registerYourTool(server: McpServer): void {
             mcpToolContext: mcpProvidedContext, // Context from MCP SDK during call
           });
         return yourToolLogic(validatedInput, handlerRequestContext);
-      },
+      }
     );
     logger.notice(`Tool 'your_tool_name' registered.`, regContext);
   } catch (error) {
@@ -327,14 +332,14 @@ export function registerYourTool(server: McpServer): void {
         `Failed to register 'your_tool_name'`,
         {
           /* details */
-        },
+        }
       ),
       {
         operation,
         context: regContext,
         errorCode: BaseErrorCode.INITIALIZATION_FAILED,
         critical: true,
-      },
+      }
     );
   }
 }
@@ -356,7 +361,7 @@ import { registerYourTool } from "./tools/yourToolName/index.js"; // Import new 
 // ...
 export async function createMcpServerInstance(
   options: McpServerOptions,
-  serverInitContext: RequestContext,
+  serverInitContext: RequestContext
 ): Promise<McpServer> {
   // ...
   const server = new McpServer(options);
@@ -505,7 +510,7 @@ Integrate these utilities consistently:
     export type McpNotificationSender = (
       level: McpLogLevel,
       data: McpNotificationData,
-      loggerName?: string,
+      loggerName?: string
     ) => void;
 
     // The logsPath from config is already resolved and validated by src/config/index.ts
@@ -551,7 +556,7 @@ Integrate these utilities consistently:
             }
           }
           return `${timestamp} ${level}: ${message}${metaString}`;
-        }),
+        })
       );
     }
 
@@ -603,7 +608,7 @@ Integrate these utilities consistently:
         const fileFormat = winston.format.combine(
           winston.format.timestamp(),
           winston.format.errors({ stack: true }),
-          winston.format.json(),
+          winston.format.json()
         );
 
         const transports: TransportStream[] = [];
@@ -639,12 +644,12 @@ Integrate these utilities consistently:
             new winston.transports.File({
               filename: path.join(resolvedLogsDir, "combined.log"),
               ...fileTransportOptions,
-            }),
+            })
           );
         } else {
           if (process.stdout.isTTY) {
             console.warn(
-              "File logging disabled as logsPath is not configured or invalid.",
+              "File logging disabled as logsPath is not configured or invalid."
             );
           }
         }
@@ -676,7 +681,7 @@ Integrate these utilities consistently:
             requestId: "logger-post-init",
             timestamp: new Date().toISOString(),
             logsPathUsed: resolvedLogsDir,
-          },
+          }
         );
       }
 
@@ -685,7 +690,7 @@ Integrate these utilities consistently:
        * @param sender - The function to call for sending notifications, or undefined to disable.
        */
       public setMcpNotificationSender(
-        sender: McpNotificationSender | undefined,
+        sender: McpNotificationSender | undefined
       ): void {
         this.mcpNotificationSender = sender;
         const status = sender ? "enabled" : "disabled";
@@ -715,7 +720,7 @@ Integrate these utilities consistently:
         if (!(newLevel in mcpLevelSeverity)) {
           this.warning(
             `Invalid MCP log level provided: ${newLevel}. Level not changed.`,
-            setLevelContext,
+            setLevelContext
           );
           return;
         }
@@ -733,7 +738,7 @@ Integrate these utilities consistently:
         if (oldLevel !== newLevel) {
           this.info(
             `Log level changed. File logging level: ${this.currentWinstonLevel}. MCP logging level: ${this.currentMcpLevel}. Console logging: ${consoleStatus.enabled ? "enabled" : "disabled"}`,
-            setLevelContext,
+            setLevelContext
           );
           if (
             consoleStatus.message &&
@@ -763,7 +768,7 @@ Integrate these utilities consistently:
         }
 
         const consoleTransport = this.winstonLogger.transports.find(
-          (t) => t instanceof winston.transports.Console,
+          (t) => t instanceof winston.transports.Console
         );
         const shouldHaveConsole =
           this.currentMcpLevel === "debug" && process.stdout.isTTY;
@@ -775,7 +780,7 @@ Integrate these utilities consistently:
             new winston.transports.Console({
               level: "debug", // Console always logs debug if enabled
               format: consoleFormat,
-            }),
+            })
           );
           message = "Console logging enabled (level: debug, stdout is TTY).";
         } else if (!shouldHaveConsole && consoleTransport) {
@@ -826,7 +831,7 @@ Integrate these utilities consistently:
         level: McpLogLevel,
         msg: string,
         context?: RequestContext,
-        error?: Error,
+        error?: Error
       ): void {
         if (!this.ensureInitialized()) return;
         if (mcpLevelSeverity[level] > mcpLevelSeverity[this.currentMcpLevel]) {
@@ -852,7 +857,7 @@ Integrate these utilities consistently:
             if (this.currentMcpLevel === "debug" && error.stack) {
               mcpDataPayload.error.stack = error.stack.substring(
                 0,
-                this.MCP_NOTIFICATION_STACK_TRACE_MAX_LENGTH,
+                this.MCP_NOTIFICATION_STACK_TRACE_MAX_LENGTH
               );
             }
           }
@@ -875,7 +880,7 @@ Integrate these utilities consistently:
             };
             this.winstonLogger!.error(
               "Failed to send MCP log notification",
-              internalErrorContext,
+              internalErrorContext
             );
           }
         }
@@ -910,7 +915,7 @@ Integrate these utilities consistently:
       public error(
         msg: string,
         err?: Error | RequestContext,
-        context?: RequestContext,
+        context?: RequestContext
       ): void {
         const errorObj = err instanceof Error ? err : undefined;
         const actualContext = err instanceof Error ? context : err;
@@ -926,7 +931,7 @@ Integrate these utilities consistently:
       public crit(
         msg: string,
         err?: Error | RequestContext,
-        context?: RequestContext,
+        context?: RequestContext
       ): void {
         const errorObj = err instanceof Error ? err : undefined;
         const actualContext = err instanceof Error ? context : err;
@@ -942,7 +947,7 @@ Integrate these utilities consistently:
       public alert(
         msg: string,
         err?: Error | RequestContext,
-        context?: RequestContext,
+        context?: RequestContext
       ): void {
         const errorObj = err instanceof Error ? err : undefined;
         const actualContext = err instanceof Error ? context : err;
@@ -958,7 +963,7 @@ Integrate these utilities consistently:
       public emerg(
         msg: string,
         err?: Error | RequestContext,
-        context?: RequestContext,
+        context?: RequestContext
       ): void {
         const errorObj = err instanceof Error ? err : undefined;
         const actualContext = err instanceof Error ? context : err;
@@ -974,7 +979,7 @@ Integrate these utilities consistently:
       public fatal(
         msg: string,
         err?: Error | RequestContext,
-        context?: RequestContext,
+        context?: RequestContext
       ): void {
         const errorObj = err instanceof Error ? err : undefined;
         const actualContext = err instanceof Error ? context : err;

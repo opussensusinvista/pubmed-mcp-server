@@ -2,7 +2,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.12.1-green.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.1.4-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.2.1-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -23,7 +23,7 @@ This server equips your AI with specialized tools to interact with PubMed:
 | [`fetch_pubmed_content`](./src/mcp-server/tools/fetchPubMedContent/)                    | Retrieves detailed information for PubMed articles. Can use a list of PMIDs or ESearch history (queryKey/webEnv) with pagination. (See [Example](./examples/fetch_pubmed_content_example.md))                | - Flexible `detailLevel`: `abstract_plus` (parsed details, optional MeSH/grant), `full_xml` (JSON representation of the PubMedArticle XML structure), `medline_text` (MEDLINE format), `citation_data` (minimal for citations).<br/>- Supports direct PMID list or `queryKey`/`webEnv` from ESearch history.<br/>- Supports `retstart`/`retmax` for pagination with history.<br/>- Uses NCBI EFetch. |
 | [`get_pubmed_article_connections`](./src/mcp-server/tools/getPubMedArticleConnections/) | Finds related articles (cited by, similar, references) or formats citations for a PMID. (See [Ex.1](./examples/get_pubmed_article_connections_1.md), [Ex.2](./examples/get_pubmed_article_connections_2.md)) | - Uses NCBI ELink for relationships.<br/>- Uses NCBI EFetch for citation data (RIS, BibTeX, APA, MLA).<br/>- Filter by max related results.                                                                                                                                                                                                                                                          |
 | [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                  | Generates a standardized JSON research plan outline from component details. (See [Example](./examples/pubmed_research_agent_example.md))                                                                     | - Accepts granular inputs for all research phases.<br/>- Optionally embeds instructive prompts for agent execution.<br/>- Structures rough ideas into a formal, machine-readable plan for further processing.                                                                                                                                                                                        |
-| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data. (See [Examples](./examples/))                                                                                                                           | - Supports 'bar', 'line', and 'scatter' chart types.<br/>- Takes data values and field specifications for axes and encoding.<br/>- Constructs a Vega-Lite specification internally and renders it as a PNG using a canvas renderer.                                                                                                                                                                  |
+| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data. (See [Examples](./examples/generate_pubmed_chart))                                                                                                      | - Supports a wide range of chart types: `bar`, `line`, `scatter`, `pie`, `doughnut`, `bubble`, `radar`, and `polarArea`.<br/>- Takes data values and field specifications for axes and series.<br/>- Uses `Chart.js` and `chartjs-node-canvas` for direct server-side rendering.                                                                                                                     |
 
 ---
 
@@ -73,7 +73,7 @@ Leverages the robust utilities provided by the `mcp-ts-template`:
 - **Full Article Metadata**: Retrieve complete publication data including abstracts, authors, affiliations, journal information, DOIs, and citation data.
 - **Citation Network Analysis**: Find related articles, citing articles, and reference lists through ELink integration.
 - **Research Planning**: Generate structured research plans with automated literature search strategies.
-- **Data Visualization**: Create PNG charts from publication metadata (bar charts, line graphs, scatter plots).
+- **Data Visualization**: Create PNG charts from publication metadata (bar, line, scatter, pie, bubble, radar, polarArea).
 - **Multiple Output Formats**: Support for JSON, MEDLINE text, full XML, and formatted citations (RIS, BibTeX, APA, MLA).
 - **Batch Processing**: Efficient handling of multiple PMIDs with pagination support.
 
@@ -135,14 +135,14 @@ Configure the server using environment variables. These environmental variables 
 
 ### MCP Client Settings
 
-Add to your MCP client settings (e.g., `cline_mcp_settings.json`):
+Add the following to your MCP client's configuration file (e.g., `cline_mcp_settings.json`). This configuration uses `npx` to run the server, which will automatically install the package if not already present:
 
 ```json
 {
   "mcpServers": {
     "pubmed-mcp-server": {
-      "command": "node",
-      "args": ["/path/to/your/pubmed-mcp-server/dist/index.js"],
+      "command": "npx",
+      "args": ["@cyanheads/pubmed-mcp-server"],
       "env": {
         "NCBI_API_KEY": "your_ncbi_api_key_here"
       },
@@ -152,8 +152,6 @@ Add to your MCP client settings (e.g., `cline_mcp_settings.json`):
   }
 }
 ```
-
-**Note**: You can see [mcp.json](mcp.json) for an example MCP client configuration file that includes the PubMed MCP Server.
 
 ## Project Structure
 
@@ -187,7 +185,7 @@ The PubMed MCP Server provides a comprehensive suite of tools for biomedical lit
 | `fetch_pubmed_content`           | Fetches detailed article information using PMIDs or search history.    | `pmids?`, `queryKey?`, `webEnv?`, `detailLevel?`, `includeMeshTerms?`, `includeGrantInfo?`                |
 | `get_pubmed_article_connections` | Finds related articles, citations, and references for a given PMID.    | `sourcePmid`, `relationshipType?`, `maxRelatedResults?`, `citationStyles?`                                |
 | `pubmed_research_agent`          | Generates structured research plans with literature search strategies. | `project_title_suggestion`, `primary_research_goal`, `research_keywords`, `organism_focus?`, `p1_*`, etc. |
-| `generate_pubmed_chart`          | Creates customizable PNG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `colorField?`, `seriesField?`, `sizeField?`      |
+| `generate_pubmed_chart`          | Creates customizable PNG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `seriesField?`, `sizeField?`                     |
 
 _Note: All tools support comprehensive error handling and return structured JSON responses._
 
@@ -199,7 +197,7 @@ Comprehensive usage examples are available in the [`examples/`](examples/) direc
 - [Fetch Article Content](examples/fetch_pubmed_content_example.md)
 - [Article Connections](examples/get_pubmed_article_connections_1.md)
 - [Research Planning](examples/pubmed_research_agent_example.md)
-- [Chart Generation](examples/) - Generated chart examples (bar, line, scatter) are available in the `examples/` directory.
+- [Chart Generation](./examples/generate_pubmed_chart/) - Generated chart examples (bar, line, scatter, pie, bubble, radar, polarArea) are available in the `examples/generate_pubmed_chart/` directory.
 
 ## Development
 

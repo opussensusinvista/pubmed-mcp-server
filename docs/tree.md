@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-06-16 02:19:57
+Generated on: 2025-06-16 03:22:03
 
 ```
 pubmed-mcp-server
@@ -15,10 +15,15 @@ pubmed-mcp-server
 │   ├── project-spec.md
 │   └── tree.md
 ├── examples
+│   ├── generate_pubmed_chart
+│   │   ├── bar_chart.png
+│   │   ├── doughnut_chart.png
+│   │   ├── line_chart.png
+│   │   ├── pie_chart.png
+│   │   ├── polar_chart.png
+│   │   ├── radar_chart.png
+│   │   └── scatter_plot.png
 │   ├── fetch_pubmed_content_example.md
-│   ├── generate_pubmed_chart_example_bar.svg
-│   ├── generate_pubmed_chart_example_line.svg
-│   ├── generate_pubmed_chart_example_scatter.svg
 │   ├── get_pubmed_article_connections_1.md
 │   ├── get_pubmed_article_connections_2.md
 │   ├── pubmed_research_agent_example.md

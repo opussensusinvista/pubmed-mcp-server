@@ -28,8 +28,8 @@ startCommand:
         description: "Administrator's email for NCBI contact. Optional, but recommended if using an API key."
   commandFunction: |
     (config) => ({
-      "command": "node",
-      "args": ["dist/index.js"],
+      "command": "npx",
+      "args": ["@cyanheads/pubmed-mcp-server"],
       "env": {
         "MCP_TRANSPORT_TYPE": config.MCP_TRANSPORT_TYPE,
         "MCP_HTTP_PORT": config.MCP_HTTP_PORT,
