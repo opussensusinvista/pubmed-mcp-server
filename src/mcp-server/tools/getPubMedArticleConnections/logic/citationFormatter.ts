@@ -18,7 +18,7 @@ import {
   extractPmid,
   getText,
 } from "../../../../utils/parsing/ncbi-parsing/index.js";
-import type { GetPubMedArticleConnectionsInput } from "../registration.js";
+import type { GetPubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 
 // Main handler for citation formats

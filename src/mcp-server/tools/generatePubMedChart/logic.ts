@@ -3,7 +3,6 @@
  * Generates charts from parameterized input by creating Vega-Lite specifications.
  * @module src/mcp-server/tools/generatePubMedChart/logic
  */
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as vega from "vega";
 import * as vegaLite from "vega-lite";
 import { z } from "zod";
@@ -58,8 +57,8 @@ export const GeneratePubMedChartInputSchema = z.object({
       "Required. An array of data objects used to plot the chart. Each object represents a data point or bar, structured as key-value pairs (e.g., [{ 'year': '2020', 'articles': 150 }, { 'year': '2021', 'articles': 180 }]). Must contain at least one data object.",
     ),
   outputFormat: z
-    .enum(["png"]) // Changed from svg to png
-    .default("png") // Changed default to png
+    .enum(["png"])
+    .default("png")
     .describe(
       "Specifies the output format for the chart. Currently, only 'png' (Portable Network Graphics) is supported and is the default.",
     ),
@@ -88,7 +87,6 @@ export const GeneratePubMedChartInputSchema = z.object({
       "Optional. Specifies the data type of the Y-axis field. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'quantitative' if omitted.",
     ),
 
-  // Optional fields for various chart types
   colorField: z
     .string()
     .optional()
@@ -115,7 +113,6 @@ export const GeneratePubMedChartInputSchema = z.object({
       "Optional. Specifies the data type of the `seriesField`. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'nominal' if `seriesField` is provided and this is omitted.",
     ),
 
-  // Scatter plot specific optional fields (can be expanded)
   sizeField: z
     .string()
     .optional()
@@ -134,10 +131,16 @@ export type GeneratePubMedChartInput = z.infer<
   typeof GeneratePubMedChartInputSchema
 >;
 
+export type GeneratePubMedChartOutput = {
+  base64Data: string;
+  chartType: string;
+  dataPoints: number;
+};
+
 export async function generatePubMedChartLogic(
   input: GeneratePubMedChartInput,
   parentRequestContext: RequestContext,
-): Promise<CallToolResult> {
+): Promise<GeneratePubMedChartOutput> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
     operation: "generatePubMedChartLogicExecution",
@@ -145,190 +148,143 @@ export async function generatePubMedChartLogic(
   });
 
   logger.info(
-    `Executing 'generate_pubmed_chart'. Chart type: ${input.chartType}, Output format: ${input.outputFormat}`,
+    `Executing 'generate_pubmed_chart'. Chart type: ${input.chartType}`,
     operationContext,
   );
 
   if (input.outputFormat !== "png") {
-    const unsupportedFormatError = new McpError(
+    throw new McpError(
       BaseErrorCode.VALIDATION_ERROR,
       `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`,
-      { requestedFormat: input.outputFormat },
+      { ...operationContext, requestedFormat: input.outputFormat },
     );
-    logger.warning(unsupportedFormatError.message, operationContext);
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: unsupportedFormatError.code,
-              message: unsupportedFormatError.message,
-              details: unsupportedFormatError.details,
-            },
-          }),
+  }
+
+  const vegaLiteSpec: any = {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    title: input.title,
+    width: input.width,
+    height: input.height,
+    data: { values: input.dataValues },
+    encoding: {},
+  };
+
+  const yEncType = input.yFieldType || "quantitative";
+  const colorEncType = input.colorFieldType || "nominal";
+  const seriesEncType = input.seriesFieldType || "nominal";
+  const sizeEncType = input.sizeFieldType || "quantitative";
+  let xEncType: string;
+
+  switch (input.chartType) {
+    case "bar":
+      xEncType = input.xFieldType || "nominal";
+      vegaLiteSpec.mark = "bar";
+      vegaLiteSpec.encoding = {
+        x: {
+          field: input.xField,
+          type: xEncType,
+          axis: { title: input.xField },
         },
-      ],
-      isError: true,
-    };
+        y: {
+          field: input.yField,
+          type: yEncType,
+          axis: { title: input.yField },
+        },
+      };
+      if (input.colorField) {
+        vegaLiteSpec.encoding.color = {
+          field: input.colorField,
+          type: colorEncType,
+        };
+      }
+      break;
+    case "line":
+      xEncType = input.xFieldType || "temporal";
+      vegaLiteSpec.mark = "line";
+      vegaLiteSpec.encoding = {
+        x: {
+          field: input.xField,
+          type: xEncType,
+          axis: { title: input.xField },
+        },
+        y: {
+          field: input.yField,
+          type: yEncType,
+          axis: { title: input.yField },
+        },
+      };
+      if (input.seriesField) {
+        vegaLiteSpec.encoding.color = {
+          field: input.seriesField,
+          type: seriesEncType,
+        };
+      } else if (input.colorField) {
+        vegaLiteSpec.encoding.color = {
+          field: input.colorField,
+          type: colorEncType,
+        };
+      }
+      break;
+    case "scatter":
+      xEncType = input.xFieldType || "quantitative";
+      vegaLiteSpec.mark = "point";
+      vegaLiteSpec.encoding = {
+        x: {
+          field: input.xField,
+          type: xEncType,
+          axis: { title: input.xField },
+        },
+        y: {
+          field: input.yField,
+          type: yEncType,
+          axis: { title: input.yField },
+        },
+      };
+      if (input.colorField) {
+        vegaLiteSpec.encoding.color = {
+          field: input.colorField,
+          type: colorEncType,
+        };
+      }
+      if (input.sizeField) {
+        vegaLiteSpec.encoding.size = {
+          field: input.sizeField,
+          type: sizeEncType,
+        };
+      }
+      break;
   }
 
   try {
-    const vegaLiteSpec: any = {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-      title: input.title,
-      width: input.width,
-      height: input.height,
-      data: { values: input.dataValues },
-      encoding: {},
-    };
-
-    const yEncType = input.yFieldType || "quantitative";
-    const colorEncType = input.colorFieldType || "nominal";
-    const seriesEncType = input.seriesFieldType || "nominal";
-    const sizeEncType = input.sizeFieldType || "quantitative";
-    let xEncType: string;
-
-    switch (input.chartType) {
-      case "bar":
-        xEncType = input.xFieldType || "nominal";
-        vegaLiteSpec.mark = "bar";
-        vegaLiteSpec.encoding = {
-          x: {
-            field: input.xField,
-            type: xEncType,
-            axis: { title: input.xField },
-          },
-          y: {
-            field: input.yField,
-            type: yEncType,
-            axis: { title: input.yField },
-          },
-        };
-        if (input.colorField) {
-          vegaLiteSpec.encoding.color = {
-            field: input.colorField,
-            type: colorEncType,
-          };
-        }
-        break;
-      case "line":
-        xEncType = input.xFieldType || "temporal";
-        vegaLiteSpec.mark = "line";
-        vegaLiteSpec.encoding = {
-          x: {
-            field: input.xField,
-            type: xEncType,
-            axis: { title: input.xField },
-          },
-          y: {
-            field: input.yField,
-            type: yEncType,
-            axis: { title: input.yField },
-          },
-        };
-        if (input.seriesField) {
-          vegaLiteSpec.encoding.color = {
-            field: input.seriesField,
-            type: seriesEncType,
-          };
-        } else if (input.colorField) {
-          vegaLiteSpec.encoding.color = {
-            field: input.colorField,
-            type: colorEncType,
-          };
-        }
-        break;
-      case "scatter":
-        xEncType = input.xFieldType || "quantitative";
-        vegaLiteSpec.mark = "point";
-        vegaLiteSpec.encoding = {
-          x: {
-            field: input.xField,
-            type: xEncType,
-            axis: { title: input.xField },
-          },
-          y: {
-            field: input.yField,
-            type: yEncType,
-            axis: { title: input.yField },
-          },
-        };
-        if (input.colorField) {
-          vegaLiteSpec.encoding.color = {
-            field: input.colorField,
-            type: colorEncType,
-          };
-        }
-        if (input.sizeField) {
-          vegaLiteSpec.encoding.size = {
-            field: input.sizeField,
-            type: sizeEncType,
-          };
-        }
-        break;
-    }
-
     const compiledVegaSpec = vegaLite.compile(vegaLiteSpec).spec;
     const view = new vega.View(vega.parse(compiledVegaSpec), {
       renderer: "canvas",
     });
-
     await view.runAsync();
     const canvas = await view.toCanvas();
-
     const imageBuffer = await (canvas as any).toBuffer("image/png");
     const base64Data = imageBuffer.toString("base64");
 
     logger.notice("Successfully generated chart.", {
       ...operationContext,
       chartType: input.chartType,
-      outputFormat: input.outputFormat,
       dataPoints: input.dataValues.length,
     });
 
     return {
-      content: [
-        {
-          type: "image" as const,
-          data: base64Data,
-          mimeType: "image/png" as const,
-        },
-      ],
-      isError: false,
+      base64Data,
+      chartType: input.chartType,
+      dataPoints: input.dataValues.length,
     };
   } catch (error: any) {
-    logger.error(
-      "Execution failed for 'generate_pubmed_chart'",
-      error,
-      operationContext,
+    throw new McpError(
+      BaseErrorCode.INTERNAL_ERROR,
+      `Chart generation failed: ${error.message || "Internal server error during chart generation."}`,
+      {
+        ...operationContext,
+        originalErrorName: error.name,
+        originalErrorMessage: error.message,
+      },
     );
-    const mcpError =
-      error instanceof McpError
-        ? error
-        : new McpError(
-            BaseErrorCode.INTERNAL_ERROR,
-            `'generate_pubmed_chart' failed: ${error.message || "Internal server error during chart generation."}`,
-            {
-              originalErrorName: error.name,
-              originalErrorMessage: error.message,
-              requestId: operationContext.requestId,
-            },
-          );
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: mcpError.code,
-              message: mcpError.message,
-              details: mcpError.details,
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
   }
 }

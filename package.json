@@ -33,22 +33,16 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.4",
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "@node-oauth/oauth2-server": "^5.2.0",
+    "@modelcontextprotocol/sdk": "^1.12.3",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^24.0.1",
     "@types/sanitize-html": "^2.16.0",
     "@types/validator": "13.15.1",
-    "axios": "^1.9.0",
-    "canvas": "^3.1.0",
-    "chalk": "^5.4.1",
-    "chrono-node": "^2.8.2",
-    "cli-table3": "^0.6.5",
+    "axios": "^1.10.0",
+    "chrono-node": "^2.8.3",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0",
     "fast-xml-parser": "^5.2.5",
     "hono": "^4.7.11",
-    "ignore": "^7.0.5",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
     "openai": "^5.3.0",
@@ -61,8 +55,7 @@
     "vega": "^6.1.2",
     "vega-lite": "^6.1.0",
     "winston": "^3.17.0",
-    "winston-daily-rotate-file": "^5.0.0",
-    "yargs": "^18.0.0",
+    "winston-transport": "^4.9.0",
     "zod": "^3.25.64"
   },
   "keywords": [
@@ -103,7 +96,6 @@
     "node": ">=16.0.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
     "@types/js-yaml": "^4.0.9",
     "js-yaml": "^4.1.0",
     "prettier": "^3.5.3",

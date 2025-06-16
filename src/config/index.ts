@@ -188,7 +188,8 @@ const EnvSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["OAUTH_ISSUER_URL"],
-          message: "OAUTH_ISSUER_URL is required when MCP_AUTH_MODE is 'oauth'.",
+          message:
+            "OAUTH_ISSUER_URL is required when MCP_AUTH_MODE is 'oauth'.",
         });
       }
       if (!data.OAUTH_AUDIENCE) {

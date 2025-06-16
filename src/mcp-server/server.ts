@@ -18,6 +18,7 @@ import { ServerType } from "@hono/node-server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
+import { BaseErrorCode } from "../types-global/errors.js";
 import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
 import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js";
 import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
@@ -37,10 +38,8 @@ import { connectStdioTransport } from "./transports/stdioTransport.js";
  * - Capabilities Declaration: Declares supported features (logging, dynamic resources/tools).
  * - Resource/Tool Registration: Makes capabilities discoverable and invocable.
  *
- * Design Note: This factory is called once for 'stdio' transport and per session for 'http' transport.
- *
  * @returns A promise resolving with the configured `McpServer` instance.
- * @throws {Error} If any resource or tool registration fails.
+ * @throws {McpError} If any resource or tool registration fails.
  * @private
  */
 async function createMcpServerInstance(): Promise<McpServer> {
@@ -55,18 +54,6 @@ async function createMcpServerInstance(): Promise<McpServer> {
     environment,
   });
 
-  logger.debug("Instantiating McpServer with capabilities", {
-    ...context,
-    serverInfo: {
-      name: config.mcpServerName,
-      version: config.mcpServerVersion,
-    },
-    capabilities: {
-      logging: {},
-      resources: { listChanged: true },
-      tools: { listChanged: true },
-    },
-  });
   const server = new McpServer(
     { name: config.mcpServerName, version: config.mcpServerVersion },
     {
@@ -78,24 +65,24 @@ async function createMcpServerInstance(): Promise<McpServer> {
     },
   );
 
-  try {
-    logger.debug("Registering resources and tools...", context);
-    // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
-    await registerFetchPubMedContentTool(server);
-    await registerGeneratePubMedChartTool(server);
-    await registerGetPubMedArticleConnectionsTool(server);
-    await registerPubMedResearchAgentTool(server);
-    await registerSearchPubMedArticlesTool(server);
-    // Add other tool/resource registrations here
-    logger.info("Resources and tools registered successfully", context);
-  } catch (err) {
-    logger.error("Failed to register resources/tools", {
-      ...context,
-      error: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    throw err;
-  }
+  await ErrorHandler.tryCatch(
+    async () => {
+      logger.debug("Registering resources and tools...", context);
+      // IMPORTANT: Keep tool registrations in alphabetical order. Do not remove this comment.
+      await registerFetchPubMedContentTool(server);
+      await registerGeneratePubMedChartTool(server);
+      await registerGetPubMedArticleConnectionsTool(server);
+      await registerPubMedResearchAgentTool(server);
+      await registerSearchPubMedArticlesTool(server);
+      logger.info("Resources and tools registered successfully", context);
+    },
+    {
+      operation: "registerAllTools",
+      context,
+      errorCode: BaseErrorCode.INITIALIZATION_FAILED,
+      critical: true,
+    },
+  );
 
   return server;
 }
@@ -108,7 +95,7 @@ async function createMcpServerInstance(): Promise<McpServer> {
  * - Transport Connection: Calls dedicated functions for chosen transport.
  * - Server Instance Lifecycle: Single instance for 'stdio', per-session for 'http'.
  *
- * @returns Resolves with `McpServer` for 'stdio', `http.Server` for 'http', or `void` if http transport manages its own lifecycle without returning a server.
+ * @returns Resolves with `McpServer` for 'stdio', `http.Server` for 'http', or `void`.
  * @throws {Error} If transport type is unsupported or setup fails.
  * @private
  */
@@ -121,31 +108,15 @@ async function startTransport(): Promise<McpServer | ServerType | void> {
   logger.info(`Starting transport: ${transportType}`, context);
 
   if (transportType === "http") {
-    logger.debug("Delegating to startHttpTransport...", context);
-    // For HTTP, startHttpTransport now returns the http.Server instance.
-    const httpServerInstance = await startHttpTransport(
-      createMcpServerInstance,
-      context,
-    );
-    return httpServerInstance;
+    return startHttpTransport(createMcpServerInstance, context);
   }
 
   if (transportType === "stdio") {
-    logger.debug(
-      "Creating single McpServer instance for stdio transport...",
-      context,
-    );
     const server = await createMcpServerInstance();
-    logger.debug("Delegating to connectStdioTransport...", context);
     await connectStdioTransport(server, context);
-    return server; // Return the single McpServer instance for stdio.
+    return server;
   }
 
-  // Should not be reached if config validation is effective.
-  logger.fatal(
-    `Unsupported transport type configured: ${transportType}`,
-    context,
-  );
   throw new Error(
     `Unsupported transport type: ${transportType}. Must be 'stdio' or 'http'.`,
   );
@@ -154,13 +125,6 @@ async function startTransport(): Promise<McpServer | ServerType | void> {
 /**
  * Main application entry point. Initializes and starts the MCP server.
  * Orchestrates server startup, transport selection, and top-level error handling.
- *
- * MCP Spec Relevance:
- * - Manages server startup, leading to a server ready for MCP messages.
- * - Handles critical startup failures, ensuring appropriate process exit.
- *
- * @returns For 'stdio', resolves with `McpServer`. For 'http', resolves with `http.Server`.
- *   Rejects on critical failure, leading to process exit.
  */
 export async function initializeAndStartServer(): Promise<
   void | McpServer | ServerType
@@ -177,21 +141,16 @@ export async function initializeAndStartServer(): Promise<
     );
     return result;
   } catch (err) {
-    logger.fatal("Critical error during MCP server initialization.", {
-      ...context,
-      error: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    // Ensure the error is handled by our centralized handler, which might log more details or perform cleanup.
     ErrorHandler.handleError(err, {
-      operation: "initializeAndStartServer", // More specific operation
-      context: context, // Pass the existing context
-      critical: true, // This is a critical failure
+      operation: "initializeAndStartServer",
+      context: context,
+      critical: true,
+      rethrow: false, // Ensure we don't rethrow, so we can exit gracefully.
     });
     logger.info(
       "Exiting process due to critical initialization error.",
       context,
     );
-    process.exit(1); // Exit with a non-zero code to indicate failure.
+    process.exit(1);
   }
 }

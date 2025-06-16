@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-06-13 08:53:02
+Generated on: 2025-06-16 02:19:57
 
 ```
 pubmed-mcp-server
@@ -10,8 +10,8 @@ pubmed-mcp-server
 │   └── FUNDING.yml
 ├── docs
 │   ├── api-references
-│   │   ├── jsdoc-standard-tags.md
 │   │   └── typedoc-reference.md
+│   ├── best-practices.md
 │   ├── project-spec.md
 │   └── tree.md
 ├── examples
@@ -32,11 +32,6 @@ pubmed-mcp-server
 │   ├── config
 │   │   └── index.ts
 │   ├── mcp-server
-│   │   ├── resources
-│   │   │   └── echoResource
-│   │   │       ├── echoResourceLogic.ts
-│   │   │       ├── index.ts
-│   │   │       └── registration.ts
 │   │   ├── tools
 │   │   │   ├── fetchPubMedContent
 │   │   │   │   ├── index.ts
@@ -53,7 +48,6 @@ pubmed-mcp-server
 │   │   │   │   │   ├── index.ts
 │   │   │   │   │   └── types.ts
 │   │   │   │   ├── index.ts
-│   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts
 │   │   │   ├── pubmedResearchAgent
 │   │   │   │   ├── logic

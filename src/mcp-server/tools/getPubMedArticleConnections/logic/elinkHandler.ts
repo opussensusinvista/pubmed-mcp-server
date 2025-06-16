@@ -12,7 +12,7 @@ import type {
 import { logger, RequestContext } from "../../../../utils/index.js";
 import { extractBriefSummaries } from "../../../../utils/parsing/ncbi-parsing/index.js";
 import { ensureArray } from "../../../../utils/parsing/ncbi-parsing/xmlGenericHelpers.js"; // Added import
-import type { GetPubMedArticleConnectionsInput } from "../registration.js";
+import type { GetPubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 
 // Local interface for the structure of an ELink 'Link' item

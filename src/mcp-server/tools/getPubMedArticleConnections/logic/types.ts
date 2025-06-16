@@ -3,7 +3,7 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/types
  */
 
-import type { GetPubMedArticleConnectionsInput } from "../registration.js";
+import type { GetPubMedArticleConnectionsInput } from "./index.js";
 
 // Helper type for enriched related articles
 export interface RelatedArticle {

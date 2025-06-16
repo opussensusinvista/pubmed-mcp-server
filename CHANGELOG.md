@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2025-06-15
+
+### Changed
+
+- **Architectural Refactor**:
+  - Completed a major architectural refactoring across all tools to enforce a strict separation of concerns, following a "logic-throws, handler-catches" pattern.
+  - **Tool Logic (`logic.ts`)**: Now exclusively contains business logic, Zod schemas, and type definitions. All error conditions are handled by `throwing` a structured `McpError`.
+  - **Tool Registration (`registration.ts`)**: Now acts as the "handler" layer, responsible for registering the tool, invoking the core logic, and catching any thrown errors within a `try...catch` block. It formats the final `CallToolResult` for both success and error cases.
+  - This new pattern significantly improves modularity, testability, and the consistency of error handling throughout the server.
+- **Server Core**:
+  - Refactored `src/mcp-server/server.ts` and `src/mcp-server/transports/httpTransport.ts` to streamline error handling and improve logging context during server startup and request processing.
+- **Dependencies**: Updated various dependencies, including `@modelcontextprotocol/sdk` to `1.12.3` and `axios` to `1.10.0`. Removed several unused packages like `express`, `canvas`, and `yargs`.
+
+### Added
+
+- **Documentation**: Added a new `docs/best-practices.md` file to formally document the new architectural patterns and provide clear guidance for future development.
+
+### Removed
+
+- **`echoResource`**: Deleted the entire `src/mcp-server/resources/echoResource/` directory and its associated files, as it was a non-functional example and not relevant to the project's scope.
+
 ## [1.1.4] - 2025-06-13
 
 ### Changed

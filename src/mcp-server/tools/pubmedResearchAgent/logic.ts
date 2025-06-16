@@ -5,8 +5,6 @@
  * @module pubmedResearchAgent/logic
  */
 
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   logger,
   RequestContext,
@@ -16,15 +14,13 @@ import {
 import {
   generateFullResearchPlanOutline,
   PubMedResearchAgentInput,
-  PubMedResearchAgentInputSchema,
+  PubMedResearchPlanGeneratedOutput,
 } from "./logic/index.js";
-
-export { PubMedResearchAgentInput, PubMedResearchAgentInputSchema };
 
 export async function pubmedResearchAgentLogic(
   input: PubMedResearchAgentInput,
   parentRequestContext: RequestContext,
-): Promise<CallToolResult> {
+): Promise<PubMedResearchPlanGeneratedOutput> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
     operation: "pubmedResearchAgentLogicExecution",
@@ -38,57 +34,15 @@ export async function pubmedResearchAgentLogic(
     operationContext,
   );
 
-  try {
-    const researchPlanOutline = generateFullResearchPlanOutline(
-      input,
-      operationContext,
-    );
+  const researchPlanOutline = generateFullResearchPlanOutline(
+    input,
+    operationContext,
+  );
 
-    logger.notice("Successfully generated research plan outline.", {
-      ...operationContext,
-      projectTitle: input.project_title_suggestion,
-    });
+  logger.notice("Successfully generated research plan outline.", {
+    ...operationContext,
+    projectTitle: input.project_title_suggestion,
+  });
 
-    return {
-      content: [
-        { type: "text", text: JSON.stringify(researchPlanOutline, null, 2) },
-      ],
-      isError: false,
-    };
-  } catch (error: any) {
-    logger.error(
-      "Execution failed for 'pubmed_research_agent'",
-      error,
-      operationContext,
-    );
-    const mcpError =
-      error instanceof McpError
-        ? error
-        : new McpError(
-            BaseErrorCode.INTERNAL_ERROR,
-            `'pubmed_research_agent' tool failed during plan outline generation: ${
-              error.message || "Internal server error."
-            }`,
-            {
-              originalErrorName: error.name,
-              requestId: operationContext.requestId,
-              inputKeywords: input.research_keywords,
-            },
-          );
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: mcpError.code,
-              message: mcpError.message,
-              details: mcpError.details,
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
-  }
+  return researchPlanOutline;
 }

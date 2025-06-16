@@ -6,7 +6,6 @@
  * @module src/mcp-server/tools/fetchPubMedContent/logic
  */
 
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { getNcbiService } from "../../../services/NCBI/ncbiService.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
@@ -150,20 +149,21 @@ export type FetchPubMedContentInput = z.infer<
   typeof FetchPubMedContentInputSchema
 >;
 
-/**
- * Interface for parameters passed to the ncbiService.eFetch method.
- * Adjusted to reflect that 'id' is not used when query_key and WebEnv are present.
- */
+export type FetchPubMedContentOutput = {
+  content: string;
+  articlesReturned: number;
+  eFetchUrl: string;
+};
+
 interface EFetchServiceParams {
   db: string;
-  id?: string; // Optional if using history
-  query_key?: string; // NCBI uses query_key
-  WebEnv?: string; // NCBI uses WebEnv (capital E)
+  id?: string;
+  query_key?: string;
+  WebEnv?: string;
   retmode?: "xml" | "text";
   rettype?: string;
   retstart?: string;
   retmax?: string;
-  // Allow other E-utility specific parameters, typically strings
   [key: string]: string | undefined;
 }
 
@@ -183,7 +183,8 @@ function parsePubMedArticleSet(
     typeof xmlData !== "object" ||
     !("PubmedArticleSet" in xmlData)
   ) {
-    logger.warning(
+    throw new McpError(
+      BaseErrorCode.PARSING_ERROR,
       "Invalid or unexpected structure for xmlData in parsePubMedArticleSet.",
       {
         ...operationContext,
@@ -193,7 +194,6 @@ function parsePubMedArticleSet(
         ),
       },
     );
-    return articles;
   }
 
   const typedXmlData = xmlData as { PubmedArticleSet?: XmlPubmedArticleSet };
@@ -202,52 +202,22 @@ function parsePubMedArticleSet(
   if (!articleSet || !articleSet.PubmedArticle) {
     logger.warning(
       "PubmedArticleSet or PubmedArticle array not found in EFetch XML response.",
-      {
-        ...operationContext,
-        xmlDataPreview: sanitizeInputForLogging(
-          JSON.stringify(typedXmlData).substring(0, 200),
-        ),
-      },
+      operationContext,
     );
     return articles;
   }
 
   const pubmedArticlesXml = ensureArray(articleSet.PubmedArticle);
-  const totalArticlesInXml = pubmedArticlesXml.length;
 
   for (const articleXml of pubmedArticlesXml) {
-    if (!articleXml || typeof articleXml !== "object") {
-      logger.warning(
-        "Skipping invalid articleXml item in pubmedArticlesXml array",
-        {
-          ...operationContext,
-          articleXmlItem: sanitizeInputForLogging(articleXml),
-        },
-      );
-      continue;
-    }
+    if (!articleXml || typeof articleXml !== "object") continue;
+
     const medlineCitation: XmlMedlineCitation | undefined =
       articleXml.MedlineCitation;
-    if (!medlineCitation) {
-      logger.warning("MedlineCitation not found in articleXml, skipping.", {
-        ...operationContext,
-        articleXmlPreview: sanitizeInputForLogging(
-          JSON.stringify(articleXml).substring(0, 200),
-        ),
-      });
-      continue;
-    }
+    if (!medlineCitation) continue;
 
     const pmid = extractPmid(medlineCitation);
-    if (!pmid) {
-      logger.warning("Could not extract PMID from MedlineCitation, skipping.", {
-        ...operationContext,
-        medlineCitationPreview: sanitizeInputForLogging(
-          JSON.stringify(medlineCitation).substring(0, 200),
-        ),
-      });
-      continue;
-    }
+    if (!pmid) continue;
 
     const articleNode = medlineCitation.Article;
     const parsedArticle: ParsedArticle = {
@@ -290,53 +260,26 @@ function parsePubMedArticleSet(
 
     articles.push(parsedArticle);
   }
-
-  logger.debug(
-    `Successfully parsed ${articles.length} of ${totalArticlesInXml} articles from XML.`,
-    {
-      ...operationContext,
-      parsedCount: articles.length,
-      totalInXml: totalArticlesInXml,
-    },
-  );
-
   return articles;
 }
 
 export async function fetchPubMedContentLogic(
   input: FetchPubMedContentInput,
   parentRequestContext: RequestContext,
-): Promise<CallToolResult> {
+): Promise<FetchPubMedContentOutput> {
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
     operation: "fetchPubMedContentLogic",
     input: sanitizeInputForLogging(input),
   });
 
-  // Manual validation safeguard
   const validationResult = FetchPubMedContentInputSchema.safeParse(input);
   if (!validationResult.success) {
-    const errorMessage =
-      validationResult.error.errors[0]?.message || "Invalid input";
-    logger.warning(
-      `Input validation failed pre-check: ${errorMessage}`,
-      toolLogicContext,
+    throw new McpError(
+      BaseErrorCode.VALIDATION_ERROR,
+      validationResult.error.errors[0]?.message || "Invalid input",
+      { ...toolLogicContext, details: validationResult.error.flatten() },
     );
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: BaseErrorCode.VALIDATION_ERROR,
-              message: errorMessage,
-              details: validationResult.error.flatten(),
-            },
-          }),
-        },
-      ],
-      isError: true,
-    };
   }
 
   const ncbiService = getNcbiService();
@@ -349,12 +292,9 @@ export async function fetchPubMedContentLogic(
     usingHistory = true;
     eFetchParams.query_key = input.queryKey;
     eFetchParams.WebEnv = input.webEnv;
-    if (input.retstart !== undefined) {
+    if (input.retstart !== undefined)
       eFetchParams.retstart = String(input.retstart);
-    }
-    if (input.retmax !== undefined) {
-      eFetchParams.retmax = String(input.retmax);
-    }
+    if (input.retmax !== undefined) eFetchParams.retmax = String(input.retmax);
   } else if (input.pmids && input.pmids.length > 0) {
     eFetchParams.id = input.pmids.join(",");
   }
@@ -378,205 +318,119 @@ export async function fetchPubMedContentLogic(
   eFetchParams.retmode = serviceRetmode;
   if (rettype) eFetchParams.rettype = rettype;
 
-  let eFetchUrl = "";
+  const eFetchBase =
+    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
+  const eFetchQueryString = new URLSearchParams(
+    eFetchParams as Record<string, string>,
+  ).toString();
+  const eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
 
-  try {
-    const eFetchBase =
-      "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
-    const eFetchQueryString = new URLSearchParams(
-      eFetchParams as Record<string, string>,
-    ).toString();
-    eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
+  const shouldReturnRawXml =
+    input.detailLevel === "full_xml" && input.outputFormat === "raw_text";
 
-    const shouldReturnRawXml =
-      input.detailLevel === "full_xml" && input.outputFormat === "raw_text";
+  const eFetchResponseData = await ncbiService.eFetch(
+    eFetchParams,
+    toolLogicContext,
+    { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml },
+  );
 
-    const eFetchResponseData = await ncbiService.eFetch(
-      eFetchParams,
-      toolLogicContext,
-      { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml },
-    );
+  let finalOutputText: string;
+  let articlesCount = 0;
 
-    let finalOutputText: string;
-    let structuredResponseData: any;
-    let articlesCount = 0;
-
-    if (input.detailLevel === "medline_text") {
-      const medlineText = String(eFetchResponseData);
-      const foundPmidsInMedline = new Set<string>();
-      const pmidRegex = /^PMID- (\d+)/gm;
-      let match;
-      while ((match = pmidRegex.exec(medlineText)) !== null) {
-        foundPmidsInMedline.add(match[1]);
-      }
-      articlesCount = foundPmidsInMedline.size;
-
-      let notFoundPmids: string[] = [];
-      if (input.pmids && input.pmids.length > 0) {
-        notFoundPmids = input.pmids.filter(
-          (pmid) => !foundPmidsInMedline.has(pmid),
-        );
-      }
-
-      structuredResponseData = {
-        requestedPmids: input.pmids || "N/A (used history query)",
-        articles: [
-          {
-            pmids: input.pmids || "N/A (used history query)",
-            medlineText: medlineText,
-          },
-        ],
-        notFoundPmids: usingHistory
-          ? "N/A (used history query)"
-          : notFoundPmids,
-        eFetchDetails: {
-          urls: [eFetchUrl],
-          requestMethod:
-            input.pmids && input.pmids.length > 200 && !usingHistory
-              ? "POST"
-              : "GET",
-        },
-      };
-      finalOutputText =
-        input.outputFormat === "raw_text"
-          ? medlineText
-          : JSON.stringify(structuredResponseData);
-    } else if (input.detailLevel === "full_xml") {
-      if (input.outputFormat === "raw_text") {
-        finalOutputText = String(eFetchResponseData);
-        articlesCount = (finalOutputText.match(/<PubmedArticle>/g) || []).length;
-      } else {
-        const articlesXml = ensureArray(
-          (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
-        );
-        articlesCount = articlesXml.length;
-        const articlesPayload: { pmid: string; fullXmlContent: any }[] = [];
-        const foundPmidsInXml = new Set<string>();
-
-        for (const articleXml of articlesXml) {
-          const pmid = extractPmid(articleXml.MedlineCitation) || "unknown_pmid";
-          if (pmid !== "unknown_pmid") foundPmidsInXml.add(pmid);
-          articlesPayload.push({ pmid, fullXmlContent: articleXml });
-        }
-
-        const notFoundPmids =
-          input.pmids && input.pmids.length > 0
-            ? input.pmids.filter((pmid) => !foundPmidsInXml.has(pmid))
-            : "N/A (used history query)";
-
-        structuredResponseData = {
-          requestedPmids: input.pmids || "N/A (used history query)",
-          articles: articlesPayload,
-          notFoundPmids,
-          eFetchDetails: {
-            urls: [eFetchUrl],
-            requestMethod:
-              input.pmids && input.pmids.length > 200 && !usingHistory
-                ? "POST"
-                : "GET",
-          },
-        };
-        finalOutputText = JSON.stringify(structuredResponseData);
-      }
-    } else {
-      // abstract_plus or citation_data
-      const parsedArticles = parsePubMedArticleSet(
-        eFetchResponseData as XmlPubmedArticleSet,
-        input,
-        toolLogicContext,
-      );
-      articlesCount = parsedArticles.length;
-      const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
-
-      const notFoundPmids =
-        input.pmids && input.pmids.length > 0
-          ? input.pmids.filter((pmid) => !foundPmids.has(pmid))
-          : "N/A (used history query)";
-
-      structuredResponseData = {
-        requestedPmids: input.pmids || "N/A (used history query)",
-        articles: parsedArticles,
-        notFoundPmids,
-        eFetchDetails: {
-          urls: [eFetchUrl],
-          requestMethod:
-            input.pmids && input.pmids.length > 200 && !usingHistory
-              ? "POST"
-              : "GET",
-        },
-      };
-
-      if (input.detailLevel === "citation_data") {
-        structuredResponseData.articles = structuredResponseData.articles.map(
-          (article: ParsedArticle) => ({
-            pmid: article.pmid,
-            title: article.title,
-            authors: article.authors?.map((a) => ({
-              lastName: a.lastName,
-              initials: a.initials,
-            })),
-            journalInfo: {
-              title: article.journalInfo?.title,
-              isoAbbreviation: article.journalInfo?.isoAbbreviation,
-              volume: article.journalInfo?.volume,
-              issue: article.journalInfo?.issue,
-              pages: article.journalInfo?.pages,
-              year: article.journalInfo?.publicationDate?.year,
-            },
-            doi: article.doi,
-            ...(input.includeMeshTerms && { meshTerms: article.meshTerms }),
-          }),
-        );
-      }
-      finalOutputText = JSON.stringify(structuredResponseData);
+  if (input.detailLevel === "medline_text") {
+    const medlineText = String(eFetchResponseData);
+    const foundPmidsInMedline = new Set<string>();
+    const pmidRegex = /^PMID- (\d+)/gm;
+    let match;
+    while ((match = pmidRegex.exec(medlineText)) !== null) {
+      foundPmidsInMedline.add(match[1]);
     }
+    articlesCount = foundPmidsInMedline.size;
 
-    logger.notice("Successfully executed fetch_pubmed_content tool.", {
-      ...toolLogicContext,
-      detailLevel: input.detailLevel,
-      outputFormat: input.outputFormat,
-      articlesReturned: articlesCount,
-      usingHistory,
-    });
-
-    return {
-      content: [{ type: "text", text: finalOutputText }],
-      isError: false,
-    };
-  } catch (error: any) {
-    logger.error(
-      "Error in fetch_pubmed_content logic",
-      error,
+    if (input.outputFormat === "raw_text") {
+      finalOutputText = medlineText;
+    } else {
+      const notFoundPmids =
+        input.pmids?.filter((pmid) => !foundPmidsInMedline.has(pmid)) || [];
+      finalOutputText = JSON.stringify({
+        requestedPmids: input.pmids || "N/A (history query)",
+        articles: [{ medlineText }],
+        notFoundPmids,
+        eFetchDetails: { urls: [eFetchUrl] },
+      });
+    }
+  } else if (input.detailLevel === "full_xml") {
+    if (input.outputFormat === "raw_text") {
+      finalOutputText = String(eFetchResponseData);
+      articlesCount = (finalOutputText.match(/<PubmedArticle>/g) || []).length;
+    } else {
+      const articlesXml = ensureArray(
+        (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
+      );
+      articlesCount = articlesXml.length;
+      const foundPmidsInXml = new Set<string>();
+      const articlesPayload = articlesXml.map((articleXml) => {
+        const pmid = extractPmid(articleXml.MedlineCitation) || "unknown_pmid";
+        if (pmid !== "unknown_pmid") foundPmidsInXml.add(pmid);
+        return { pmid, fullXmlContent: articleXml };
+      });
+      const notFoundPmids =
+        input.pmids?.filter((pmid) => !foundPmidsInXml.has(pmid)) || [];
+      finalOutputText = JSON.stringify({
+        requestedPmids: input.pmids || "N/A (history query)",
+        articles: articlesPayload,
+        notFoundPmids,
+        eFetchDetails: { urls: [eFetchUrl] },
+      });
+    }
+  } else {
+    const parsedArticles = parsePubMedArticleSet(
+      eFetchResponseData as XmlPubmedArticleSet,
+      input,
       toolLogicContext,
     );
-    const mcpError =
-      error instanceof McpError
-        ? error
-        : new McpError(
-            BaseErrorCode.INTERNAL_ERROR,
-            "Failed to fetch PubMed content.",
-            {
-              originalErrorName: error.name,
-              originalErrorMessage: error.message,
-              requestId: toolLogicContext.requestId,
-            },
-          );
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: mcpError.code,
-              message: mcpError.message,
-              details: mcpError.details,
-            },
-            requestedPmids: input.pmids || "N/A (used history query)",
-            eFetchUrl,
-          }),
+    articlesCount = parsedArticles.length;
+    const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
+    const notFoundPmids =
+      input.pmids?.filter((pmid) => !foundPmids.has(pmid)) || [];
+
+    let articlesToReturn: any = parsedArticles;
+    if (input.detailLevel === "citation_data") {
+      articlesToReturn = parsedArticles.map((article) => ({
+        pmid: article.pmid,
+        title: article.title,
+        authors: article.authors?.map((a) => ({
+          lastName: a.lastName,
+          initials: a.initials,
+        })),
+        journalInfo: {
+          title: article.journalInfo?.title,
+          isoAbbreviation: article.journalInfo?.isoAbbreviation,
+          volume: article.journalInfo?.volume,
+          issue: article.journalInfo?.issue,
+          pages: article.journalInfo?.pages,
+          year: article.journalInfo?.publicationDate?.year,
         },
-      ],
-      isError: true,
-    };
+        doi: article.doi,
+        ...(input.includeMeshTerms && { meshTerms: article.meshTerms }),
+      }));
+    }
+    finalOutputText = JSON.stringify({
+      requestedPmids: input.pmids || "N/A (history query)",
+      articles: articlesToReturn,
+      notFoundPmids,
+      eFetchDetails: { urls: [eFetchUrl] },
+    });
   }
+
+  logger.notice("Successfully executed fetch_pubmed_content tool.", {
+    ...toolLogicContext,
+    articlesReturned: articlesCount,
+  });
+
+  return {
+    content: finalOutputText,
+    articlesReturned: articlesCount,
+    eFetchUrl,
+  };
 }

@@ -5,7 +5,6 @@
  * @module src/mcp-server/tools/searchPubMedArticles/logic
  */
 
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { getNcbiService } from "../../../services/NCBI/ncbiService.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
@@ -103,9 +102,17 @@ export type SearchPubMedArticlesInput = z.infer<
   typeof SearchPubMedArticlesInputSchema
 >;
 
-/**
- * Interface for parameters passed to the ncbiService.eSearch or eSummary methods.
- */
+export type SearchPubMedArticlesOutput = {
+  searchParameters: SearchPubMedArticlesInput;
+  effectiveESearchTerm: string;
+  totalFound: number;
+  retrievedPmidCount: number;
+  pmids: string[];
+  briefSummaries: ParsedBriefSummary[];
+  eSearchUrl: string;
+  eSummaryUrl?: string;
+};
+
 interface ESearchServiceParams {
   db: string;
   term?: string;
@@ -120,18 +127,10 @@ interface ESearchServiceParams {
   [key: string]: string | number | undefined;
 }
 
-/**
- * Logic for the searchPubMedArticles tool.
- * Constructs and executes ESearch and optionally ESummary queries via NcbiService,
- * then formats the results into a CallToolResult.
- * @param input - Validated input arguments for the tool.
- * @param parentRequestContext - The parent request context for logging and correlation.
- * @returns A promise resolving to a CallToolResult.
- */
 export async function searchPubMedArticlesLogic(
   input: SearchPubMedArticlesInput,
   parentRequestContext: RequestContext,
-): Promise<CallToolResult> {
+): Promise<SearchPubMedArticlesOutput> {
   const ncbiService = getNcbiService();
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
@@ -179,167 +178,107 @@ export async function searchPubMedArticlesLogic(
     usehistory: currentFetchBriefSummaries > 0 ? "y" : "n",
   };
 
-  let eSearchUrl = "";
-  let eSummaryUrl = "";
+  const eSearchResponse: ESearchResponseContainer = await ncbiService.eSearch(
+    eSearchParams,
+    toolLogicContext,
+  );
 
-  try {
-    const eSearchResponse: ESearchResponseContainer = await ncbiService.eSearch(
-      eSearchParams,
-      toolLogicContext,
-    );
-
-    const eSearchBase =
-      "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
-    const eSearchQueryStringParams: Record<string, string> = {};
-    for (const key in eSearchParams) {
-      if (eSearchParams[key] !== undefined) {
-        eSearchQueryStringParams[key] = String(eSearchParams[key]);
-      }
+  const eSearchBase =
+    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
+  const eSearchQueryStringParams: Record<string, string> = {};
+  for (const key in eSearchParams) {
+    if (eSearchParams[key] !== undefined) {
+      eSearchQueryStringParams[key] = String(eSearchParams[key]);
     }
-    const eSearchQueryString = new URLSearchParams(
-      eSearchQueryStringParams,
-    ).toString();
-    eSearchUrl = `${eSearchBase}?${eSearchQueryString}`;
-
-    if (!eSearchResponse || !eSearchResponse.eSearchResult) {
-      throw new McpError(
-        BaseErrorCode.NCBI_PARSING_ERROR,
-        "Invalid or empty ESearch response from NCBI.",
-        {
-          responsePreview: sanitizeInputForLogging(
-            JSON.stringify(eSearchResponse).substring(0, 200),
-          ),
-          requestId: toolLogicContext.requestId,
-        },
-      );
-    }
-
-    const esResult = eSearchResponse.eSearchResult;
-    const pmids: string[] = esResult.IdList?.Id || [];
-    const totalFound = parseInt(esResult.Count || "0", 10);
-    const retrievedPmidCount = pmids.length;
-
-    let briefSummaries: ParsedBriefSummary[] = [];
-
-    if (currentFetchBriefSummaries > 0 && pmids.length > 0) {
-      const eSummaryParams: ESearchServiceParams = {
-        db: "pubmed",
-        version: "2.0",
-        retmode: "xml",
-      };
-
-      if (esResult.WebEnv && esResult.QueryKey) {
-        eSummaryParams.WebEnv = esResult.WebEnv;
-        eSummaryParams.query_key = esResult.QueryKey;
-        eSummaryParams.retmax = currentFetchBriefSummaries;
-      } else {
-        const pmidsForSummary = pmids
-          .slice(0, currentFetchBriefSummaries)
-          .join(",");
-        eSummaryParams.id = pmidsForSummary;
-      }
-
-      const eSummaryBase =
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
-      const eSummaryQueryStringParams: Record<string, string> = {};
-      for (const key in eSummaryParams) {
-        if (eSummaryParams[key] !== undefined) {
-          eSummaryQueryStringParams[key] = String(eSummaryParams[key]);
-        }
-      }
-      const eSummaryQueryString = new URLSearchParams(
-        eSummaryQueryStringParams,
-      ).toString();
-      eSummaryUrl = `${eSummaryBase}?${eSummaryQueryString}`;
-
-      const eSummaryResponseXml: ESummaryResponseContainer =
-        await ncbiService.eSummary(eSummaryParams, toolLogicContext);
-
-      logger.debug("Raw ESummary Response (XML parsed by ncbiService):", {
-        ...toolLogicContext,
-        eSummaryResponse: sanitizeInputForLogging(eSummaryResponseXml),
-      });
-
-      if (eSummaryResponseXml && eSummaryResponseXml.eSummaryResult) {
-        briefSummaries = await extractBriefSummaries(
-          eSummaryResponseXml.eSummaryResult,
-          toolLogicContext,
-        );
-      } else if (eSummaryResponseXml && (eSummaryResponseXml as any).ERROR) {
-        logger.warning("ESummary returned a top-level error", {
-          ...toolLogicContext,
-          errorDetails: (eSummaryResponseXml as any).ERROR,
-        });
-      }
-    }
-
-    const resultPayload = {
-      searchParameters: {
-        queryTerm: input.queryTerm,
-        maxResults: input.maxResults,
-        sortBy: input.sortBy,
-        dateRange: input.dateRange,
-        filterByPublicationTypes: input.filterByPublicationTypes,
-        fetchBriefSummaries: currentFetchBriefSummaries,
-      },
-      effectiveESearchTerm: effectiveQuery,
-      totalFound,
-      retrievedPmidCount,
-      pmids,
-      briefSummaries,
-      eSearchUrl,
-      eSummaryUrl:
-        currentFetchBriefSummaries > 0 && pmids.length > 0
-          ? eSummaryUrl
-          : undefined,
-    };
-
-    logger.notice("Successfully executed searchPubMedArticles tool.", {
-      ...toolLogicContext,
-      totalFound,
-      retrievedPmidCount,
-      summariesFetched: briefSummaries.length,
-    });
-
-    return {
-      content: [{ type: "text", text: JSON.stringify(resultPayload) }],
-      isError: false,
-    };
-  } catch (error: any) {
-    logger.error("Error in searchPubMedArticlesLogic", error, toolLogicContext);
-    const mcpError =
-      error instanceof McpError
-        ? error
-        : new McpError(
-            BaseErrorCode.INTERNAL_ERROR,
-            "Failed to search PubMed articles due to an unexpected error.",
-            {
-              originalErrorName: error.name,
-              originalErrorMessage: error.message,
-              requestId: toolLogicContext.requestId,
-            },
-          );
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: {
-              code: mcpError.code,
-              message: mcpError.message,
-              details: mcpError.details,
-            },
-            searchParameters: sanitizeInputForLogging(input),
-            eSearchUrl,
-            eSummaryUrl:
-              (input.fetchBriefSummaries ?? 0) > 0 && eSummaryUrl
-                ? eSummaryUrl
-                : undefined,
-          }),
-        },
-      ],
-      isError: true,
-    };
   }
+  const eSearchQueryString = new URLSearchParams(
+    eSearchQueryStringParams,
+  ).toString();
+  const eSearchUrl = `${eSearchBase}?${eSearchQueryString}`;
+
+  if (!eSearchResponse || !eSearchResponse.eSearchResult) {
+    throw new McpError(
+      BaseErrorCode.NCBI_PARSING_ERROR,
+      "Invalid or empty ESearch response from NCBI.",
+      {
+        ...toolLogicContext,
+        responsePreview: sanitizeInputForLogging(
+          JSON.stringify(eSearchResponse).substring(0, 200),
+        ),
+      },
+    );
+  }
+
+  const esResult = eSearchResponse.eSearchResult;
+  const pmids: string[] = esResult.IdList?.Id || [];
+  const totalFound = parseInt(esResult.Count || "0", 10);
+  const retrievedPmidCount = pmids.length;
+
+  let briefSummaries: ParsedBriefSummary[] = [];
+  let eSummaryUrl: string | undefined;
+
+  if (currentFetchBriefSummaries > 0 && pmids.length > 0) {
+    const eSummaryParams: ESearchServiceParams = {
+      db: "pubmed",
+      version: "2.0",
+      retmode: "xml",
+    };
+
+    if (esResult.WebEnv && esResult.QueryKey) {
+      eSummaryParams.WebEnv = esResult.WebEnv;
+      eSummaryParams.query_key = esResult.QueryKey;
+      eSummaryParams.retmax = currentFetchBriefSummaries;
+    } else {
+      const pmidsForSummary = pmids
+        .slice(0, currentFetchBriefSummaries)
+        .join(",");
+      eSummaryParams.id = pmidsForSummary;
+    }
+
+    const eSummaryBase =
+      "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi";
+    const eSummaryQueryStringParams: Record<string, string> = {};
+    for (const key in eSummaryParams) {
+      if (eSummaryParams[key] !== undefined) {
+        eSummaryQueryStringParams[key] = String(eSummaryParams[key]);
+      }
+    }
+    const eSummaryQueryString = new URLSearchParams(
+      eSummaryQueryStringParams,
+    ).toString();
+    eSummaryUrl = `${eSummaryBase}?${eSummaryQueryString}`;
+
+    const eSummaryResponseXml: ESummaryResponseContainer =
+      await ncbiService.eSummary(eSummaryParams, toolLogicContext);
+
+    if (eSummaryResponseXml && eSummaryResponseXml.eSummaryResult) {
+      briefSummaries = await extractBriefSummaries(
+        eSummaryResponseXml.eSummaryResult,
+        toolLogicContext,
+      );
+    } else if (eSummaryResponseXml && (eSummaryResponseXml as any).ERROR) {
+      logger.warning("ESummary returned a top-level error", {
+        ...toolLogicContext,
+        errorDetails: (eSummaryResponseXml as any).ERROR,
+      });
+    }
+  }
+
+  logger.notice("Successfully executed searchPubMedArticles tool.", {
+    ...toolLogicContext,
+    totalFound,
+    retrievedPmidCount,
+    summariesFetched: briefSummaries.length,
+  });
+
+  return {
+    searchParameters: input,
+    effectiveESearchTerm: effectiveQuery,
+    totalFound,
+    retrievedPmidCount,
+    pmids,
+    briefSummaries,
+    eSearchUrl,
+    eSummaryUrl,
+  };
 }
