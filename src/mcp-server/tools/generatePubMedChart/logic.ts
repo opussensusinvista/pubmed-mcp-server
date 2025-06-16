@@ -1,18 +1,13 @@
 /**
  * @fileoverview Core logic for the generate_pubmed_chart tool.
- * Generates charts from parameterized input by creating Vega-Lite specifications.
+ * Generates charts from parameterized input by creating Chart.js configurations
+ * and rendering them on the server using chartjs-node-canvas.
  * @module src/mcp-server/tools/generatePubMedChart/logic
  */
-import * as vega from "vega";
-import * as vegaLite from "vega-lite";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
+import { ChartConfiguration } from "chart.js";
 import { z } from "zod";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
-
-// IMPORTANT DEPLOYMENT NOTE:
-// This tool uses the 'canvas' package to render PNG images on the server.
-// The 'canvas' package has native system dependencies (e.g., cairo, pango, libjpeg).
-// Ensure these are installed on the deployment environment.
-// See: https://www.npmjs.com/package/canvas#compiling
 import {
   logger,
   RequestContext,
@@ -22,9 +17,18 @@ import {
 
 export const GeneratePubMedChartInputSchema = z.object({
   chartType: z
-    .enum(["bar", "line", "scatter"])
+    .enum([
+      "bar",
+      "line",
+      "scatter",
+      "pie",
+      "doughnut",
+      "bubble",
+      "radar",
+      "polarArea",
+    ])
     .describe(
-      "Required. Specifies the type of chart to generate. Options: 'bar', 'line', 'scatter'.",
+      "Required. Specifies the type of chart to generate. Options: 'bar', 'line', 'scatter', 'pie', 'doughnut', 'bubble', 'radar', 'polarArea'.",
     ),
   title: z
     .string()
@@ -37,18 +41,18 @@ export const GeneratePubMedChartInputSchema = z.object({
     .int()
     .positive()
     .optional()
-    .default(400)
+    .default(800)
     .describe(
-      "Optional. The width of the chart canvas in pixels. Must be a positive integer. Default: 400.",
+      "Optional. The width of the chart canvas in pixels. Must be a positive integer. Default: 800.",
     ),
   height: z
     .number()
     .int()
     .positive()
     .optional()
-    .default(300)
+    .default(600)
     .describe(
-      "Optional. The height of the chart canvas in pixels. Must be a positive integer. Default: 300.",
+      "Optional. The height of the chart canvas in pixels. Must be a positive integer. Default: 600.",
     ),
   dataValues: z
     .array(z.record(z.string(), z.any()))
@@ -62,7 +66,6 @@ export const GeneratePubMedChartInputSchema = z.object({
     .describe(
       "Specifies the output format for the chart. Currently, only 'png' (Portable Network Graphics) is supported and is the default.",
     ),
-
   xField: z
     .string()
     .describe(
@@ -73,57 +76,17 @@ export const GeneratePubMedChartInputSchema = z.object({
     .describe(
       "Required. The name of the field in `dataValues` to be used for the Y-axis (vertical). This field determines the values plotted upwards on the chart (e.g., 'articles', 'expressionLevel', 'citationCount').",
     ),
-
-  xFieldType: z
-    .enum(["nominal", "ordinal", "quantitative", "temporal"])
-    .optional()
-    .describe(
-      "Optional. Specifies the data type of the X-axis field. Options: 'nominal' (categories), 'ordinal' (ordered categories), 'quantitative' (numerical), 'temporal' (dates/times). If omitted, a suitable default is chosen based on `chartType` (e.g., 'nominal' for bar charts, 'temporal' for line charts, 'quantitative' for scatter plots).",
-    ),
-  yFieldType: z
-    .enum(["nominal", "ordinal", "quantitative", "temporal"])
-    .optional()
-    .describe(
-      "Optional. Specifies the data type of the Y-axis field. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'quantitative' if omitted.",
-    ),
-
-  colorField: z
-    .string()
-    .optional()
-    .describe(
-      "Optional. The name of the field in `dataValues` to use for color encoding. This can differentiate bars, lines, or points by color based on the values in this field (e.g., 'studyType', 'country').",
-    ),
-  colorFieldType: z
-    .enum(["nominal", "ordinal", "quantitative", "temporal"])
-    .optional()
-    .describe(
-      "Optional. Specifies the data type of the `colorField`. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'nominal' if `colorField` is provided and this is omitted.",
-    ),
-
   seriesField: z
     .string()
     .optional()
     .describe(
-      "Optional. Primarily for line charts. The name of the field in `dataValues` used to create multiple distinct lines (series) on the same chart. Each unique value in this field will correspond to a separate line (e.g., 'drugName' to plot different drug efficacy trends). Often used with `colorField` implicitly or explicitly.",
+      "Optional. The name of the field in `dataValues` used to create multiple distinct lines or bar groups (series) on the same chart. Each unique value in this field will correspond to a separate dataset.",
     ),
-  seriesFieldType: z
-    .enum(["nominal", "ordinal", "quantitative", "temporal"])
-    .optional()
-    .describe(
-      "Optional. Specifies the data type of the `seriesField`. Options: 'nominal', 'ordinal', 'quantitative', 'temporal'. Defaults to 'nominal' if `seriesField` is provided and this is omitted.",
-    ),
-
   sizeField: z
     .string()
     .optional()
     .describe(
-      "Optional. For scatter plots. The name of the field in `dataValues` to use for encoding the size of the points. Larger values in this field will result in larger points on the scatter plot (e.g., 'sampleSize', 'effectMagnitude').",
-    ),
-  sizeFieldType: z
-    .enum(["quantitative", "ordinal"])
-    .optional()
-    .describe(
-      "Optional. Specifies the data type of the `sizeField`. Options: 'quantitative', 'ordinal'. Defaults to 'quantitative' if `sizeField` is provided and this is omitted.",
+        "Optional. For bubble charts. The name of the field in `dataValues` to use for encoding the size of the bubbles. Larger values in this field will result in larger bubbles (e.g., 'sampleSize', 'effectMagnitude').",
     ),
 });
 
@@ -137,6 +100,24 @@ export type GeneratePubMedChartOutput = {
   dataPoints: number;
 };
 
+// Helper to group data by a series field
+function groupDataBySeries(
+  data: any[],
+  xField: string,
+  yField: string,
+  seriesField: string,
+) {
+  const series = new Map<string, { x: any; y: any }[]>();
+  for (const item of data) {
+    const seriesName = item[seriesField];
+    if (!series.has(seriesName)) {
+      series.set(seriesName, []);
+    }
+    series.get(seriesName)!.push({ x: item[xField], y: item[yField] });
+  }
+  return series;
+}
+
 export async function generatePubMedChartLogic(
   input: GeneratePubMedChartInput,
   parentRequestContext: RequestContext,
@@ -148,124 +129,119 @@ export async function generatePubMedChartLogic(
   });
 
   logger.info(
-    `Executing 'generate_pubmed_chart'. Chart type: ${input.chartType}`,
+    `Executing 'generate_pubmed_chart' with Chart.js. Chart type: ${input.chartType}`,
     operationContext,
   );
 
-  if (input.outputFormat !== "png") {
-    throw new McpError(
-      BaseErrorCode.VALIDATION_ERROR,
-      `Unsupported output format: ${input.outputFormat}. Currently, only 'png' is supported.`,
-      { ...operationContext, requestedFormat: input.outputFormat },
-    );
+  const {
+    width,
+    height,
+    chartType,
+    dataValues,
+    xField,
+    yField,
+    title,
+    seriesField,
+    sizeField,
+  } = input;
+
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({
+    width,
+    height,
+    chartCallback: (ChartJS) => {
+      ChartJS.defaults.responsive = false;
+      ChartJS.defaults.maintainAspectRatio = false;
+    },
+  });
+
+  const labels = [...new Set(dataValues.map((item) => item[xField]))];
+  let datasets: any[];
+
+  if (seriesField) {
+    const groupedData = groupDataBySeries(dataValues, xField, yField, seriesField);
+    datasets = Array.from(groupedData.entries()).map(([seriesName, data]) => ({
+      label: seriesName,
+      data: labels.map(label => {
+        const point = data.find(p => p.x === label);
+        return point ? point.y : null;
+      }),
+      // You can add backgroundColor, borderColor etc. here for styling
+    }));
+  } else {
+    datasets = [
+      {
+        label: yField,
+        data: labels.map(label => {
+            const item = dataValues.find(d => d[xField] === label);
+            return item ? item[yField] : null;
+        }),
+      },
+    ];
+  }
+  
+  // For scatter and bubble charts, the data format is different
+  if (chartType === 'scatter' || chartType === 'bubble') {
+      if (seriesField) {
+          const groupedData = groupDataBySeries(dataValues, xField, yField, seriesField);
+          datasets = Array.from(groupedData.entries()).map(([seriesName, data]) => ({
+              label: seriesName,
+              data: data.map(point => ({
+                  x: point.x,
+                  y: point.y,
+                  r: chartType === 'bubble' && sizeField ? dataValues.find(d => d[xField] === point.x)![sizeField] : undefined
+              })),
+          }));
+      } else {
+          datasets = [{
+              label: yField,
+              data: dataValues.map(item => ({
+                  x: item[xField],
+                  y: item[yField],
+                  r: chartType === 'bubble' && sizeField ? item[sizeField] : undefined
+              })),
+          }];
+      }
   }
 
-  const vegaLiteSpec: any = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-    title: input.title,
-    width: input.width,
-    height: input.height,
-    data: { values: input.dataValues },
-    encoding: {},
+
+  const configuration: ChartConfiguration = {
+    type: chartType,
+    data: {
+      labels: (chartType !== 'scatter' && chartType !== 'bubble') ? labels : undefined,
+      datasets: datasets,
+    },
+    options: {
+      plugins: {
+        title: {
+          display: !!title,
+          text: title,
+        },
+      },
+      scales:
+        chartType === "pie" || chartType === "doughnut" || chartType === "polarArea"
+          ? undefined
+          : {
+              x: {
+                title: {
+                  display: true,
+                  text: xField,
+                },
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: yField,
+                },
+              },
+            },
+    },
   };
 
-  const yEncType = input.yFieldType || "quantitative";
-  const colorEncType = input.colorFieldType || "nominal";
-  const seriesEncType = input.seriesFieldType || "nominal";
-  const sizeEncType = input.sizeFieldType || "quantitative";
-  let xEncType: string;
-
-  switch (input.chartType) {
-    case "bar":
-      xEncType = input.xFieldType || "nominal";
-      vegaLiteSpec.mark = "bar";
-      vegaLiteSpec.encoding = {
-        x: {
-          field: input.xField,
-          type: xEncType,
-          axis: { title: input.xField },
-        },
-        y: {
-          field: input.yField,
-          type: yEncType,
-          axis: { title: input.yField },
-        },
-      };
-      if (input.colorField) {
-        vegaLiteSpec.encoding.color = {
-          field: input.colorField,
-          type: colorEncType,
-        };
-      }
-      break;
-    case "line":
-      xEncType = input.xFieldType || "temporal";
-      vegaLiteSpec.mark = "line";
-      vegaLiteSpec.encoding = {
-        x: {
-          field: input.xField,
-          type: xEncType,
-          axis: { title: input.xField },
-        },
-        y: {
-          field: input.yField,
-          type: yEncType,
-          axis: { title: input.yField },
-        },
-      };
-      if (input.seriesField) {
-        vegaLiteSpec.encoding.color = {
-          field: input.seriesField,
-          type: seriesEncType,
-        };
-      } else if (input.colorField) {
-        vegaLiteSpec.encoding.color = {
-          field: input.colorField,
-          type: colorEncType,
-        };
-      }
-      break;
-    case "scatter":
-      xEncType = input.xFieldType || "quantitative";
-      vegaLiteSpec.mark = "point";
-      vegaLiteSpec.encoding = {
-        x: {
-          field: input.xField,
-          type: xEncType,
-          axis: { title: input.xField },
-        },
-        y: {
-          field: input.yField,
-          type: yEncType,
-          axis: { title: input.yField },
-        },
-      };
-      if (input.colorField) {
-        vegaLiteSpec.encoding.color = {
-          field: input.colorField,
-          type: colorEncType,
-        };
-      }
-      if (input.sizeField) {
-        vegaLiteSpec.encoding.size = {
-          field: input.sizeField,
-          type: sizeEncType,
-        };
-      }
-      break;
-  }
-
   try {
-    const compiledVegaSpec = vegaLite.compile(vegaLiteSpec).spec;
-    const view = new vega.View(vega.parse(compiledVegaSpec), {
-      renderer: "canvas",
-    });
-    await view.runAsync();
-    const canvas = await view.toCanvas();
-    const imageBuffer = await (canvas as any).toBuffer("image/png");
+    const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration);
     const base64Data = imageBuffer.toString("base64");
 
-    logger.notice("Successfully generated chart.", {
+    logger.notice("Successfully generated chart with Chart.js.", {
       ...operationContext,
       chartType: input.chartType,
       dataPoints: input.dataValues.length,

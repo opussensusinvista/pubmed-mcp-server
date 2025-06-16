@@ -25,10 +25,10 @@ export async function registerGeneratePubMedChartTool(
   const toolName = "generate_pubmed_chart";
   const toolDescription =
     "Generates a customizable chart (PNG) from structured data. " +
-    "Supports 'bar', 'line', and 'scatter' plots. " +
+    "Supports 'bar', 'line', 'scatter', 'pie', 'doughnut', 'bubble', 'radar', and 'polarArea' plots. " +
     "Requires data values and field mappings for axes. " +
-    "Optional parameters allow for titles, dimensions, and color/size/series encoding. " +
-    "Internally uses Vega-Lite and a canvas renderer to produce a Base64-encoded PNG image.";
+    "Optional parameters allow for titles and dimensions. " +
+    "Internally uses Chart.js and chartjs-node-canvas to produce a Base64-encoded PNG image.";
   const context = requestContextService.createRequestContext({ operation });
 
   await ErrorHandler.tryCatch(

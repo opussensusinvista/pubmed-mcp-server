@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2025-06-15
+
+### Changed
+
+- **Tool `generatePubMedChart`**:
+  - Majorly refactored the `generatePubMedChart` tool to use `Chart.js` and `chartjs-node-canvas` instead of `vega-lite` and `vega`. This removes the heavy `vega` dependencies and uses a more direct, server-side canvas rendering approach.
+  - The tool now supports a wider range of chart types: `bar`, `line`, `scatter`, `pie`, `doughnut`, `bubble`, `radar`, and `polarArea`.
+  - The input schema in `logic.ts` has been simplified, removing `xFieldType`, `yFieldType`, `colorField`, etc., in favor of a more streamlined `seriesField` and `sizeField` for multi-series and bubble charts.
+- **Dependencies**:
+  - Removed `vega` and `vega-lite` from `package.json`.
+  - Added `chart.js` and `chartjs-node-canvas` to `package.json`.
+- **Examples**:
+  - Deleted the old SVG examples for charts.
+  - Added a new directory `examples/generate_pubmed_chart/` containing multiple PNG examples for different chart types.
+
 ## [1.2.0] - 2025-06-15
 
 ### Changed
