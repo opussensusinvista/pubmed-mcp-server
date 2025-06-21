@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-06-16 03:22:03
+Generated on: 2025-06-21 00:54:01
 
 ```
 pubmed-mcp-server
@@ -11,7 +11,6 @@ pubmed-mcp-server
 ├── docs
 │   ├── api-references
 │   │   └── typedoc-reference.md
-│   ├── best-practices.md
 │   ├── project-spec.md
 │   └── tree.md
 ├── examples
@@ -68,12 +67,18 @@ pubmed-mcp-server
 │   │   │       ├── logic.ts
 │   │   │       └── registration.ts
 │   │   ├── transports
-│   │   │   ├── authentication
-│   │   │   │   ├── authContext.ts
-│   │   │   │   ├── authMiddleware.ts
-│   │   │   │   ├── authUtils.ts
-│   │   │   │   ├── oauthMiddleware.ts
-│   │   │   │   └── types.ts
+│   │   │   ├── auth
+│   │   │   │   ├── core
+│   │   │   │   │   ├── authContext.ts
+│   │   │   │   │   ├── authTypes.ts
+│   │   │   │   │   └── authUtils.ts
+│   │   │   │   ├── strategies
+│   │   │   │   │   ├── jwt
+│   │   │   │   │   │   └── jwtMiddleware.ts
+│   │   │   │   │   └── oauth
+│   │   │   │   │       └── oauthMiddleware.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── httpErrorHandler.ts
 │   │   │   ├── httpTransport.ts
 │   │   │   └── stdioTransport.ts
 │   │   └── server.ts
@@ -120,7 +125,6 @@ pubmed-mcp-server
 ├── Dockerfile
 ├── LICENSE
 ├── mcp.json
-├── NOTICE
 ├── package-lock.json
 ├── package.json
 ├── README.md

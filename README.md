@@ -1,8 +1,8 @@
 # PubMed MCP Server
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg)](https://www.typescriptlang.org/)
-[![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.12.1-green.svg)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.2.1-blue.svg)](./CHANGELOG.md)
+[![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.13.0-green.svg)](https://modelcontextprotocol.io/)
+[![Version](https://img.shields.io/badge/Version-1.2.2-blue.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -62,7 +62,7 @@ Leverages the robust utilities provided by the `mcp-ts-template`:
 - **Input Validation/Sanitization**: Uses `zod` for schema validation and custom sanitization logic.
 - **Request Context**: Tracking and correlation of operations via unique request IDs using `AsyncLocalStorage`.
 - **Type Safety**: Strong typing enforced by TypeScript and Zod schemas.
-- **HTTP Transport**: High-performance HTTP server using **Hono**, featuring session management with garbage collection, CORS, and IP-based rate limiting.
+- **HTTP Transport**: High-performance HTTP server using **Hono**, featuring session management with garbage collection and CORS support.
 - **Authentication**: Robust authentication layer supporting JWT and OAuth 2.1, with fine-grained scope enforcement.
 - **Deployment**: Multi-stage `Dockerfile` for creating small, secure production images with native dependency support.
 

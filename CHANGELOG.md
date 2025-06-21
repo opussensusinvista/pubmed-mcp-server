@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2025-06-20
+
+### Changed
+
+- **Architectural Refactor (Auth & Error Handling)**:
+  - Refactored the entire authentication system into a modular `src/mcp-server/transports/auth/` directory. Logic is now split into `core` utilities, and `strategies` for JWT and OAuth, improving separation of concerns.
+  - Implemented a centralized `httpErrorHandler.ts` for the Hono transport. All middleware and route handlers now throw `McpError` instances, which are caught by a single `app.onError()` handler. This standardizes error responses and simplifies error logic throughout the application.
+  - Removed session timeout and garbage collection logic from `httpTransport.ts`, simplifying its role to transport and session management.
+- **Dependencies**:
+  - Updated core dependencies, including `@modelcontextprotocol/sdk` to `^1.13.0`, `hono` to `^4.8.2`, and `zod` to `^3.25.67`.
+- **Dockerfile**:
+  - Switched the base image in the `Dockerfile` from `node:23-slim` to `node:23-alpine` for a smaller and more secure production image.
+- **Documentation**:
+  - Updated `README.md` to reflect the new SDK version and simplified HTTP transport features.
+  - Updated `docs/tree.md` to show the new auth directory structure and removal of old files.
+
+### Removed
+
+- **`NOTICE` file**: Deleted the `NOTICE` file, as its contents regarding Vega/Vega-Lite are no longer relevant after the switch to Chart.js.
+- **Old Auth Files**: Deleted the previous authentication files (`authContext.ts`, `authMiddleware.ts`, `authUtils.ts`, `oauthMiddleware.ts`, `types.ts`) from `src/mcp-server/transports/authentication/` as they have been replaced by the new modular system.
+
 ## [1.2.1] - 2025-06-15
 
 ### Changed
