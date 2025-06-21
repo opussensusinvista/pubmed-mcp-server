@@ -1,6 +1,6 @@
 # ---- Base Node ----
 # Use the 'slim' variant for a smaller image with glibc for better native module compatibility
-FROM node:23-slim AS base
+FROM node:23-alpine AS base
 WORKDIR /usr/src/app
 ENV NODE_ENV=development
 
