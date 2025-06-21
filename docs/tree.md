@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-06-21 00:54:01
+Generated on: 2025-06-21 06:36:51
 
 ```
 pubmed-mcp-server

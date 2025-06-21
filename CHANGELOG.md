@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2025-06-21
+
+### Changed
+
+- **Logger Refactor**: Refactored the `Logger` in `src/utils/internal/logger.ts` to improve initialization logic and clarify the handling of file-based vs. console logging. The logger now assumes the configuration module is responsible for validating and creating the logs directory, simplifying its own logic.
+- **Security Enhancements**:
+  - **ID Generation**: In `src/utils/security/idGenerator.ts`, switched from a potentially biased modulo operation to a rejection sampling method for generating random IDs, ensuring a uniform character distribution. Validation logic was also updated to support custom charsets.
+  - **URL Sanitization**: In `src/utils/security/sanitization.ts`, expanded the URL sanitization to block `data:` and `vbscript:` pseudo-protocols in addition to `javascript:`.
+- **Code Quality**:
+  - Added more detailed JSDoc comments to `sanitization.ts` to clarify the behavior and limitations of the `sanitizeForLogging` method's deep cloning fallback.
+
 ## [1.2.2] - 2025-06-20
 
 ### Changed

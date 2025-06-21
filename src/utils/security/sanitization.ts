@@ -293,8 +293,15 @@ export class Sanitization {
       ) {
         throw new Error("Invalid URL format or protocol not in allowed list.");
       }
-      if (trimmedInput.toLowerCase().startsWith("javascript:")) {
-        throw new Error("JavaScript pseudo-protocol is not allowed in URLs.");
+      const lowercasedInput = trimmedInput.toLowerCase();
+      if (
+        lowercasedInput.startsWith("javascript:") ||
+        lowercasedInput.startsWith("data:") ||
+        lowercasedInput.startsWith("vbscript:")
+      ) {
+        throw new Error(
+          "Disallowed pseudo-protocol (javascript:, data:, or vbscript:) in URL.",
+        );
       }
       return trimmedInput;
     } catch (error) {
@@ -528,6 +535,17 @@ export class Sanitization {
    * Sanitizes input for logging by redacting sensitive fields.
    * Creates a deep clone and replaces values of fields matching `this.sensitiveFields`
    * (case-insensitive substring match) with "[REDACTED]".
+   *
+   * It uses `structuredClone` if available for a high-fidelity deep clone.
+   * If `structuredClone` is not available (e.g., in older Node.js environments),
+   * it falls back to `JSON.parse(JSON.stringify(input))`. This fallback has limitations:
+   * - `Date` objects are converted to ISO date strings.
+   * - `undefined` values within objects are removed.
+   * - `Map`, `Set`, `RegExp` objects are converted to empty objects (`{}`).
+   * - Functions are removed.
+   * - `BigInt` values will throw an error during `JSON.stringify` unless a `toJSON` method is provided.
+   * - Circular references will cause `JSON.stringify` to throw an error.
+   *
    * @param input - The input data to sanitize for logging.
    * @returns A sanitized (deep cloned) version of the input, safe for logging.
    *   Returns original input if not object/array, or "[Log Sanitization Failed]" on error.
