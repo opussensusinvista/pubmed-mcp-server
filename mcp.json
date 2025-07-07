@@ -2,9 +2,7 @@
   "mcpServers": {
     "pubmed-mcp-server": {
       "command": "npx",
-      "args": [
-        "@cyanheads/pubmed-mcp-server"
-      ],
+      "args": ["@cyanheads/pubmed-mcp-server"],
       "env": {
         "MCP_LOG_LEVEL": "debug",
         "MCP_TRANSPORT_TYPE": "http",

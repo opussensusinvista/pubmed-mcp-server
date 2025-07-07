@@ -4,8 +4,8 @@
  * and rendering them on the server using chartjs-node-canvas.
  * @module src/mcp-server/tools/generatePubMedChart/logic
  */
-import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { ChartConfiguration } from "chart.js";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { z } from "zod";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
@@ -86,7 +86,7 @@ export const GeneratePubMedChartInputSchema = z.object({
     .string()
     .optional()
     .describe(
-        "Optional. For bubble charts. The name of the field in `dataValues` to use for encoding the size of the bubbles. Larger values in this field will result in larger bubbles (e.g., 'sampleSize', 'effectMagnitude').",
+      "Optional. For bubble charts. The name of the field in `dataValues` to use for encoding the size of the bubbles. Larger values in this field will result in larger bubbles (e.g., 'sampleSize', 'effectMagnitude').",
     ),
 });
 
@@ -158,11 +158,16 @@ export async function generatePubMedChartLogic(
   let datasets: any[];
 
   if (seriesField) {
-    const groupedData = groupDataBySeries(dataValues, xField, yField, seriesField);
+    const groupedData = groupDataBySeries(
+      dataValues,
+      xField,
+      yField,
+      seriesField,
+    );
     datasets = Array.from(groupedData.entries()).map(([seriesName, data]) => ({
       label: seriesName,
-      data: labels.map(label => {
-        const point = data.find(p => p.x === label);
+      data: labels.map((label) => {
+        const point = data.find((p) => p.x === label);
         return point ? point.y : null;
       }),
       // You can add backgroundColor, borderColor etc. here for styling
@@ -171,43 +176,56 @@ export async function generatePubMedChartLogic(
     datasets = [
       {
         label: yField,
-        data: labels.map(label => {
-            const item = dataValues.find(d => d[xField] === label);
-            return item ? item[yField] : null;
+        data: labels.map((label) => {
+          const item = dataValues.find((d) => d[xField] === label);
+          return item ? item[yField] : null;
         }),
       },
     ];
   }
-  
-  // For scatter and bubble charts, the data format is different
-  if (chartType === 'scatter' || chartType === 'bubble') {
-      if (seriesField) {
-          const groupedData = groupDataBySeries(dataValues, xField, yField, seriesField);
-          datasets = Array.from(groupedData.entries()).map(([seriesName, data]) => ({
-              label: seriesName,
-              data: data.map(point => ({
-                  x: point.x,
-                  y: point.y,
-                  r: chartType === 'bubble' && sizeField ? dataValues.find(d => d[xField] === point.x)![sizeField] : undefined
-              })),
-          }));
-      } else {
-          datasets = [{
-              label: yField,
-              data: dataValues.map(item => ({
-                  x: item[xField],
-                  y: item[yField],
-                  r: chartType === 'bubble' && sizeField ? item[sizeField] : undefined
-              })),
-          }];
-      }
-  }
 
+  // For scatter and bubble charts, the data format is different
+  if (chartType === "scatter" || chartType === "bubble") {
+    if (seriesField) {
+      const groupedData = groupDataBySeries(
+        dataValues,
+        xField,
+        yField,
+        seriesField,
+      );
+      datasets = Array.from(groupedData.entries()).map(
+        ([seriesName, data]) => ({
+          label: seriesName,
+          data: data.map((point) => ({
+            x: point.x,
+            y: point.y,
+            r:
+              chartType === "bubble" && sizeField
+                ? dataValues.find((d) => d[xField] === point.x)![sizeField]
+                : undefined,
+          })),
+        }),
+      );
+    } else {
+      datasets = [
+        {
+          label: yField,
+          data: dataValues.map((item) => ({
+            x: item[xField],
+            y: item[yField],
+            r:
+              chartType === "bubble" && sizeField ? item[sizeField] : undefined,
+          })),
+        },
+      ];
+    }
+  }
 
   const configuration: ChartConfiguration = {
     type: chartType,
     data: {
-      labels: (chartType !== 'scatter' && chartType !== 'bubble') ? labels : undefined,
+      labels:
+        chartType !== "scatter" && chartType !== "bubble" ? labels : undefined,
       datasets: datasets,
     },
     options: {
@@ -218,7 +236,9 @@ export async function generatePubMedChartLogic(
         },
       },
       scales:
-        chartType === "pie" || chartType === "doughnut" || chartType === "polarArea"
+        chartType === "pie" ||
+        chartType === "doughnut" ||
+        chartType === "polarArea"
           ? undefined
           : {
               x: {
