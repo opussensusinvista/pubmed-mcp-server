@@ -26,9 +26,6 @@ Thumbs.db
 .rollup.cache
 *.mjs.map
 *.cjs.map
-*.d.ts.map
-*.d.ts
-!*.d.ts.template
 .pnp.js
 .pnp.cjs
 .pnp.mjs

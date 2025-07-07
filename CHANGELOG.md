@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2025-07-07
+
+### Added
+
+- **Citation Library**: Integrated the `citation-js` library to handle all citation formatting (RIS, BibTeX, APA, MLA). This replaces the previous manual formatting logic with a robust, industry-standard solution.
+- **Type Declarations**: Added a `declarations.d.ts` file to provide type support for the `citation-js` module.
+- **Configuration**: Added a `.ncurc.json` file to configure the `npm-check-updates` tool, allowing for more controlled dependency management.
+
+### Changed
+
+- **Citation Generation**: Majorly refactored the `getPubMedArticleConnections` tool. The `citationFormatter.ts` logic now converts PubMed XML to a standard CSL-JSON object, which is then processed by `citation-js`. This significantly simplifies the codebase and improves the accuracy and reliability of all citation outputs.
+- **NCBI Service Layer**:
+  - Refactored `ncbiService.ts` to return strongly-typed, parsed objects (`ESearchResult`, `EFetchArticleSet`) instead of generic `any` types, enhancing type safety and developer experience.
+  - Improved the retry mechanism in `ncbiCoreApiClient.ts` for more resilient communication with NCBI APIs.
+- **Author Parsing**: Enhanced the `pubmedArticleStructureParser.ts` to correctly handle and extract `CollectiveName` from author lists in PubMed XML data.
+- **Dependencies**: Upgraded key dependencies, including `@modelcontextprotocol/sdk` to `^1.15.0`, `hono` to `^4.8.4`, and `zod` to `^3.25.74`.
+
+### Fixed
+
+- **XML Parsing**: Corrected a minor issue in `fetchPubMedContent/logic.ts` related to counting articles from a raw XML string to ensure accurate metrics.
+- **Build**: Removed outdated TypeScript declaration file patterns (`*.d.ts`, `*.d.ts.map`) from `.gitignore` to ensure all necessary type declarations are included in the repository.
+
 ## [1.2.3] - 2025-06-21
 
 ### Changed

@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-06-21 06:36:51
+Generated on: 2025-07-07 03:45:56
 
 ```
 pubmed-mcp-server
@@ -90,6 +90,7 @@ pubmed-mcp-server
 │   │       ├── ncbiResponseHandler.ts
 │   │       └── ncbiService.ts
 │   ├── types-global
+│   │   ├── declarations.d.ts
 │   │   ├── errors.ts
 │   │   └── pubmedXml.ts
 │   ├── utils
@@ -120,6 +121,7 @@ pubmed-mcp-server
 ├── .clinerules
 ├── .dockerignore
 ├── .gitignore
+├── .ncurc.json
 ├── CHANGELOG.md
 ├── CLAUDE.md
 ├── Dockerfile
