@@ -39,6 +39,11 @@ export function extractAuthors(
   if (!authorListXml) return [];
   const authors = ensureArray(authorListXml.Author);
   return authors.map((auth: XmlAuthor) => {
+    const collectiveName = getText(auth.CollectiveName);
+    if (collectiveName) {
+      return { collectiveName };
+    }
+
     let affiliation = "";
     const affiliations = ensureArray(auth.AffiliationInfo);
     if (affiliations.length > 0) {

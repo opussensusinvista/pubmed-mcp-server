@@ -360,14 +360,15 @@ export async function fetchPubMedContentLogic(
       });
     }
   } else if (input.detailLevel === "full_xml") {
+    const articlesXml = ensureArray(
+      (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
+    );
+    articlesCount = articlesXml.length;
     if (input.outputFormat === "raw_text") {
+      // Note: Raw XML output is requested, but we still parse to get an accurate count.
+      // This is a trade-off for robustness over performance in this specific case.
       finalOutputText = String(eFetchResponseData);
-      articlesCount = (finalOutputText.match(/<PubmedArticle>/g) || []).length;
     } else {
-      const articlesXml = ensureArray(
-        (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
-      );
-      articlesCount = articlesXml.length;
       const foundPmidsInXml = new Set<string>();
       const articlesPayload = articlesXml.map((articleXml) => {
         const pmid = extractPmid(articleXml.MedlineCitation) || "unknown_pmid";

@@ -44,7 +44,6 @@ export class NcbiCoreApiClient {
     params: NcbiRequestParams,
     context: RequestContext,
     options: NcbiRequestOptions = {},
-    retries = 0,
   ): Promise<AxiosResponse> {
     const rawParams: Record<string, any> = {
       tool: config.ncbiToolIdentifier,
@@ -53,7 +52,6 @@ export class NcbiCoreApiClient {
       ...params,
     };
 
-    // Filter out undefined/null values and convert others to string for URLSearchParams/request body
     const finalParams: Record<string, string> = {};
     for (const key in rawParams) {
       if (Object.prototype.hasOwnProperty.call(rawParams, key)) {
@@ -78,87 +76,90 @@ export class NcbiCoreApiClient {
       requestConfig.params = finalParams;
     }
 
-    try {
-      logger.debug(
-        `Making NCBI HTTP request: ${requestConfig.method} ${requestConfig.url}`,
-        requestContextService.createRequestContext({
-          ...context,
-          operation: "NCBI_HttpRequest",
-          endpoint,
-          method: requestConfig.method,
-          requestParams: sanitizeInputForLogging(finalParams),
-          attempt: retries + 1,
-        }),
-      );
-      const response: AxiosResponse = await this.axiosInstance(requestConfig);
-      return response;
-    } catch (error: any) {
-      if (retries < config.ncbiMaxRetries) {
-        const retryDelay = Math.pow(2, retries) * 200; // Increased base delay for retries
-        logger.warning(
-          `NCBI request to ${endpoint} failed. Retrying (${retries + 1}/${config.ncbiMaxRetries}) in ${retryDelay}ms...`,
+    for (let attempt = 0; attempt <= config.ncbiMaxRetries; attempt++) {
+      try {
+        logger.debug(
+          `Making NCBI HTTP request: ${requestConfig.method} ${requestConfig.url}`,
           requestContextService.createRequestContext({
             ...context,
-            operation: "NCBI_HttpRequestRetry",
+            operation: "NCBI_HttpRequest",
             endpoint,
-            error: error.message,
-            retryCount: retries + 1,
-            maxRetries: config.ncbiMaxRetries,
-            delay: retryDelay,
+            method: requestConfig.method,
+            requestParams: sanitizeInputForLogging(finalParams),
+            attempt: attempt + 1,
           }),
         );
-        await new Promise((r) => setTimeout(r, retryDelay));
-        return this.makeRequest(
-          endpoint,
-          params,
-          context,
-          options,
-          retries + 1,
-        );
-      }
+        const response: AxiosResponse = await this.axiosInstance(requestConfig);
+        return response;
+      } catch (error: any) {
+        if (attempt < config.ncbiMaxRetries) {
+          const retryDelay = Math.pow(2, attempt) * 200;
+          logger.warning(
+            `NCBI request to ${endpoint} failed. Retrying (${attempt + 1}/${config.ncbiMaxRetries}) in ${retryDelay}ms...`,
+            requestContextService.createRequestContext({
+              ...context,
+              operation: "NCBI_HttpRequestRetry",
+              endpoint,
+              error: error.message,
+              retryCount: attempt + 1,
+              maxRetries: config.ncbiMaxRetries,
+              delay: retryDelay,
+            }),
+          );
+          await new Promise((r) => setTimeout(r, retryDelay));
+          continue; // Continue to the next iteration of the loop
+        }
 
-      if (axios.isAxiosError(error)) {
+        // If all retries are exhausted, handle the final error
+        if (axios.isAxiosError(error)) {
+          logger.error(
+            `Axios error during NCBI request to ${endpoint} after ${attempt} retries`,
+            error,
+            requestContextService.createRequestContext({
+              ...context,
+              operation: "NCBI_AxiosError",
+              endpoint,
+              status: error.response?.status,
+              responseData: sanitizeInputForLogging(error.response?.data),
+            }),
+          );
+          throw new McpError(
+            BaseErrorCode.NCBI_SERVICE_UNAVAILABLE,
+            `NCBI request failed: ${error.message}`,
+            {
+              endpoint,
+              status: error.response?.status,
+              details: error.response?.data
+                ? String(error.response.data).substring(0, 500)
+                : undefined,
+            },
+          );
+        }
+        if (error instanceof McpError) throw error;
+
         logger.error(
-          `Axios error during NCBI request to ${endpoint} after ${retries} retries`,
+          `Unexpected error during NCBI request to ${endpoint} after ${attempt} retries`,
           error,
           requestContextService.createRequestContext({
             ...context,
-            operation: "NCBI_AxiosError",
+            operation: "NCBI_UnexpectedError",
             endpoint,
-            status: error.response?.status,
-            responseData: sanitizeInputForLogging(error.response?.data),
+            errorMessage: error.message,
           }),
         );
         throw new McpError(
-          BaseErrorCode.NCBI_SERVICE_UNAVAILABLE,
-          `NCBI request failed: ${error.message}`,
-          {
-            endpoint,
-            status: error.response?.status,
-            details: error.response?.data
-              ? String(error.response.data).substring(0, 500)
-              : undefined,
-          },
+          BaseErrorCode.INTERNAL_ERROR,
+          `Unexpected error communicating with NCBI: ${error.message}`,
+          { endpoint },
         );
       }
-      // If it's already an McpError, rethrow it (could be from a previous stage if this function is used more broadly)
-      if (error instanceof McpError) throw error;
-
-      logger.error(
-        `Unexpected error during NCBI request to ${endpoint} after ${retries} retries`,
-        error,
-        requestContextService.createRequestContext({
-          ...context,
-          operation: "NCBI_UnexpectedError",
-          endpoint,
-          errorMessage: error.message,
-        }),
-      );
-      throw new McpError(
-        BaseErrorCode.INTERNAL_ERROR,
-        `Unexpected error communicating with NCBI: ${error.message}`,
-        { endpoint },
-      );
     }
+    // This line should theoretically be unreachable, but it satisfies TypeScript's need
+    // for a return path if the loop completes without returning or throwing.
+    throw new McpError(
+      BaseErrorCode.INTERNAL_ERROR,
+      "Request failed after all retries.",
+      { endpoint },
+    );
   }
 }

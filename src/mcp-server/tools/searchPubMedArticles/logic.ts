@@ -9,7 +9,7 @@ import { z } from "zod";
 import { getNcbiService } from "../../../services/NCBI/ncbiService.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
-  ESearchResponseContainer,
+  ESearchResult,
   ESummaryResponseContainer,
   ParsedBriefSummary,
 } from "../../../types-global/pubmedXml.js";
@@ -178,7 +178,7 @@ export async function searchPubMedArticlesLogic(
     usehistory: currentFetchBriefSummaries > 0 ? "y" : "n",
   };
 
-  const eSearchResponse: ESearchResponseContainer = await ncbiService.eSearch(
+  const esResult: ESearchResult = await ncbiService.eSearch(
     eSearchParams,
     toolLogicContext,
   );
@@ -196,22 +196,21 @@ export async function searchPubMedArticlesLogic(
   ).toString();
   const eSearchUrl = `${eSearchBase}?${eSearchQueryString}`;
 
-  if (!eSearchResponse || !eSearchResponse.eSearchResult) {
+  if (!esResult) {
     throw new McpError(
       BaseErrorCode.NCBI_PARSING_ERROR,
       "Invalid or empty ESearch response from NCBI.",
       {
         ...toolLogicContext,
         responsePreview: sanitizeInputForLogging(
-          JSON.stringify(eSearchResponse).substring(0, 200),
+          JSON.stringify(esResult).substring(0, 200),
         ),
       },
     );
   }
 
-  const esResult = eSearchResponse.eSearchResult;
-  const pmids: string[] = esResult.IdList?.Id || [];
-  const totalFound = parseInt(esResult.Count || "0", 10);
+  const pmids: string[] = esResult.idList || [];
+  const totalFound = esResult.count || 0;
   const retrievedPmidCount = pmids.length;
 
   let briefSummaries: ParsedBriefSummary[] = [];
@@ -224,9 +223,9 @@ export async function searchPubMedArticlesLogic(
       retmode: "xml",
     };
 
-    if (esResult.WebEnv && esResult.QueryKey) {
-      eSummaryParams.WebEnv = esResult.WebEnv;
-      eSummaryParams.query_key = esResult.QueryKey;
+    if (esResult.webEnv && esResult.queryKey) {
+      eSummaryParams.WebEnv = esResult.webEnv;
+      eSummaryParams.query_key = esResult.queryKey;
       eSummaryParams.retmax = currentFetchBriefSummaries;
     } else {
       const pmidsForSummary = pmids

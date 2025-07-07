@@ -196,6 +196,7 @@ export interface ParsedArticleAuthor {
   firstName?: string;
   initials?: string;
   affiliation?: string;
+  collectiveName?: string;
 }
 
 export interface ParsedArticleDate {
@@ -424,4 +425,23 @@ export interface ESearchResultContent {
 export interface ESearchResponseContainer {
   eSearchResult: ESearchResultContent;
   // header?: any;
+}
+
+// Fully parsed and typed result for ESearch
+export interface ESearchResult {
+  count: number;
+  retmax: number;
+  retstart: number;
+  queryKey?: string;
+  webEnv?: string;
+  idList: string[];
+  queryTranslation: string;
+  errorList?: ESearchErrorList;
+  warningList?: ESearchWarningList;
+}
+
+// Fully parsed and typed result for EFetch
+export interface EFetchArticleSet {
+  articles: ParsedArticle[];
+  // Add any other top-level fields from the parsed EFetch result if necessary
 }

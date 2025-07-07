@@ -9,6 +9,11 @@
  */
 
 import {
+  ESearchResult,
+  EFetchArticleSet,
+  ESearchResponseContainer,
+} from "../../types-global/pubmedXml.js";
+import {
   logger,
   RequestContext,
   requestContextService,
@@ -56,10 +61,28 @@ export class NcbiService {
   public async eSearch(
     params: NcbiRequestParams,
     context: RequestContext,
-  ): Promise<any> {
-    return this.performNcbiRequest("esearch", params, context, {
-      retmode: "xml",
-    });
+  ): Promise<ESearchResult> {
+    const response = await this.performNcbiRequest<ESearchResponseContainer>(
+      "esearch",
+      params,
+      context,
+      {
+        retmode: "xml",
+      },
+    );
+
+    const esResult = response.eSearchResult;
+    return {
+      count: parseInt(esResult.Count, 10) || 0,
+      retmax: parseInt(esResult.RetMax, 10) || 0,
+      retstart: parseInt(esResult.RetStart, 10) || 0,
+      queryKey: esResult.QueryKey,
+      webEnv: esResult.WebEnv,
+      idList: esResult.IdList?.Id || [],
+      queryTranslation: esResult.QueryTranslation,
+      errorList: esResult.ErrorList,
+      warningList: esResult.WarningList,
+    };
   }
 
   public async eSummary(
@@ -76,13 +99,18 @@ export class NcbiService {
     params: NcbiRequestParams,
     context: RequestContext,
     options: NcbiRequestOptions = { retmode: "xml" }, // Default retmode for eFetch
-  ): Promise<any> {
+  ): Promise<EFetchArticleSet> {
     // Determine if POST should be used based on number of IDs
     const usePost =
       typeof params.id === "string" && params.id.split(",").length > 200;
     const fetchOptions = { ...options, usePost };
 
-    return this.performNcbiRequest("efetch", params, context, fetchOptions);
+    return this.performNcbiRequest<EFetchArticleSet>(
+      "efetch",
+      params,
+      context,
+      fetchOptions,
+    );
   }
 
   public async eLink(

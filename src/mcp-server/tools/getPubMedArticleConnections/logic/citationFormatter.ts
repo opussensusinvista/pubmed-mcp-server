@@ -4,6 +4,7 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/citationFormatter
  */
 
+import Cite from "citation-js";
 import { getNcbiService } from "../../../../services/NCBI/ncbiService.js";
 import type { XmlPubmedArticle } from "../../../../types-global/pubmedXml.js";
 import {
@@ -27,22 +28,16 @@ export async function handleCitationFormats(
   outputData: ToolOutputData,
   context: RequestContext,
 ): Promise<void> {
-  const eFetchParams: {
-    db: string;
-    id: string;
-    retmode: "xml";
-    rettype?: string;
-  } = {
+  const eFetchParams = {
     db: "pubmed",
     id: input.sourcePmid,
-    retmode: "xml",
-    // Omitting rettype to hopefully get the fullest XML record by default
+    retmode: "xml" as const,
   };
 
   const eFetchBaseUrl =
     "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
   const searchParamsString = new URLSearchParams(
-    eFetchParams as Record<string, string>, // Cast to Record<string, string> for URLSearchParams
+    eFetchParams as Record<string, string>,
   ).toString();
   outputData.eUtilityUrl = `${eFetchBaseUrl}?${searchParamsString}`;
 
@@ -58,39 +53,54 @@ export async function handleCitationFormats(
 
   const article: XmlPubmedArticle =
     eFetchResult.PubmedArticleSet.PubmedArticle[0];
+  const csl = pubmedArticleToCsl(article, context);
+  const cite = new Cite(csl);
 
   if (input.citationStyles?.includes("ris")) {
-    outputData.citations.ris = formatAsRIS(article, context);
+    outputData.citations.ris = cite.format("ris");
   }
   if (input.citationStyles?.includes("bibtex")) {
-    outputData.citations.bibtex = formatAsBibTeX(article, context);
+    outputData.citations.bibtex = cite.format("bibtex");
   }
   if (input.citationStyles?.includes("apa_string")) {
-    outputData.citations.apa_string = formatAsAPA(article, context);
+    outputData.citations.apa_string = cite.format("bibliography", {
+      format: "text",
+      template: "apa",
+    });
   }
   if (input.citationStyles?.includes("mla_string")) {
-    outputData.citations.mla_string = formatAsMLA(article, context);
+    outputData.citations.mla_string = cite.format("bibliography", {
+      format: "text",
+      template: "mla",
+    });
   }
   outputData.retrievedCount = 1;
 }
 
-// --- Citation Formatting Helper Functions ---
-
-function formatAsRIS(
+/**
+ * Converts an XML PubMed Article object to a CSL-JSON object.
+ * @param article The PubMed article in XML format.
+ * @param context The request context for logging.
+ * @returns A CSL-JSON object compatible with citation-js.
+ */
+function pubmedArticleToCsl(
   article: XmlPubmedArticle,
   context: RequestContext,
-): string {
+): any {
   const medlineCitation = article.MedlineCitation;
   const articleDetails = medlineCitation?.Article;
   const pmid = extractPmid(medlineCitation);
 
-  logger.debug(
-    "Formatting RIS for article",
-    requestContextService.createRequestContext({ ...context, pmid }),
-  );
+  const cslContext = requestContextService.createRequestContext({
+    ...context,
+    pmid,
+  });
+  logger.debug("Converting PubMed XML to CSL-JSON", cslContext);
 
-  if (!articleDetails)
-    return "TY  - ERROR\nTI  - Article details not found\nER  - \n";
+  if (!articleDetails) {
+    logger.warning("Article details not found for CSL conversion", cslContext);
+    return { id: pmid || "unknown", title: "Article details not found" };
+  }
 
   const authors = extractAuthors(articleDetails.AuthorList);
   const journalInfo = extractJournalInfo(
@@ -100,271 +110,52 @@ function formatAsRIS(
   const title = getText(articleDetails.ArticleTitle);
   const doi = extractDoi(articleDetails);
 
-  let risString = "TY  - JOUR\n";
-  authors.forEach((author) => {
-    if (author.lastName && author.firstName) {
-      risString += `AU  - ${author.lastName}, ${author.firstName}\n`;
-    } else if (author.lastName) {
-      // Handle collective name or incomplete author
-      risString += `AU  - ${author.lastName}\n`;
-    }
-  });
-
-  risString += `TI  - ${title || "N/A"}\n`;
-  risString += `JO  - ${journalInfo?.title || "N/A"}\n`;
-  risString += `VL  - ${journalInfo?.volume || ""}\n`;
-  risString += `IS  - ${journalInfo?.issue || ""}\n`;
-
-  if (journalInfo?.pages) {
-    const pages = journalInfo.pages.split("-");
-    risString += `SP  - ${pages[0] || ""}\n`;
-    if (pages.length > 1) risString += `EP  - ${pages[1] || ""}\n`;
-  }
-  risString += `PY  - ${journalInfo?.publicationDate?.year || ""}\n`;
-  if (doi) risString += `DO  - ${doi}\n`;
-  if (pmid) risString += `UR  - https://pubmed.ncbi.nlm.nih.gov/${pmid}\n`;
-  risString += "ER  - \n";
-  return risString;
-}
-
-function formatAsBibTeX(
-  article: XmlPubmedArticle,
-  context: RequestContext,
-): string {
-  const medlineCitation = article.MedlineCitation;
-  const articleDetails = medlineCitation?.Article;
-  const pmid = extractPmid(medlineCitation);
-
-  logger.debug(
-    "Formatting BibTeX for article",
-    requestContextService.createRequestContext({ ...context, pmid }),
+  const cslAuthors = authors.map((author) =>
+    author.collectiveName
+      ? { literal: author.collectiveName }
+      : { family: author.lastName, given: author.firstName },
   );
 
-  if (!articleDetails)
-    return `@article{ERROR_ArticleNotFound${pmid || ""},\n  title = {Article details not found}\n}\n`;
-
-  const parsedAuthors = extractAuthors(articleDetails.AuthorList);
-  const journalInfo = extractJournalInfo(
-    articleDetails.Journal,
-    medlineCitation,
-  );
-  const title = getText(articleDetails.ArticleTitle) || "N/A";
-  const doi = extractDoi(articleDetails);
-
-  const authorsBibtex = parsedAuthors
-    .map((author) => {
-      if (author.lastName && author.firstName)
-        return `${author.lastName}, ${author.firstName}`;
-      if (author.lastName) return `{${author.lastName}}`; // For collective names or single names
-      return "";
-    })
-    .filter(Boolean)
-    .join(" and ");
-
-  const year = journalInfo?.publicationDate?.year || "ND";
-  const firstAuthorLastName =
-    parsedAuthors[0]?.lastName?.replace(/\s+/g, "") || "Unknown";
-  const bibKey = `${firstAuthorLastName}${year}`;
-
-  let bibtexString = `@article{${bibKey},\n`;
-  if (authorsBibtex) bibtexString += `  author    = {${authorsBibtex}},\n`;
-  bibtexString += `  title     = {${title}},\n`;
-  bibtexString += `  journal   = {${journalInfo?.title || "N/A"}},\n`;
-  if (journalInfo?.publicationDate?.year)
-    bibtexString += `  year      = {${journalInfo.publicationDate.year}},\n`;
-  if (journalInfo?.volume)
-    bibtexString += `  volume    = {${journalInfo.volume}},\n`;
-  if (journalInfo?.issue)
-    bibtexString += `  number    = {${journalInfo.issue}},\n`;
-  if (journalInfo?.pages)
-    bibtexString += `  pages     = {${journalInfo.pages.replace("-", "--")}},\n`;
-  if (journalInfo?.publicationDate?.month)
-    bibtexString += `  month     = {${journalInfo.publicationDate.month.toLowerCase()}},\n`;
-  if (doi) bibtexString += `  doi       = {${doi}},\n`;
-  if (pmid) bibtexString += `  pmid      = {${pmid}}\n`;
-  bibtexString += `}\n`;
-
-  return bibtexString;
-}
-
-function formatAsAPA(
-  article: XmlPubmedArticle,
-  context: RequestContext,
-): string {
-  const medlineCitation = article.MedlineCitation;
-  const articleDetails = medlineCitation?.Article;
-  const pmid = extractPmid(medlineCitation);
-
-  logger.debug(
-    "Formatting APA for article",
-    requestContextService.createRequestContext({ ...context, pmid }),
-  );
-
-  if (!articleDetails) return "Article details not found.";
-
-  const parsedAuthors = extractAuthors(articleDetails.AuthorList);
-  const journalInfo = extractJournalInfo(
-    articleDetails.Journal,
-    medlineCitation,
-  );
-  const titleText = getText(articleDetails.ArticleTitle) || "N/A";
-  const doi = extractDoi(articleDetails);
-
-  let authorsString = "N/A";
-  if (parsedAuthors.length > 0) {
-    if (parsedAuthors.length <= 20) {
-      authorsString = parsedAuthors
-        .map((author) => {
-          if (author.lastName && author.firstName) {
-            const initials = author.firstName
-              .split(/\s+|-/)
-              .map((namePart) => namePart.charAt(0).toUpperCase() + ".")
-              .join("");
-            return `${author.lastName}, ${initials}`;
-          }
-          if (author.lastName) return author.lastName; // Collective name
-          return "";
-        })
-        .filter(Boolean)
-        .join(", ");
-      if (parsedAuthors.length > 1) {
-        const lastCommaIndex = authorsString.lastIndexOf(", ");
-        if (lastCommaIndex !== -1) {
-          authorsString =
-            authorsString.substring(0, lastCommaIndex) +
-            " & " +
-            authorsString.substring(lastCommaIndex + 2);
+  const dateParts: (number | string)[] = [];
+  if (journalInfo?.publicationDate?.year) {
+    dateParts.push(parseInt(journalInfo.publicationDate.year, 10));
+    if (journalInfo.publicationDate.month) {
+      // Convert month name/number to number
+      const monthNumber = new Date(
+        `${journalInfo.publicationDate.month} 1, 2000`,
+      ).getMonth();
+      if (!isNaN(monthNumber)) {
+        dateParts.push(monthNumber + 1);
+        if (journalInfo.publicationDate.day) {
+          dateParts.push(parseInt(journalInfo.publicationDate.day, 10));
         }
       }
-    } else {
-      const first19 = parsedAuthors
-        .slice(0, 19)
-        .map((author) => {
-          if (author.lastName && author.firstName) {
-            const initials = author.firstName
-              .split(/\s+|-/)
-              .map((namePart) => namePart.charAt(0).toUpperCase() + ".")
-              .join("");
-            return `${author.lastName}, ${initials}`;
-          }
-          if (author.lastName) return author.lastName;
-          return "";
-        })
-        .filter(Boolean)
-        .join(", ");
-      const lastAuthor = parsedAuthors[parsedAuthors.length - 1];
-      let lastAuthorString = "";
-      if (lastAuthor.lastName && lastAuthor.firstName) {
-        const initials = lastAuthor.firstName
-          .split(/\s+|-/)
-          .map((namePart) => namePart.charAt(0).toUpperCase() + ".")
-          .join("");
-        lastAuthorString = `${lastAuthor.lastName}, ${initials}`;
-      } else if (lastAuthor.lastName) {
-        lastAuthorString = lastAuthor.lastName;
-      }
-      authorsString = `${first19}, ..., ${lastAuthorString}`;
     }
   }
 
-  const year = journalInfo?.publicationDate?.year || "n.d.";
-  const apaTitle = titleText.charAt(0).toUpperCase() + titleText.slice(1); // APA typically sentence case for article titles.
+  const cslData: any = {
+    id: pmid,
+    type: "article-journal",
+    title: title,
+    author: cslAuthors,
+    issued: {
+      "date-parts": [dateParts],
+    },
+    "container-title": journalInfo?.title,
+    volume: journalInfo?.volume,
+    issue: journalInfo?.issue,
+    page: journalInfo?.pages,
+    DOI: doi,
+    PMID: pmid,
+    URL: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}` : undefined,
+  };
 
-  const journal = journalInfo?.title || "N/A";
-  const volume = journalInfo?.volume || "";
-  const issue = journalInfo?.issue ? `(${journalInfo.issue})` : "";
-  const pages = journalInfo?.pages || "";
-  const doiLink = doi ? ` https://doi.org/${doi}` : "";
-
-  let apaString = `${authorsString}. (${year}). ${apaTitle}. ${journal}`;
-  if (volume) apaString += `, ${volume}`;
-  if (issue) apaString += issue;
-  if (pages) apaString += `, ${pages}`;
-  apaString += `.${doiLink}`;
-
-  return apaString;
-}
-
-function formatAsMLA(
-  article: XmlPubmedArticle,
-  context: RequestContext,
-): string {
-  const medlineCitation = article.MedlineCitation;
-  const articleDetails = medlineCitation?.Article;
-  const pmid = extractPmid(medlineCitation);
-
-  logger.debug(
-    "Formatting MLA for article",
-    requestContextService.createRequestContext({ ...context, pmid }),
-  );
-
-  if (!articleDetails) return "Article details not found.";
-
-  const parsedAuthors = extractAuthors(articleDetails.AuthorList);
-  const journalInfo = extractJournalInfo(
-    articleDetails.Journal,
-    medlineCitation,
-  );
-  const titleText = getText(articleDetails.ArticleTitle);
-  const doi = extractDoi(articleDetails);
-
-  let authorsString = "N/A";
-  if (parsedAuthors.length > 0) {
-    if (parsedAuthors.length <= 2) {
-      authorsString = parsedAuthors
-        .map((author, index) => {
-          if (author.lastName && author.firstName) {
-            return index === 0
-              ? `${author.lastName}, ${author.firstName}`
-              : `${author.firstName} ${author.lastName}`;
-          }
-          if (author.lastName) return author.lastName;
-          return "";
-        })
-        .filter(Boolean)
-        .join(" and ");
-    } else {
-      const firstAuthor = parsedAuthors[0];
-      if (firstAuthor.lastName && firstAuthor.firstName) {
-        authorsString = `${firstAuthor.lastName}, ${firstAuthor.firstName}, et al`;
-      } else if (firstAuthor.lastName) {
-        authorsString = `${firstAuthor.lastName}, et al`;
-      }
+  // Clean up any undefined/null properties
+  for (const key in cslData) {
+    if (cslData[key] === undefined || cslData[key] === null) {
+      delete cslData[key];
     }
   }
 
-  const title = titleText ? `"${titleText}."` : "N/A.";
-  const journal = journalInfo?.title || "N/A";
-
-  let publicationDateString = journalInfo?.publicationDate?.year || "";
-  if (journalInfo?.publicationDate?.month && journalInfo.publicationDate.year) {
-    const month = journalInfo.publicationDate.month.substring(0, 3) + "."; // Abbreviate month
-    publicationDateString = `${month} ${journalInfo.publicationDate.year}`;
-    if (journalInfo.publicationDate.day) {
-      publicationDateString = `${journalInfo.publicationDate.day} ${month} ${journalInfo.publicationDate.year}`;
-    }
-  } else if (journalInfo?.publicationDate?.medlineDate) {
-    publicationDateString = journalInfo.publicationDate.medlineDate;
-  }
-
-  const volume = journalInfo?.volume ? `vol. ${journalInfo.volume}` : "";
-  const issue = journalInfo?.issue ? `no. ${journalInfo.issue}` : "";
-  const pages = journalInfo?.pages
-    ? `pp. ${journalInfo.pages.replace("-", "–")}`
-    : ""; // en-dash for MLA
-
-  const accessUrl = doi
-    ? `doi:${doi}`
-    : pmid
-      ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}`
-      : "";
-
-  let mlaString = `${authorsString}. ${title} ${journal}`;
-  if (volume) mlaString += `, ${volume}`;
-  if (issue) mlaString += `, ${issue}`;
-  if (publicationDateString) mlaString += `, ${publicationDateString}`;
-  if (pages) mlaString += `, ${pages}`;
-  mlaString += `. PubMed Central, ${accessUrl}.`; // Assuming PubMed Central or just PubMed
-
-  return mlaString;
+  return cslData;
 }
