@@ -77,14 +77,29 @@ const EnvSchema = z
     MCP_HTTP_PORT: z.coerce.number().int().positive().default(3010),
     MCP_HTTP_HOST: z.string().default("127.0.0.1"),
     MCP_HTTP_ENDPOINT_PATH: z.string().default("/mcp"),
-    MCP_HTTP_MAX_PORT_RETRIES: z.coerce.number().int().nonnegative().default(15),
-    MCP_HTTP_PORT_RETRY_DELAY_MS: z.coerce.number().int().nonnegative().default(50),
-    MCP_STATEFUL_SESSION_STALE_TIMEOUT_MS: z.coerce.number().int().positive().default(1_800_000),
+    MCP_HTTP_MAX_PORT_RETRIES: z.coerce
+      .number()
+      .int()
+      .nonnegative()
+      .default(15),
+    MCP_HTTP_PORT_RETRY_DELAY_MS: z.coerce
+      .number()
+      .int()
+      .nonnegative()
+      .default(50),
+    MCP_STATEFUL_SESSION_STALE_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(1_800_000),
     MCP_ALLOWED_ORIGINS: z.string().optional(),
 
     // Authentication
     MCP_AUTH_MODE: z.enum(["jwt", "oauth", "none"]).default("none"),
-    MCP_AUTH_SECRET_KEY: z.string().min(32, "MCP_AUTH_SECRET_KEY must be at least 32 characters long.").optional(),
+    MCP_AUTH_SECRET_KEY: z
+      .string()
+      .min(32, "MCP_AUTH_SECRET_KEY must be at least 32 characters long.")
+      .optional(),
     OAUTH_ISSUER_URL: z.string().url().optional(),
     OAUTH_JWKS_URI: z.string().url().optional(),
     OAUTH_AUDIENCE: z.string().optional(),
@@ -110,15 +125,24 @@ const EnvSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["MCP_AUTH_SECRET_KEY"],
-        message: "MCP_AUTH_SECRET_KEY is required for 'jwt' auth in production with 'http' transport.",
+        message:
+          "MCP_AUTH_SECRET_KEY is required for 'jwt' auth in production with 'http' transport.",
       });
     }
     if (data.MCP_AUTH_MODE === "oauth") {
       if (!data.OAUTH_ISSUER_URL) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["OAUTH_ISSUER_URL"], message: "OAUTH_ISSUER_URL is required for 'oauth' mode." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["OAUTH_ISSUER_URL"],
+          message: "OAUTH_ISSUER_URL is required for 'oauth' mode.",
+        });
       }
       if (!data.OAUTH_AUDIENCE) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["OAUTH_AUDIENCE"], message: "OAUTH_AUDIENCE is required for 'oauth' mode." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["OAUTH_AUDIENCE"],
+          message: "OAUTH_AUDIENCE is required for 'oauth' mode.",
+        });
       }
     }
   });
@@ -127,17 +151,28 @@ const parsedEnv = EnvSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
   if (process.stdout.isTTY) {
-    console.error("❌ Invalid environment variables:", parsedEnv.error.flatten().fieldErrors);
+    console.error(
+      "❌ Invalid environment variables:",
+      parsedEnv.error.flatten().fieldErrors,
+    );
   }
 }
 
 const env = parsedEnv.success ? parsedEnv.data : EnvSchema.parse({});
 
-const ensureDirectory = (dirPath: string, rootDir: string, dirName: string): string | null => {
-  const resolvedDirPath = path.isAbsolute(dirPath) ? dirPath : path.resolve(rootDir, dirPath);
+const ensureDirectory = (
+  dirPath: string,
+  rootDir: string,
+  dirName: string,
+): string | null => {
+  const resolvedDirPath = path.isAbsolute(dirPath)
+    ? dirPath
+    : path.resolve(rootDir, dirPath);
   if (!resolvedDirPath.startsWith(rootDir)) {
     if (process.stdout.isTTY) {
-      console.error(`Error: ${dirName} path "${dirPath}" is outside the project boundary "${rootDir}".`);
+      console.error(
+        `Error: ${dirName} path "${dirPath}" is outside the project boundary "${rootDir}".`,
+      );
     }
     return null;
   }
@@ -146,13 +181,17 @@ const ensureDirectory = (dirPath: string, rootDir: string, dirName: string): str
       mkdirSync(resolvedDirPath, { recursive: true });
     } else {
       if (!statSync(resolvedDirPath).isDirectory()) {
-        console.error(`Error: ${dirName} path ${resolvedDirPath} exists but is not a directory.`);
+        console.error(
+          `Error: ${dirName} path ${resolvedDirPath} exists but is not a directory.`,
+        );
         return null;
       }
     }
     return resolvedDirPath;
   } catch (error: any) {
-    console.error(`Error ensuring ${dirName} directory at ${resolvedDirPath}: ${error.message}`);
+    console.error(
+      `Error ensuring ${dirName} directory at ${resolvedDirPath}: ${error.message}`,
+    );
     return null;
   }
 };
@@ -174,7 +213,9 @@ export const config = {
   mcpHttpMaxPortRetries: env.MCP_HTTP_MAX_PORT_RETRIES,
   mcpHttpPortRetryDelayMs: env.MCP_HTTP_PORT_RETRY_DELAY_MS,
   mcpStatefulSessionStaleTimeoutMs: env.MCP_STATEFUL_SESSION_STALE_TIMEOUT_MS,
-  mcpAllowedOrigins: env.MCP_ALLOWED_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
+  mcpAllowedOrigins: env.MCP_ALLOWED_ORIGINS?.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
   mcpAuthMode: env.MCP_AUTH_MODE,
   mcpAuthSecretKey: env.MCP_AUTH_SECRET_KEY,
   oauthIssuerUrl: env.OAUTH_ISSUER_URL,
@@ -183,9 +224,12 @@ export const config = {
   devMcpClientId: env.DEV_MCP_CLIENT_ID,
   devMcpScopes: env.DEV_MCP_SCOPES?.split(",").map((s) => s.trim()),
   ncbiApiKey: env.NCBI_API_KEY,
-  ncbiToolIdentifier: env.NCBI_TOOL_IDENTIFIER || `${env.MCP_SERVER_NAME || pkg.name}/${env.MCP_SERVER_VERSION || pkg.version}`,
+  ncbiToolIdentifier:
+    env.NCBI_TOOL_IDENTIFIER ||
+    `${env.MCP_SERVER_NAME || pkg.name}/${env.MCP_SERVER_VERSION || pkg.version}`,
   ncbiAdminEmail: env.NCBI_ADMIN_EMAIL,
-  ncbiRequestDelayMs: env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
+  ncbiRequestDelayMs:
+    env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
   ncbiMaxRetries: env.NCBI_MAX_RETRIES,
 };
 
