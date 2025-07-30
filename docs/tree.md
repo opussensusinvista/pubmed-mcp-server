@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-07-07 03:45:56
+Generated on: 2025-07-30 08:37:06
 
 ```
 pubmed-mcp-server
@@ -68,27 +68,46 @@ pubmed-mcp-server
 │   │   │       └── registration.ts
 │   │   ├── transports
 │   │   │   ├── auth
-│   │   │   │   ├── core
+│   │   │   │   ├── lib
 │   │   │   │   │   ├── authContext.ts
 │   │   │   │   │   ├── authTypes.ts
 │   │   │   │   │   └── authUtils.ts
 │   │   │   │   ├── strategies
-│   │   │   │   │   ├── jwt
-│   │   │   │   │   │   └── jwtMiddleware.ts
-│   │   │   │   │   └── oauth
-│   │   │   │   │       └── oauthMiddleware.ts
+│   │   │   │   │   ├── authStrategy.ts
+│   │   │   │   │   ├── jwtStrategy.ts
+│   │   │   │   │   └── oauthStrategy.ts
+│   │   │   │   ├── authFactory.ts
+│   │   │   │   ├── authMiddleware.ts
 │   │   │   │   └── index.ts
-│   │   │   ├── httpErrorHandler.ts
-│   │   │   ├── httpTransport.ts
-│   │   │   └── stdioTransport.ts
+│   │   │   ├── core
+│   │   │   │   ├── baseTransportManager.ts
+│   │   │   │   ├── honoNodeBridge.ts
+│   │   │   │   ├── statefulTransportManager.ts
+│   │   │   │   ├── statelessTransportManager.ts
+│   │   │   │   └── transportTypes.ts
+│   │   │   ├── http
+│   │   │   │   ├── httpErrorHandler.ts
+│   │   │   │   ├── httpTransport.ts
+│   │   │   │   ├── httpTypes.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── mcpTransportMiddleware.ts
+│   │   │   └── stdio
+│   │   │       ├── index.ts
+│   │   │       └── stdioTransport.ts
 │   │   └── server.ts
 │   ├── services
 │   │   └── NCBI
-│   │       ├── ncbiConstants.ts
-│   │       ├── ncbiCoreApiClient.ts
-│   │       ├── ncbiRequestQueueManager.ts
-│   │       ├── ncbiResponseHandler.ts
-│   │       └── ncbiService.ts
+│   │       ├── core
+│   │       │   ├── ncbiConstants.ts
+│   │       │   ├── ncbiCoreApiClient.ts
+│   │       │   ├── ncbiRequestQueueManager.ts
+│   │       │   ├── ncbiResponseHandler.ts
+│   │       │   └── ncbiService.ts
+│   │       └── parsing
+│   │           ├── eSummaryResultParser.ts
+│   │           ├── index.ts
+│   │           ├── pubmedArticleStructureParser.ts
+│   │           └── xmlGenericHelpers.ts
 │   ├── types-global
 │   │   ├── declarations.d.ts
 │   │   ├── errors.ts
@@ -102,15 +121,16 @@ pubmed-mcp-server
 │   │   ├── metrics
 │   │   │   ├── index.ts
 │   │   │   └── tokenCounter.ts
+│   │   ├── network
+│   │   │   ├── fetchWithTimeout.ts
+│   │   │   └── index.ts
 │   │   ├── parsing
-│   │   │   ├── ncbi-parsing
-│   │   │   │   ├── eSummaryResultParser.ts
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── pubmedArticleStructureParser.ts
-│   │   │   │   └── xmlGenericHelpers.ts
 │   │   │   ├── dateParser.ts
 │   │   │   ├── index.ts
 │   │   │   └── jsonParser.ts
+│   │   ├── scheduling
+│   │   │   ├── index.ts
+│   │   │   └── scheduler.ts
 │   │   ├── security
 │   │   │   ├── idGenerator.ts
 │   │   │   ├── index.ts
@@ -123,7 +143,6 @@ pubmed-mcp-server
 ├── .gitignore
 ├── .ncurc.json
 ├── CHANGELOG.md
-├── CLAUDE.md
 ├── Dockerfile
 ├── LICENSE
 ├── mcp.json

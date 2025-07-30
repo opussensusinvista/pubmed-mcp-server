@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2025-07-30
+
+### Changed
+
+- **Major Refactoring & Template Alignment**: Overhauled the entire project structure to align with `cyanheads/mcp-ts-template@v1.7.7`. This includes a complete refactoring of the transport layer, authentication, and service directory structures for improved modularity and maintainability. Streamable HTTP should now work as expected.
+- **Transport Layer**: Replaced the previous `stdioTransport.ts` and `httpTransport.ts` with a more robust, strategy-based architecture in `src/mcp-server/transports/`. This new implementation uses transport managers (`stateful`, `stateless`) and a Hono bridge for better separation of concerns.
+- **Authentication**: Refactored the authentication system into a factory-based strategy pattern (`src/mcp-server/transports/auth/`). It now clearly separates JWT and OAuth strategies, improving clarity and extensibility.
+- **Service Structure**: Reorganized the `NCBI` and `parsing` utilities into a more logical subdirectory structure within `src/services/NCBI/`.
+- **Dependencies**: Updated all major dependencies, including `@modelcontextprotocol/sdk` to `^1.17.0`, `@hono/node-server` to `^1.17.1`, and `hono` to `^4.8.10`.
+
+### Removed
+
+- **Legacy Transport & Auth Files**: Deleted numerous old files from the previous transport and authentication implementation that have been replaced by the new, modular architecture.
+
 ## [1.2.4] - 2025-07-07
 
 ### Added

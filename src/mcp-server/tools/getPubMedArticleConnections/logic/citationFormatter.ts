@@ -5,7 +5,7 @@
  */
 
 import Cite from "citation-js";
-import { getNcbiService } from "../../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../../services/NCBI/core/ncbiService.js";
 import type { XmlPubmedArticle } from "../../../../types-global/pubmedXml.js";
 import {
   logger,
@@ -18,7 +18,7 @@ import {
   extractJournalInfo,
   extractPmid,
   getText,
-} from "../../../../utils/parsing/ncbi-parsing/index.js";
+} from "../../../../services/NCBI/parsing/index.js";
 import type { GetPubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Helper functions for parsing detailed PubMed Article XML structures,
  * typically from EFetch results.
- * @module src/utils/parsing/ncbi-parsing/pubmedArticleStructureParser
+ * @module src/services/NCBI/parsing/pubmedArticleStructureParser
  */
 
 import {

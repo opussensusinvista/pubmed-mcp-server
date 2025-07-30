@@ -1,15 +1,15 @@
 /**
  * @fileoverview Manages a queue for NCBI E-utility requests to ensure compliance with rate limits.
- * @module src/services/NCBI/ncbiRequestQueueManager
+ * @module src/services/NCBI/core/ncbiRequestQueueManager
  */
 
-import { config } from "../../config/index.js";
+import { config } from "../../../config/index.js";
 import {
   logger,
   RequestContext,
   requestContextService,
   sanitizeInputForLogging,
-} from "../../utils/index.js";
+} from "../../../utils/index.js";
 import { NcbiRequestParams } from "./ncbiConstants.js";
 
 /**

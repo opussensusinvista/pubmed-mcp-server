@@ -4,14 +4,14 @@
  * @module src/mcp-server/tools/getPubMedArticleConnections/logic/elinkHandler
  */
 
-import { getNcbiService } from "../../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../../services/NCBI/core/ncbiService.js";
 import type {
   ESummaryResult,
   ParsedBriefSummary,
 } from "../../../../types-global/pubmedXml.js";
 import { logger, RequestContext } from "../../../../utils/index.js";
-import { extractBriefSummaries } from "../../../../utils/parsing/ncbi-parsing/index.js";
-import { ensureArray } from "../../../../utils/parsing/ncbi-parsing/xmlGenericHelpers.js"; // Added import
+import { extractBriefSummaries } from "../../../../services/NCBI/parsing/index.js";
+import { ensureArray } from "../../../../services/NCBI/parsing/xmlGenericHelpers.js"; // Added import
 import type { GetPubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 

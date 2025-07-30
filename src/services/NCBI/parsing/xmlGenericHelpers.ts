@@ -1,7 +1,7 @@
 /**
  * @fileoverview Generic helper functions for parsing XML data, particularly
  * structures from fast-xml-parser.
- * @module src/utils/parsing/ncbi-parsing/xmlGenericHelpers
+ * @module src/services/NCBI/parsing/xmlGenericHelpers
  */
 
 /**

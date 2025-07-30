@@ -1,6 +1,6 @@
 /**
  * @fileoverview Constants and shared type definitions for NCBI E-utility interactions.
- * @module src/services/NCBI/ncbiConstants
+ * @module src/services/NCBI/core/ncbiConstants
  */
 
 export const NCBI_EUTILS_BASE_URL =

@@ -5,19 +5,19 @@
  * retries, and parsing of XML/JSON responses. It aims to provide a robust
  * and compliant interface for other parts of the pubmed-mcp-server to
  * access PubMed data.
- * @module src/services/NCBI/ncbiService
+ * @module src/services/NCBI/core/ncbiService
  */
 
 import {
   ESearchResult,
   EFetchArticleSet,
   ESearchResponseContainer,
-} from "../../types-global/pubmedXml.js";
+} from "../../../types-global/pubmedXml.js";
 import {
   logger,
   RequestContext,
   requestContextService,
-} from "../../utils/index.js";
+} from "../../../utils/index.js";
 import { NcbiRequestParams, NcbiRequestOptions } from "./ncbiConstants.js";
 import { NcbiCoreApiClient } from "./ncbiCoreApiClient.js";
 import { NcbiRequestQueueManager } from "./ncbiRequestQueueManager.js";

@@ -13,10 +13,6 @@ export type AuthInfo = SdkAuthInfo & {
   subject?: string;
 };
 
-// Extend the Node.js IncomingMessage type to include an optional 'auth' property.
-// This is necessary for type-safe access when attaching the AuthInfo.
-declare module "http" {
-  interface IncomingMessage {
-    auth?: AuthInfo;
-  }
-}
+// The declaration for `http.IncomingMessage` is no longer needed here,
+// as the new architecture avoids direct mutation where possible and handles
+// the attachment within the Hono context.

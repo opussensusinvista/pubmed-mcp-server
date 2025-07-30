@@ -2,7 +2,7 @@
  * @fileoverview Helper functions for parsing ESummary results from NCBI.
  * Handles different ESummary XML structures and formats the data into
  * consistent ParsedBriefSummary objects.
- * @module src/utils/parsing/ncbi-parsing/eSummaryResultParser
+ * @module src/services/NCBI/parsing/eSummaryResultParser
  */
 
 import {

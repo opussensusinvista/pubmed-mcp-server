@@ -1,18 +1,18 @@
 /**
  * @fileoverview Core client for making HTTP requests to NCBI E-utilities.
  * Handles request construction, API key injection, retries, and basic error handling.
- * @module src/services/NCBI/ncbiCoreApiClient
+ * @module src/services/NCBI/core/ncbiCoreApiClient
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-import { config } from "../../config/index.js";
-import { BaseErrorCode, McpError } from "../../types-global/errors.js";
+import { config } from "../../../config/index.js";
+import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   logger,
   RequestContext,
   requestContextService,
   sanitizeInputForLogging,
-} from "../../utils/index.js";
+} from "../../../utils/index.js";
 import {
   NCBI_EUTILS_BASE_URL,
   NcbiRequestParams,

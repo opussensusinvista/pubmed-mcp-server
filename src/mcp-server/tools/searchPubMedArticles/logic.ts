@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { getNcbiService } from "../../../services/NCBI/ncbiService.js";
+import { getNcbiService } from "../../../services/NCBI/core/ncbiService.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   ESearchResult,
@@ -19,7 +19,7 @@ import {
   requestContextService,
   sanitizeInputForLogging,
 } from "../../../utils/index.js";
-import { extractBriefSummaries } from "../../../utils/parsing/ncbi-parsing/index.js";
+import { extractBriefSummaries } from "../../../services/NCBI/parsing/index.js";
 import { sanitization } from "../../../utils/security/sanitization.js";
 
 export const SearchPubMedArticlesInputSchema = z.object({

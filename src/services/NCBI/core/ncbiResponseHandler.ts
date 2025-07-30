@@ -1,17 +1,17 @@
 /**
  * @fileoverview Handles parsing of NCBI E-utility responses and NCBI-specific error extraction.
- * @module src/services/NCBI/ncbiResponseHandler
+ * @module src/services/NCBI/core/ncbiResponseHandler
  */
 
 import { AxiosResponse } from "axios";
 import { XMLParser, XMLValidator } from "fast-xml-parser";
-import { BaseErrorCode, McpError } from "../../types-global/errors.js";
+import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
   logger,
   RequestContext,
   requestContextService,
   sanitizeInputForLogging,
-} from "../../utils/index.js";
+} from "../../../utils/index.js";
 import { NcbiRequestOptions } from "./ncbiConstants.js";
 
 export class NcbiResponseHandler {

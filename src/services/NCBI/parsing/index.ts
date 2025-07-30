@@ -1,7 +1,7 @@
 /**
  * @fileoverview Barrel file for NCBI XML parsing helper utilities.
  * Re-exports functions from more specific parser modules.
- * @module src/utils/parsing/ncbi-parsing/index
+ * @module src/services/NCBI/parsing/index
  */
 
 export * from "./xmlGenericHelpers.js";
