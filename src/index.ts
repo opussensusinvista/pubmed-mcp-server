@@ -61,77 +61,46 @@ const shutdown = async (signal: string): Promise<void> => {
     shutdownContext,
   );
 
-  let mcpClosed = false;
-  let httpClosed = false;
-  let closeError: Error | null = null;
+  try {
+    let closePromise: Promise<void> = Promise.resolve();
+    const transportType = config.mcpTransportType;
 
-  const checkAndExit = () => {
-    if (closeError) {
-      logger.error("Critical error encountered during shutdown process.", {
-        ...shutdownContext,
-        errorMessage: closeError.message,
-        errorStack: closeError.stack,
-      });
-      process.exit(1);
-    } else if (mcpClosed && httpClosed) {
+    if (transportType === "stdio" && mcpStdioServer) {
       logger.info(
-        "Graceful shutdown completed successfully. Exiting.",
+        "Attempting to close main MCP server (STDIO)...",
         shutdownContext,
       );
-      process.exit(0);
+      closePromise = mcpStdioServer.close();
+    } else if (transportType === "http" && actualHttpServer) {
+      logger.info("Attempting to close HTTP server...", shutdownContext);
+      closePromise = new Promise((resolve, reject) => {
+        actualHttpServer!.close((err) => {
+          if (err) {
+            logger.error("Error closing HTTP server.", {
+              ...shutdownContext,
+              error: err.message,
+            });
+            return reject(err);
+          }
+          logger.info("HTTP server closed successfully.", shutdownContext);
+          resolve();
+        });
+      });
     }
-  };
 
-  if (mcpStdioServer) {
+    await closePromise;
     logger.info(
-      "Attempting to close main MCP server (STDIO)...",
+      "Graceful shutdown completed successfully. Exiting.",
       shutdownContext,
     );
-    mcpStdioServer
-      .close()
-      .then(() => {
-        logger.info(
-          "Main MCP server (STDIO) closed successfully.",
-          shutdownContext,
-        );
-        mcpClosed = true;
-        checkAndExit();
-      })
-      .catch((err) => {
-        logger.error("Error closing MCP server (STDIO).", {
-          ...shutdownContext,
-          error: err,
-        });
-        mcpClosed = true; // Consider it closed even on error to allow exit
-        if (!closeError) closeError = err;
-        checkAndExit();
-      });
-  } else {
-    mcpClosed = true; // No STDIO McpServer to close
-  }
-
-  if (actualHttpServer) {
-    logger.info("Attempting to close HTTP server...", shutdownContext);
-    actualHttpServer.close((err?: Error) => {
-      if (err) {
-        logger.error("Error closing HTTP server.", {
-          ...shutdownContext,
-          error: err,
-        });
-        if (!closeError) closeError = err;
-      } else {
-        logger.info("HTTP server closed successfully.", shutdownContext);
-      }
-      httpClosed = true;
-      checkAndExit();
+    process.exit(0);
+  } catch (error) {
+    logger.error("Critical error during shutdown process.", {
+      ...shutdownContext,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
     });
-  } else {
-    httpClosed = true; // No HTTP server to close
-  }
-
-  // Initial check in case no servers needed closing
-  if (mcpClosed && httpClosed) {
-    checkAndExit();
+    process.exit(1);
   }
 };
 
