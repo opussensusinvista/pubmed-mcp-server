@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.3] - 2025-07-31
+
+### Fixed
+
+- **Configuration**: Hardened the logger configuration in `src/config/index.ts` by adding a fallback mechanism. If the `LOGS_DIR` environment variable points to an invalid or out-of-bounds path, the server will now default to creating a `logs` directory in the project root. This prevents the application from crashing on startup and ensures that `npx @cyanheads/pubmed-mcp-server` works out-of-the-box without requiring logging-related environment variables.
+
 ## [1.3.2] - 2025-07-31
 
 ### Changed

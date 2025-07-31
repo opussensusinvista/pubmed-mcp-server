@@ -168,35 +168,84 @@ const ensureDirectory = (
   const resolvedDirPath = path.isAbsolute(dirPath)
     ? dirPath
     : path.resolve(rootDir, dirPath);
-  if (!resolvedDirPath.startsWith(rootDir)) {
+
+  if (
+    !resolvedDirPath.startsWith(rootDir + path.sep) &&
+    resolvedDirPath !== rootDir
+  ) {
     if (process.stdout.isTTY) {
       console.error(
-        `Error: ${dirName} path "${dirPath}" is outside the project boundary "${rootDir}".`,
+        `Error: ${dirName} path "${dirPath}" resolves to "${resolvedDirPath}", which is outside the project boundary "${rootDir}".`,
       );
     }
     return null;
   }
-  try {
-    if (!existsSync(resolvedDirPath)) {
+
+  if (!existsSync(resolvedDirPath)) {
+    try {
       mkdirSync(resolvedDirPath, { recursive: true });
-    } else {
-      if (!statSync(resolvedDirPath).isDirectory()) {
+      if (process.stdout.isTTY) {
+        console.log(`Created ${dirName} directory: ${resolvedDirPath}`);
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (process.stdout.isTTY) {
         console.error(
-          `Error: ${dirName} path ${resolvedDirPath} exists but is not a directory.`,
+          `Error creating ${dirName} directory at ${resolvedDirPath}: ${errorMessage}`,
         );
+      }
+      return null;
+    }
+  } else {
+    try {
+      const stats = statSync(resolvedDirPath);
+      if (!stats.isDirectory()) {
+        if (process.stdout.isTTY) {
+          console.error(
+            `Error: ${dirName} path ${resolvedDirPath} exists but is not a directory.`,
+          );
+        }
         return null;
       }
+    } catch (statError: unknown) {
+      const errorMessage =
+        statError instanceof Error
+          ? statError.message
+          : "An unknown error occurred";
+      if (process.stdout.isTTY) {
+        console.error(
+          `Error accessing ${dirName} path ${resolvedDirPath}: ${errorMessage}`,
+        );
+      }
+      return null;
     }
-    return resolvedDirPath;
-  } catch (error: any) {
-    console.error(
-      `Error ensuring ${dirName} directory at ${resolvedDirPath}: ${error.message}`,
-    );
-    return null;
   }
+  return resolvedDirPath;
 };
 
-const validatedLogsPath = ensureDirectory(env.LOGS_DIR, projectRoot, "logs");
+let validatedLogsPath: string | null = ensureDirectory(
+  env.LOGS_DIR,
+  projectRoot,
+  "logs",
+);
+
+if (!validatedLogsPath) {
+  if (process.stdout.isTTY) {
+    console.warn(
+      `Warning: Custom logs directory ('${env.LOGS_DIR}') is invalid or outside the project boundary. Falling back to default.`,
+    );
+  }
+  const defaultLogsDir = path.join(projectRoot, "logs");
+  validatedLogsPath = ensureDirectory(defaultLogsDir, projectRoot, "logs");
+
+  if (!validatedLogsPath) {
+    if (process.stdout.isTTY) {
+      console.warn(
+        "Warning: Default logs directory could not be created. File logging will be disabled.",
+      );
+    }
+  }
+}
 
 export const config = {
   pkg,
