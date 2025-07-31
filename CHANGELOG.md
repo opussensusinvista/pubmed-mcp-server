@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2025-07-31
+
+### Changed
+
+- **Dependencies**: Updated `openai` dependency to `^5.11.0`.
+- **Server Shutdown**: Refactored server shutdown logic in `src/index.ts` for improved robustness and clarity.
+
 ## [1.3.0] - 2025-07-30
 
 ### Changed
