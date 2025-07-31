@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2025-07-31
+
+### Changed
+
+- **Server Initialization**: Refactored the server startup process in `src/mcp-server/server.ts` for improved robustness and standardization.
+  - Replaced the custom `ErrorHandler.tryCatch` wrapper with a standard `try...catch` block for tool registration, making the code more conventional and readable.
+  - Decoupled the transport layer from the Hono web framework by replacing the specific `ServerType` with the generic `http.Server` type from Node.js.
+  - Enhanced critical error logging during startup to include the full error stack trace, providing better diagnostics for initialization failures.
+- **Configuration**: Changed the default streamable HTTP port from `3010` to `3017` in `src/config/index.ts` to avoid conflicts with my other published MCP Servers.
+- **Dependencies**:
+  - Updated `dotenv` from `^16.5.0` to `^16.6.1`.
+  - Moved `js-yaml` (`v4.1.0`) from `devDependencies` to `dependencies`.
+- **Build**: Updated the required Node.js engine version from `>=16.0.0` to `>=20.0.0` in `package.json`.
+
 ## [1.3.3] - 2025-07-31
 
 ### Fixed

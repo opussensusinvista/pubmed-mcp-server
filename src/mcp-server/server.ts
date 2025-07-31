@@ -10,11 +10,10 @@
  * @module src/mcp-server/server
  */
 
-import { ServerType } from "@hono/node-server";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import http from "http";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
-import { BaseErrorCode } from "../types-global/errors.js";
 import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
 import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js";
 import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
@@ -53,24 +52,23 @@ async function createMcpServerInstance(): Promise<McpServer> {
     },
   );
 
-  await ErrorHandler.tryCatch(
-    async () => {
-      logger.debug("Registering resources and tools...", context);
-      // IMPORTANT: Keep tool registrations in alphabetical order.
-      await registerFetchPubMedContentTool(server);
-      await registerGeneratePubMedChartTool(server);
-      await registerGetPubMedArticleConnectionsTool(server);
-      await registerPubMedResearchAgentTool(server);
-      await registerSearchPubMedArticlesTool(server);
-      logger.info("Resources and tools registered successfully", context);
-    },
-    {
-      operation: "registerAllCapabilities",
-      context,
-      errorCode: BaseErrorCode.INITIALIZATION_FAILED,
-      critical: true,
-    },
-  );
+  try {
+    logger.debug("Registering resources and tools...", context);
+    // IMPORTANT: Keep tool registrations in alphabetical order.
+    await registerFetchPubMedContentTool(server);
+    await registerGeneratePubMedChartTool(server);
+    await registerGetPubMedArticleConnectionsTool(server);
+    await registerPubMedResearchAgentTool(server);
+    await registerSearchPubMedArticlesTool(server);
+    logger.info("Resources and tools registered successfully", context);
+  } catch (err) {
+    logger.error("Failed to register resources/tools", {
+      ...context,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    throw err;
+  }
 
   return server;
 }
@@ -78,11 +76,11 @@ async function createMcpServerInstance(): Promise<McpServer> {
 /**
  * Selects, sets up, and starts the appropriate MCP transport layer based on configuration.
  *
- * @returns Resolves with `McpServer` for 'stdio', `http.Server` for 'http', or `void`.
+ * @returns Resolves with `McpServer` for 'stdio' or `http.Server` for 'http'.
  * @throws {Error} If transport type is unsupported or setup fails.
  * @private
  */
-async function startTransport(): Promise<McpServer | ServerType | void> {
+async function startTransport(): Promise<McpServer | http.Server> {
   const transportType = config.mcpTransportType;
   const context = requestContextService.createRequestContext({
     operation: "startTransport",
@@ -90,19 +88,24 @@ async function startTransport(): Promise<McpServer | ServerType | void> {
   });
   logger.info(`Starting transport: ${transportType}`, context);
 
-  const serverFactory = createMcpServerInstance;
-
   if (transportType === "http") {
-    const { server } = await startHttpTransport(serverFactory, context);
-    return server;
+    const { server } = await startHttpTransport(
+      createMcpServerInstance,
+      context,
+    );
+    return server as http.Server;
   }
 
   if (transportType === "stdio") {
-    const server = await serverFactory();
+    const server = await createMcpServerInstance();
     await startStdioTransport(server, context);
     return server;
   }
 
+  logger.fatal(
+    `Unsupported transport type configured: ${transportType}`,
+    context,
+  );
   throw new Error(
     `Unsupported transport type: ${transportType}. Must be 'stdio' or 'http'.`,
   );
@@ -112,13 +115,12 @@ async function startTransport(): Promise<McpServer | ServerType | void> {
  * Main application entry point. Initializes and starts the MCP server.
  */
 export async function initializeAndStartServer(): Promise<
-  void | McpServer | ServerType
+  McpServer | http.Server
 > {
   const context = requestContextService.createRequestContext({
     operation: "initializeAndStartServer",
   });
   logger.info("MCP Server initialization sequence started.", context);
-
   try {
     const result = await startTransport();
     logger.info(
@@ -127,11 +129,15 @@ export async function initializeAndStartServer(): Promise<
     );
     return result;
   } catch (err) {
+    logger.fatal("Critical error during MCP server initialization.", {
+      ...context,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
     ErrorHandler.handleError(err, {
-      operation: "initializeAndStartServer",
-      context: context,
+      ...context,
+      operation: "initializeAndStartServer_Catch",
       critical: true,
-      rethrow: false,
     });
     logger.info(
       "Exiting process due to critical initialization error.",

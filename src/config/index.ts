@@ -74,7 +74,7 @@ const EnvSchema = z
     // Transport
     MCP_TRANSPORT_TYPE: z.enum(["stdio", "http"]).default("stdio"),
     MCP_SESSION_MODE: z.enum(["stateless", "stateful", "auto"]).default("auto"),
-    MCP_HTTP_PORT: z.coerce.number().int().positive().default(3010),
+    MCP_HTTP_PORT: z.coerce.number().int().positive().default(3017),
     MCP_HTTP_HOST: z.string().default("127.0.0.1"),
     MCP_HTTP_ENDPOINT_PATH: z.string().default("/mcp"),
     MCP_HTTP_MAX_PORT_RETRIES: z.coerce

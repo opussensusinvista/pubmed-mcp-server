@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.17.0-green.svg?style=flat-square)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.3.2-blue.svg?style=flat-square)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-1.3.4-blue.svg?style=flat-square)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg?style=flat-square)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
@@ -84,13 +84,15 @@ Leverages the robust utilities provided by the `mcp-ts-template`:
 
 ### Prerequisites
 
-- [Node.js (>=18.0.0)](https://nodejs.org/)
+- [Node.js (>=20.0.0)](https://nodejs.org/)
 - [npm](https://www.npmjs.com/) (comes with Node.js)
 - **NCBI API Key** (recommended for higher rate limits) - [Get one here](https://ncbiinsights.ncbi.nlm.nih.gov/2017/11/02/new-api-keys-for-the-e-utilities/)
 
 ### MCP Client Settings
 
-Add the following to your MCP client's configuration file (e.g., `cline_mcp_settings.json`). This configuration uses `npx` to run the server, which will automatically install the package if not already present:
+Add the following to your MCP client's configuration file (e.g., `cline_mcp_settings.json`).
+This configuration uses `npx` to run the server, which will automatically install the package if not already present.
+All environment variables are optional, but recommended for production use. NCBI API key is recommended to avoid rate limiting issues.
 
 ```json
 {
@@ -99,7 +101,10 @@ Add the following to your MCP client's configuration file (e.g., `cline_mcp_sett
       "command": "npx",
       "args": ["@cyanheads/pubmed-mcp-server"],
       "env": {
-        "NCBI_API_KEY": "your_ncbi_api_key_here"
+        "MCP_LOG_LEVEL": "debug",
+        "MCP_TRANSPORT_TYPE": "http",
+        "MCP_HTTP_PORT": "3017",
+        "NCBI_API_KEY": "YOUR_NCBI_API_KEY_HERE"
       }
     }
   }
@@ -139,7 +144,7 @@ Configure the server using environment variables. For local development, these c
 | Variable              | Description                                                                              | Default       |
 | :-------------------- | :--------------------------------------------------------------------------------------- | :------------ |
 | `MCP_TRANSPORT_TYPE`  | Transport mechanism: `stdio` or `http`.                                                  | `stdio`       |
-| `MCP_HTTP_PORT`       | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                 | `3010`        |
+| `MCP_HTTP_PORT`       | Port for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                                 | `3017`        |
 | `MCP_HTTP_HOST`       | Host address for the HTTP server (if `MCP_TRANSPORT_TYPE=http`).                         | `127.0.0.1`   |
 | `MCP_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS (if `MCP_TRANSPORT_TYPE=http`).         | (none)        |
 | `MCP_LOG_LEVEL`       | Logging level (`debug`, `info`, `notice`, `warning`, `error`, `crit`, `alert`, `emerg`). | `debug`       |
