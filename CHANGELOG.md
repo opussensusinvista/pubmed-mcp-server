@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.5] - 2025-07-31
+
+### Changed
+
+- **TypeScript Configuration**: Overhauled `tsconfig.json` to enforce stricter type-checking and align with modern Node.js module standards. Key changes include enabling `noUncheckedIndexedAccess`, setting the module system to `NodeNext`, and adding more robust compiler options for improved code quality and error detection.
+- **Code Quality & Robustness**:
+  - Refactored multiple files to align with the new strictness, including adding null checks in `fetchPubMedContent/logic.ts`, `parsing/eSummaryResultParser.ts`, and `security/idGenerator.ts`.
+  - Improved client IP address detection in `transports/http/httpTransport.ts`.
+  - Removed the unnecessary `keepAliveInterval` from `services/NCBI/core/ncbiRequestQueueManager.ts` as it is no longer needed for stdio mode.
+  - Simplified the `isArray` callback in `services/NCBI/core/ncbiResponseHandler.ts`.
+  - Refactored error type mapping in `utils/internal/errorHandler.ts` for better reliability.
+
 ## [1.3.4] - 2025-07-31
 
 ### Changed

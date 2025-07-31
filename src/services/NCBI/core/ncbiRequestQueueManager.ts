@@ -28,14 +28,9 @@ export class NcbiRequestQueueManager {
   private requestQueue: QueuedRequest[] = [];
   private isProcessingQueue = false;
   private lastRequestTime = 0;
-  private keepAliveInterval: NodeJS.Timeout | undefined;
 
   constructor() {
-    // This interval's purpose is to keep the Node.js event loop alive
-    // so the process doesn't exit prematurely when running in stdio mode.
-    this.keepAliveInterval = setInterval(() => {
-      // This empty interval keeps the event loop active.
-    }, 1_000_000);
+    // The constructor is kept for future initializations, if any.
   }
 
   /**

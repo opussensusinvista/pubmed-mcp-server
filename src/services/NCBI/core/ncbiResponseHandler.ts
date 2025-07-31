@@ -22,7 +22,7 @@ export class NcbiResponseHandler {
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
       parseTagValue: true, // auto-convert numbers, booleans if possible
-      isArray: (name, jpath, isLeafNode, isAttribute) => {
+      isArray: (_name, jpath) => {
         // Common NCBI list tags - expand as needed
         const arrayTags = [
           "IdList.Id",

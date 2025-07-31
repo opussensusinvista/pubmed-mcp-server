@@ -69,7 +69,7 @@ export class JsonParser {
     let stringToParse = jsonString;
     const match = jsonString.match(thinkBlockRegex);
 
-    if (match) {
+    if (match && match[1] !== undefined && match[2] !== undefined) {
       const thinkContent = match[1].trim();
       const restOfString = match[2];
 

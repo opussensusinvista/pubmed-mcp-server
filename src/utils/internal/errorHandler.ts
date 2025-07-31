@@ -269,6 +269,13 @@ function getErrorMessage(error: unknown): string {
   }
 }
 
+function mapErrorNameToType(errorName: string): BaseErrorCode {
+  return (
+    ERROR_TYPE_MAPPINGS[errorName as keyof typeof ERROR_TYPE_MAPPINGS] ??
+    BaseErrorCode.INTERNAL_ERROR
+  );
+}
+
 /**
  * A utility class providing static methods for comprehensive error handling.
  */
@@ -288,8 +295,9 @@ export class ErrorHandler {
     const errorName = getErrorName(error);
     const errorMessage = getErrorMessage(error);
 
-    if (errorName in ERROR_TYPE_MAPPINGS) {
-      return ERROR_TYPE_MAPPINGS[errorName as keyof typeof ERROR_TYPE_MAPPINGS];
+    const mappedByName = mapErrorNameToType(errorName);
+    if (mappedByName !== BaseErrorCode.INTERNAL_ERROR) {
+      return mappedByName;
     }
 
     for (const mapping of COMMON_ERROR_PATTERNS) {

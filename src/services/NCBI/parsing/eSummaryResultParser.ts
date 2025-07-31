@@ -136,6 +136,7 @@ function parseESummaryAuthorsFromDocumentSummary(
         const keys = Object.keys(authorObj);
         if (
           keys.length === 1 &&
+          keys[0] &&
           typeof (authorObj as any)[keys[0]] === "string"
         ) {
           name = (authorObj as any)[keys[0]];

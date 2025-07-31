@@ -286,10 +286,8 @@ export async function fetchPubMedContentLogic(
   logger.info("Executing fetch_pubmed_content tool", toolLogicContext);
 
   const eFetchParams: EFetchServiceParams = { db: "pubmed" };
-  let usingHistory = false;
 
   if (input.queryKey && input.webEnv) {
-    usingHistory = true;
     eFetchParams.query_key = input.queryKey;
     eFetchParams.WebEnv = input.webEnv;
     if (input.retstart !== undefined)
@@ -343,7 +341,9 @@ export async function fetchPubMedContentLogic(
     const pmidRegex = /^PMID- (\d+)/gm;
     let match;
     while ((match = pmidRegex.exec(medlineText)) !== null) {
-      foundPmidsInMedline.add(match[1]);
+      if (match[1]) {
+        foundPmidsInMedline.add(match[1]);
+      }
     }
     articlesCount = foundPmidsInMedline.size;
 
