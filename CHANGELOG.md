@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2025-07-31
+
+### Changed
+
+- **Server Initialization**: Moved `requestContextService.configure` to the top of `createMcpServerInstance` in `src/mcp-server/server.ts` to ensure it is configured before the server instance is created.
+- **STDIO Mode**: Added a `keepAliveInterval` to `NcbiRequestQueueManager` to keep the Node.js event loop alive when running in stdio mode.
+
 ## [1.3.1] - 2025-07-31
 
 ### Changed
