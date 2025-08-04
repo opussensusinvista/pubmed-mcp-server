@@ -5,6 +5,7 @@
  * offers static methods for consistent error processing, logging, and transformation.
  * @module src/utils/internal/errorHandler
  */
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { BaseErrorCode, McpError } from "../../types-global/errors.js";
 import { generateUUID, sanitizeInputForLogging } from "../index.js";
 import { logger } from "./logger.js";
@@ -269,13 +270,6 @@ function getErrorMessage(error: unknown): string {
   }
 }
 
-function mapErrorNameToType(errorName: string): BaseErrorCode {
-  return (
-    ERROR_TYPE_MAPPINGS[errorName as keyof typeof ERROR_TYPE_MAPPINGS] ??
-    BaseErrorCode.INTERNAL_ERROR
-  );
-}
-
 /**
  * A utility class providing static methods for comprehensive error handling.
  */
@@ -295,9 +289,10 @@ export class ErrorHandler {
     const errorName = getErrorName(error);
     const errorMessage = getErrorMessage(error);
 
-    const mappedByName = mapErrorNameToType(errorName);
-    if (mappedByName !== BaseErrorCode.INTERNAL_ERROR) {
-      return mappedByName;
+    const mappedFromType =
+      ERROR_TYPE_MAPPINGS[errorName as keyof typeof ERROR_TYPE_MAPPINGS];
+    if (mappedFromType) {
+      return mappedFromType;
     }
 
     for (const mapping of COMMON_ERROR_PATTERNS) {
@@ -320,6 +315,19 @@ export class ErrorHandler {
     error: unknown,
     options: ErrorHandlerOptions,
   ): Error {
+    // --- OpenTelemetry Integration ---
+    const activeSpan = trace.getActiveSpan();
+    if (activeSpan) {
+      if (error instanceof Error) {
+        activeSpan.recordException(error);
+      }
+      activeSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+    // --- End OpenTelemetry Integration ---
+
     const {
       context = {},
       operation,
@@ -360,18 +368,20 @@ export class ErrorHandler {
       consolidatedDetails.originalStack = originalStack;
     }
 
+    const cause = error instanceof Error ? error : undefined;
+
     if (error instanceof McpError) {
       loggedErrorCode = error.code;
       finalError = errorMapper
         ? errorMapper(error)
-        : new McpError(error.code, error.message, consolidatedDetails);
+        : new McpError(error.code, error.message, { ...consolidatedDetails, cause });
     } else {
       loggedErrorCode =
         explicitErrorCode || ErrorHandler.determineErrorCode(error);
       const message = `Error in ${operation}: ${originalErrorMessage}`;
       finalError = errorMapper
         ? errorMapper(error)
-        : new McpError(loggedErrorCode, message, consolidatedDetails);
+        : new McpError(loggedErrorCode, message, { ...consolidatedDetails, cause });
     }
 
     if (
@@ -395,6 +405,11 @@ export class ErrorHandler {
         : new Date().toISOString();
 
     const logPayload: Record<string, unknown> = {
+      ...Object.fromEntries(
+        Object.entries(context).filter(
+          ([key]) => key !== "requestId" && key !== "timestamp",
+        ),
+      ),
       requestId: logRequestId,
       timestamp: logTimestamp,
       operation,
@@ -403,11 +418,6 @@ export class ErrorHandler {
       errorCode: loggedErrorCode,
       originalErrorType: originalErrorName,
       finalErrorType: getErrorName(finalError),
-      ...Object.fromEntries(
-        Object.entries(context).filter(
-          ([key]) => key !== "requestId" && key !== "timestamp",
-        ),
-      ),
     };
 
     if (finalError instanceof McpError && finalError.details) {
@@ -425,7 +435,7 @@ export class ErrorHandler {
     }
 
     logger.error(
-      `Error in ${operation}: ${finalError.message || originalErrorMessage}`,
+      finalError.message || originalErrorMessage,
       logPayload as unknown as RequestContext, // Cast to RequestContext for logger compatibility
     );
 

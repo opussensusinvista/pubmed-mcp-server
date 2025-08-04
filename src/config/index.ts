@@ -18,6 +18,10 @@ dotenv.config();
 // --- Determine Project Root ---
 const findProjectRoot = (startDir: string): string => {
   let currentDir = startDir;
+  // If the start directory is in `dist`, start searching from the parent directory.
+  if (path.basename(currentDir) === 'dist') {
+    currentDir = path.dirname(currentDir);
+  }
   while (true) {
     const packageJsonPath = join(currentDir, "package.json");
     if (existsSync(packageJsonPath)) {
@@ -32,33 +36,59 @@ const findProjectRoot = (startDir: string): string => {
     currentDir = parentDir;
   }
 };
-
 let projectRoot: string;
 try {
   const currentModuleDir = dirname(fileURLToPath(import.meta.url));
   projectRoot = findProjectRoot(currentModuleDir);
-} catch (error: any) {
-  console.error(`FATAL: Error determining project root: ${error.message}`);
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error(`FATAL: Error determining project root: ${errorMessage}`);
   projectRoot = process.cwd();
-  console.warn(
-    `Warning: Using process.cwd() (${projectRoot}) as fallback project root.`,
-  );
-}
-// --- End Determine Project Root ---
-
-const pkgPath = join(projectRoot, "package.json");
-let pkg = { name: "pubmed-mcp-server", version: "0.0.0" };
-
-try {
-  pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-} catch (error) {
   if (process.stdout.isTTY) {
-    console.error(
-      "Warning: Could not read package.json for default config values. Using hardcoded defaults.",
-      error,
+    console.warn(
+      `Warning: Using process.cwd() (${projectRoot}) as fallback project root.`,
     );
   }
 }
+// --- End Determine Project Root ---
+
+/**
+ * Loads and parses the package.json file from the project root.
+ * @returns The parsed package.json object or a fallback default.
+ * @private
+ */
+const loadPackageJson = (): { name: string; version: string } => {
+  const pkgPath = join(projectRoot, "package.json");
+  const fallback = { name: "pubmed-mcp-server", version: "0.0.0" };
+
+  if (!existsSync(pkgPath)) {
+    if (process.stdout.isTTY) {
+      console.warn(
+        `Warning: package.json not found at ${pkgPath}. Using fallback values. This is expected in some environments (e.g., Docker) but may indicate an issue with project root detection.`,
+      );
+    }
+    return fallback;
+  }
+
+  try {
+    const fileContents = readFileSync(pkgPath, "utf-8");
+    const parsed = JSON.parse(fileContents);
+    return {
+      name: typeof parsed.name === "string" ? parsed.name : fallback.name,
+      version: typeof parsed.version === "string" ? parsed.version : fallback.version,
+    };
+  } catch (error) {
+    if (process.stdout.isTTY) {
+      console.error(
+        "Warning: Could not read or parse package.json. Using hardcoded defaults.",
+        error,
+      );
+    }
+    return fallback;
+  }
+};
+
+const pkg = loadPackageJson();
 
 const EnvSchema = z
   .object({
@@ -114,6 +144,27 @@ const EnvSchema = z
     NCBI_ADMIN_EMAIL: z.string().email().optional(),
     NCBI_REQUEST_DELAY_MS: z.coerce.number().int().positive().optional(),
     NCBI_MAX_RETRIES: z.coerce.number().int().nonnegative().default(3),
+
+    // --- START: OpenTelemetry Configuration ---
+    /** If 'true', OpenTelemetry will be initialized and enabled. Default: 'false'. */
+    OTEL_ENABLED: z
+      .string()
+      .transform((v) => v.toLowerCase() === "true")
+      .default("false"),
+    /** The logical name of the service. Defaults to MCP_SERVER_NAME or package name. */
+    OTEL_SERVICE_NAME: z.string().optional(),
+    /** The version of the service. Defaults to MCP_SERVER_VERSION or package version. */
+    OTEL_SERVICE_VERSION: z.string().optional(),
+    /** The OTLP endpoint for traces. If not set, traces are logged to a file in development. */
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.string().url().optional(),
+    /** The OTLP endpoint for metrics. If not set, metrics are not exported. */
+    OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: z.string().url().optional(),
+    /** Sampling ratio for traces (0.0 to 1.0). 1.0 means sample all. Default: 1.0 */
+    OTEL_TRACES_SAMPLER_ARG: z.coerce.number().min(0).max(1).default(1.0),
+    /** Log level for OpenTelemetry's internal diagnostic logger. Default: "INFO". */
+    OTEL_LOG_LEVEL: z
+      .enum(["NONE", "ERROR", "WARN", "INFO", "DEBUG", "VERBOSE", "ALL"])
+      .default("INFO"),
   })
   .superRefine((data, ctx) => {
     if (
@@ -280,6 +331,16 @@ export const config = {
   ncbiRequestDelayMs:
     env.NCBI_REQUEST_DELAY_MS ?? (env.NCBI_API_KEY ? 100 : 334),
   ncbiMaxRetries: env.NCBI_MAX_RETRIES,
+  openTelemetry: {
+    enabled: env.OTEL_ENABLED,
+    serviceName: env.OTEL_SERVICE_NAME || env.MCP_SERVER_NAME || pkg.name,
+    serviceVersion:
+      env.OTEL_SERVICE_VERSION || env.MCP_SERVER_VERSION || pkg.version,
+    tracesEndpoint: env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT,
+    metricsEndpoint: env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
+    samplingRatio: env.OTEL_TRACES_SAMPLER_ARG,
+    logLevel: env.OTEL_LOG_LEVEL,
+  },
 };
 
 export const logLevel: string = config.logLevel;
