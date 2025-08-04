@@ -6,7 +6,6 @@
  */
 
 import { serve, ServerType } from "@hono/node-server";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Context, Hono, Next } from "hono";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
@@ -18,10 +17,11 @@ import {
   RequestContext,
   requestContextService,
 } from "../../../utils/index.js";
+import { ManagedMcpServer } from "../../core/managedMcpServer.js";
 import { createAuthMiddleware, createAuthStrategy } from "../auth/index.js";
-import { StatefulTransportManager } from "../core/statefulTransportManager.js";
 import { StatelessTransportManager } from "../core/statelessTransportManager.js";
 import { TransportManager } from "../core/transportTypes.js";
+import { StatefulTransportManager } from "./../core/statefulTransportManager.js";
 import { httpErrorHandler } from "./httpErrorHandler.js";
 import { HonoNodeBindings } from "./httpTypes.js";
 import { mcpTransportMiddleware } from "./mcpTransportMiddleware.js";
@@ -29,6 +29,20 @@ import { mcpTransportMiddleware } from "./mcpTransportMiddleware.js";
 const HTTP_PORT = config.mcpHttpPort;
 const HTTP_HOST = config.mcpHttpHost;
 const MCP_ENDPOINT_PATH = config.mcpHttpEndpointPath;
+
+/**
+ * Extracts the client IP address from the request, prioritizing common proxy headers.
+ * @param c - The Hono context object.
+ * @returns The client's IP address or a default string if not found.
+ */
+function getClientIp(c: Context<{ Bindings: HonoNodeBindings }>): string {
+  const forwardedFor = c.req.header("x-forwarded-for");
+  return (
+    (forwardedFor?.split(",")[0] ?? "").trim() ||
+    c.req.header("x-real-ip") ||
+    "unknown_ip"
+  );
+}
 
 /**
  * Converts a Fetch API Headers object to Node.js IncomingHttpHeaders.
@@ -152,9 +166,10 @@ function startHttpServerWithRetry(
           }
         })
         .catch((err) => {
+          const error = err instanceof Error ? err : new Error(String(err));
           logger.fatal(
             "Failed to check if port is in use.",
-            err,
+            error,
             attemptContext,
           );
           reject(err);
@@ -166,7 +181,7 @@ function startHttpServerWithRetry(
 }
 
 function createTransportManager(
-  createServerInstanceFn: () => Promise<McpServer>,
+  createServerInstanceFn: () => Promise<ManagedMcpServer>,
   sessionMode: string,
   context: RequestContext,
 ): TransportManager {
@@ -179,24 +194,30 @@ function createTransportManager(
     `Creating transport manager for session mode: ${sessionMode}`,
     opContext,
   );
+
+  const statefulOptions = {
+    staleSessionTimeoutMs: config.mcpStatefulSessionStaleTimeoutMs,
+    mcpHttpEndpointPath: config.mcpHttpEndpointPath,
+  };
+
   switch (sessionMode) {
     case "stateless":
       return new StatelessTransportManager(createServerInstanceFn);
     case "stateful":
-      return new StatefulTransportManager(createServerInstanceFn);
+      return new StatefulTransportManager(createServerInstanceFn, statefulOptions);
     case "auto":
     default:
       logger.info(
         "Defaulting to 'auto' mode (stateful with stateless fallback).",
         opContext,
       );
-      return new StatefulTransportManager(createServerInstanceFn);
+      return new StatefulTransportManager(createServerInstanceFn, statefulOptions);
   }
 }
 
 export function createHttpApp(
   transportManager: TransportManager,
-  createServerInstanceFn: () => Promise<McpServer>,
+  createServerInstanceFn: () => Promise<ManagedMcpServer>,
   parentContext: RequestContext,
 ): Hono<{ Bindings: HonoNodeBindings }> {
   const app = new Hono<{ Bindings: HonoNodeBindings }>();
@@ -235,11 +256,7 @@ export function createHttpApp(
   app.use(
     MCP_ENDPOINT_PATH,
     async (c: Context<{ Bindings: HonoNodeBindings }>, next: Next) => {
-      const forwardedFor = c.req.header("x-forwarded-for");
-      const clientIp =
-        (forwardedFor?.split(",")[0] ?? "").trim() ||
-        c.req.header("x-real-ip") ||
-        "unknown_ip";
+      const clientIp = getClientIp(c);
       const context = requestContextService.createRequestContext({
         operation: "httpRateLimitCheck",
         ipAddress: clientIp,
@@ -281,21 +298,40 @@ export function createHttpApp(
     });
   });
 
-  app.get(MCP_ENDPOINT_PATH, (c: Context<{ Bindings: HonoNodeBindings }>) => {
-    const sessionId = c.req.header("mcp-session-id");
-    if (sessionId) {
-      return c.text(
-        "GET requests to existing sessions are not supported.",
-        405,
-      );
-    }
-    return c.json({
-      status: "ok",
-      mode: "stateless",
-      message:
-        "Server is running. Provide a Mcp-Session-Id header to stream from a session.",
-    });
-  });
+  app.get(
+    MCP_ENDPOINT_PATH,
+    async (c: Context<{ Bindings: HonoNodeBindings }>) => {
+      const sessionId = c.req.header("mcp-session-id");
+      if (sessionId) {
+        return c.text(
+          "GET requests to existing sessions are not supported.",
+          405,
+        );
+      }
+
+      // Since this is a stateless endpoint, we create a temporary instance
+      // to report on the server's configuration.
+      const serverInstance = await createServerInstanceFn();
+
+      return c.json({
+        status: "ok",
+        server: {
+          name: serverInstance.name,
+          version: serverInstance.version,
+          description:
+            (config.pkg as { description?: string })?.description ||
+            "No description provided.",
+          nodeVersion: process.version,
+          environment: config.environment,
+          capabilities: serverInstance.capabilities,
+        },
+        sessionMode: config.mcpSessionMode,
+        tools: serverInstance.getTools(),
+        message:
+          "Server is running. POST to this endpoint to execute a tool call.",
+      });
+    },
+  );
 
   app.post(
     MCP_ENDPOINT_PATH,
@@ -312,15 +348,16 @@ export function createHttpApp(
 
       c.status(response.statusCode);
 
-      if (response.stream) {
+      if (response.type === "stream") {
         return stream(c, async (s) => {
-          if (response.stream) {
-            await s.pipe(response.stream);
-          }
+          await s.pipe(response.stream);
         });
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return c.json(response.body as any);
+        const body =
+          typeof response.body === "object" && response.body !== null
+            ? response.body
+            : { body: response.body };
+        return c.json(body);
       }
     },
   );
@@ -341,8 +378,15 @@ export function createHttpApp(
             sessionId,
             context,
           );
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return c.json(response.body as any, response.statusCode);
+          if (response.type === "buffered") {
+            const body =
+              typeof response.body === "object" && response.body !== null
+                ? response.body
+                : { body: response.body };
+            return c.json(body, response.statusCode);
+          }
+          // Fallback for unexpected stream response on DELETE
+          return c.body(null, response.statusCode);
         } else {
           return c.json(
             {
@@ -366,7 +410,7 @@ export function createHttpApp(
 }
 
 export async function startHttpTransport(
-  createServerInstanceFn: () => Promise<McpServer>,
+  createServerInstanceFn: () => Promise<ManagedMcpServer>,
   parentContext: RequestContext,
 ): Promise<{
   app: Hono<{ Bindings: HonoNodeBindings }>;
