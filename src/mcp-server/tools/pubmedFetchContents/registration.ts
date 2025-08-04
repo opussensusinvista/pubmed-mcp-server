@@ -1,6 +1,6 @@
 /**
- * @fileoverview Registration for the searchPubMedArticles MCP tool.
- * @module src/mcp-server/tools/searchPubMedArticles/registration
+ * @fileoverview Registration for the pubmed_fetch_contents MCP tool.
+ * @module src/mcp-server/tools/pubmedFetchContents/registration
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -13,22 +13,23 @@ import {
   requestContextService,
 } from "../../../utils/index.js";
 import {
-  SearchPubMedArticlesInput,
-  SearchPubMedArticlesInputSchema,
-  searchPubMedArticlesLogic,
+  PubMedFetchContentsInput,
+  PubMedFetchContentsInputSchema,
+  pubMedFetchContentsLogic,
 } from "./logic.js";
 
 /**
- * Registers the searchPubMedArticles tool with the MCP server.
+ * Registers the pubmed_fetch_contents tool with the MCP server.
  * @param server - The McpServer instance.
  */
-export async function registerSearchPubMedArticlesTool(
+export async function registerPubMedFetchContentsTool(
   server: McpServer,
 ): Promise<void> {
-  const operation = "registerSearchPubMedArticlesTool";
-  const toolName = "search_pubmed_articles";
+  const operation = "registerPubMedFetchContentsTool";
+  const toolName = "pubmed_fetch_contents";
   const toolDescription =
-    "Searches PubMed for articles using a query term and optional filters (max results, sort, date range, publication types). Uses NCBI ESearch to find PMIDs and ESummary (optional) for brief summaries. Returns a JSON object with search parameters, ESearch term, result counts, PMIDs, optional summaries (PMID, title, authors, source, dates), and E-utility URLs.";
+    "Fetches detailed information from PubMed using NCBI EFetch. Can be used with a direct list of PMIDs or with queryKey/webEnv from an ESearch history entry. Supports pagination (retstart, retmax) when using history. Available 'detailLevel' options: 'abstract_plus' (parsed details), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), or 'citation_data' (minimal citation data). Returns a JSON object containing results, any PMIDs not found (if applicable), and EFetch details.";
+
   const context = requestContextService.createRequestContext({ operation });
 
   await ErrorHandler.tryCatch(
@@ -36,30 +37,28 @@ export async function registerSearchPubMedArticlesTool(
       server.tool(
         toolName,
         toolDescription,
-        SearchPubMedArticlesInputSchema.shape,
+        PubMedFetchContentsInputSchema._def.schema.shape,
         async (
-          input: SearchPubMedArticlesInput,
-          mcpProvidedContext: any,
+          input: PubMedFetchContentsInput,
+          toolContext: any,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({
               parentRequestId: context.requestId,
-              operation: "searchPubMedArticlesToolHandler",
-              mcpToolContext: mcpProvidedContext,
+              operation: "pubMedFetchContentsToolHandler",
+              mcpToolContext: toolContext,
               input,
             });
 
           try {
-            const result = await searchPubMedArticlesLogic(input, richContext);
+            const result = await pubMedFetchContentsLogic(input, richContext);
             return {
-              content: [
-                { type: "text", text: JSON.stringify(result, null, 2) },
-              ],
+              content: [{ type: "text", text: result.content }],
               isError: false,
             };
           } catch (error) {
             const handledError = ErrorHandler.handleError(error, {
-              operation: "searchPubMedArticlesToolHandler",
+              operation: "pubMedFetchContentsToolHandler",
               context: richContext,
               input,
               rethrow: false,
@@ -70,7 +69,7 @@ export async function registerSearchPubMedArticlesTool(
                 ? handledError
                 : new McpError(
                     BaseErrorCode.INTERNAL_ERROR,
-                    "An unexpected error occurred while searching PubMed articles.",
+                    "An unexpected error occurred while fetching PubMed content.",
                     {
                       originalErrorName: handledError.name,
                       originalErrorMessage: handledError.message,
@@ -95,6 +94,7 @@ export async function registerSearchPubMedArticlesTool(
           }
         },
       );
+
       logger.notice(`Tool '${toolName}' registered.`, context);
     },
     {

@@ -1,8 +1,8 @@
 /**
- * @fileoverview Logic for the searchPubMedArticles MCP tool.
+ * @fileoverview Logic for the pubmed_search_articles MCP tool.
  * Handles constructing ESearch and ESummary queries, interacting with
  * the NcbiService, and formatting the results.
- * @module src/mcp-server/tools/searchPubMedArticles/logic
+ * @module src/mcp-server/tools/pubmedSearchArticles/logic
  */
 
 import { z } from "zod";
@@ -22,7 +22,7 @@ import {
 import { extractBriefSummaries } from "../../../services/NCBI/parsing/index.js";
 import { sanitization } from "../../../utils/security/sanitization.js";
 
-export const SearchPubMedArticlesInputSchema = z.object({
+export const PubMedSearchArticlesInputSchema = z.object({
   queryTerm: z
     .string()
     .min(3, "Query term must be at least 3 characters")
@@ -44,7 +44,7 @@ export const SearchPubMedArticlesInputSchema = z.object({
     .optional()
     .default("relevance")
     .describe(
-      "Sorting criteria for results. Options: 'relevance' (default), 'pub_date', 'author', 'journal_name'. Note: Other sorting (e.g., last_author, title) may require client-side implementation or be future server enhancements.",
+      "Sorting criteria for results. Options: 'relevance' (default), 'pub_date', 'author', 'journal_name'.",
     ),
   dateRange: z
     .object({
@@ -78,13 +78,13 @@ export const SearchPubMedArticlesInputSchema = z.object({
     })
     .optional()
     .describe(
-      "Defines an optional date range for the search, including min/max dates and the type of date field to use.",
+      "Defines an optional date range for the search.",
     ),
   filterByPublicationTypes: z
     .array(z.string())
     .optional()
     .describe(
-      'An array of publication types to filter by (e.g., ["Review", "Clinical Trial"]). The server maps these to the appropriate Entrez query syntax (e.g., "Review"[Publication Type]).',
+      'An array of publication types to filter by (e.g., ["Review", "Clinical Trial"]).',
     ),
   fetchBriefSummaries: z
     .number()
@@ -94,16 +94,16 @@ export const SearchPubMedArticlesInputSchema = z.object({
     .optional()
     .default(0)
     .describe(
-      "Number of top PMIDs for which to fetch brief summaries using ESummary v2.0. Set to 0 to disable. Maximum is 50 for this tool. Default is 0.",
+      "Number of top PMIDs for which to fetch brief summaries using ESummary. Set to 0 to disable. Max 50. Default 0.",
     ),
 });
 
-export type SearchPubMedArticlesInput = z.infer<
-  typeof SearchPubMedArticlesInputSchema
+export type PubMedSearchArticlesInput = z.infer<
+  typeof PubMedSearchArticlesInputSchema
 >;
 
-export type SearchPubMedArticlesOutput = {
-  searchParameters: SearchPubMedArticlesInput;
+export type PubMedSearchArticlesOutput = {
+  searchParameters: PubMedSearchArticlesInput;
   effectiveESearchTerm: string;
   totalFound: number;
   retrievedPmidCount: number;
@@ -127,18 +127,18 @@ interface ESearchServiceParams {
   [key: string]: string | number | undefined;
 }
 
-export async function searchPubMedArticlesLogic(
-  input: SearchPubMedArticlesInput,
+export async function pubmedSearchArticlesLogic(
+  input: PubMedSearchArticlesInput,
   parentRequestContext: RequestContext,
-): Promise<SearchPubMedArticlesOutput> {
+): Promise<PubMedSearchArticlesOutput> {
   const ncbiService = getNcbiService();
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
-    operation: "searchPubMedArticlesLogic",
+    operation: "pubmedSearchArticlesLogic",
     input: sanitizeInputForLogging(input),
   });
 
-  logger.info("Executing searchPubMedArticles tool", toolLogicContext);
+  logger.info("Executing pubmed_search_articles tool", toolLogicContext);
 
   let effectiveQuery = sanitization.sanitizeString(input.queryTerm, {
     context: "text",
@@ -263,7 +263,7 @@ export async function searchPubMedArticlesLogic(
     }
   }
 
-  logger.notice("Successfully executed searchPubMedArticles tool.", {
+  logger.notice("Successfully executed pubmed_search_articles tool.", {
     ...toolLogicContext,
     totalFound,
     retrievedPmidCount,

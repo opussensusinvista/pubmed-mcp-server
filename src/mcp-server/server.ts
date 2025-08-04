@@ -14,22 +14,23 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import http from "http";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
-import { registerFetchPubMedContentTool } from "./tools/fetchPubMedContent/index.js";
-import { registerGeneratePubMedChartTool } from "./tools/generatePubMedChart/index.js";
-import { registerGetPubMedArticleConnectionsTool } from "./tools/getPubMedArticleConnections/index.js";
+import { ManagedMcpServer } from "./core/managedMcpServer.js";
+import { registerPubMedArticleConnectionsTool } from "./tools/pubmedArticleConnections/index.js";
+import { registerPubMedFetchContentsTool } from "./tools/pubmedFetchContents/index.js";
+import { registerPubMedGenerateChartTool } from "./tools/pubmedGenerateChart/index.js";
 import { registerPubMedResearchAgentTool } from "./tools/pubmedResearchAgent/index.js";
-import { registerSearchPubMedArticlesTool } from "./tools/searchPubMedArticles/index.js";
+import { registerPubMedSearchArticlesTool } from "./tools/pubmedSearchArticles/index.js";
 import { startHttpTransport } from "./transports/http/index.js";
 import { startStdioTransport } from "./transports/stdio/index.js";
 
 /**
  * Creates and configures a new instance of the `McpServer`.
  *
- * @returns A promise resolving with the configured `McpServer` instance.
+ * @returns A promise resolving with the configured `ManagedMcpServer` instance.
  * @throws {McpError} If any resource or tool registration fails.
  * @private
  */
-async function createMcpServerInstance(): Promise<McpServer> {
+async function createMcpServerInstance(): Promise<ManagedMcpServer> {
   const context = requestContextService.createRequestContext({
     operation: "createMcpServerInstance",
   });
@@ -41,7 +42,7 @@ async function createMcpServerInstance(): Promise<McpServer> {
     environment,
   });
 
-  const server = new McpServer(
+  const server = new ManagedMcpServer(
     { name: config.mcpServerName, version: config.mcpServerVersion },
     {
       capabilities: {
@@ -55,11 +56,11 @@ async function createMcpServerInstance(): Promise<McpServer> {
   try {
     logger.debug("Registering resources and tools...", context);
     // IMPORTANT: Keep tool registrations in alphabetical order.
-    await registerFetchPubMedContentTool(server);
-    await registerGeneratePubMedChartTool(server);
-    await registerGetPubMedArticleConnectionsTool(server);
+    await registerPubMedArticleConnectionsTool(server);
+    await registerPubMedFetchContentsTool(server);
+    await registerPubMedGenerateChartTool(server);
     await registerPubMedResearchAgentTool(server);
-    await registerSearchPubMedArticlesTool(server);
+    await registerPubMedSearchArticlesTool(server);
     logger.info("Resources and tools registered successfully", context);
   } catch (err) {
     logger.error("Failed to register resources/tools", {

@@ -1,7 +1,7 @@
 /**
- * @fileoverview Main logic handler for the 'get_pubmed_article_connections' MCP tool.
+ * @fileoverview Main logic handler for the 'pubmed_article_connections' MCP tool.
  * Orchestrates calls to ELink or citation formatting handlers.
- * @module src/mcp-server/tools/getPubMedArticleConnections/logic/index
+ * @module src/mcp-server/tools/pubmedArticleConnections/logic/index
  */
 
 import { z } from "zod";
@@ -17,9 +17,9 @@ import { handleELinkRelationships } from "./elinkHandler.js";
 import type { ToolOutputData } from "./types.js";
 
 /**
- * Zod schema for the input parameters of the 'get_pubmed_article_connections' tool.
+ * Zod schema for the input parameters of the 'pubmed_article_connections' tool.
  */
-export const GetPubMedArticleConnectionsInputSchema = z.object({
+export const PubMedArticleConnectionsInputSchema = z.object({
   sourcePmid: z
     .string()
     .regex(/^\d+$/)
@@ -35,7 +35,7 @@ export const GetPubMedArticleConnectionsInputSchema = z.object({
     ])
     .default("pubmed_similar_articles")
     .describe(
-      "Specifies the type of connection or action: \n- 'pubmed_similar_articles': Finds articles similar to the source PMID (uses ELink `cmd=neighbor`). \n- 'pubmed_citedin': Finds articles in PubMed that cite the source PMID (uses ELink `linkname=pubmed_pubmed_citedin`). \n- 'pubmed_references': Finds articles in PubMed referenced by the source PMID (uses ELink `linkname=pubmed_pubmed_refs`). \n- 'citation_formats': Retrieves data for the source PMID and formats it into specified citation styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting).",
+      "Specifies the type of connection or action: 'pubmed_similar_articles' (finds similar articles), 'pubmed_citedin' (finds citing articles), 'pubmed_references' (finds referenced articles), or 'citation_formats' (retrieves formatted citations)."
     ),
   maxRelatedResults: z
     .number()
@@ -45,43 +45,43 @@ export const GetPubMedArticleConnectionsInputSchema = z.object({
     .optional()
     .default(5)
     .describe(
-      "Maximum number of related articles to retrieve when 'relationshipType' is 'pubmed_similar_articles', 'pubmed_citedin', or 'pubmed_references'. ELink results from NCBI will be truncated by the server if they exceed this number. Default is 5, maximum is 50.",
+      "Maximum number of related articles to retrieve for relationship-based searches. Default is 5, max is 50."
     ),
   citationStyles: z
     .array(z.enum(["ris", "bibtex", "apa_string", "mla_string"]))
     .optional()
     .default(["ris"])
     .describe(
-      "An array of citation styles to format the source article into when 'relationshipType' is 'citation_formats'. Supported styles: 'ris', 'bibtex', 'apa_string', 'mla_string'. Default is ['ris']. Formatting is performed server-side based on data fetched via EFetch.",
+      "An array of citation styles to format the source article into when 'relationshipType' is 'citation_formats'. Supported styles: 'ris', 'bibtex', 'apa_string', 'mla_string'. Default is ['ris']."
     ),
 });
 
 /**
- * Type alias for the validated input of the 'get_pubmed_article_connections' tool.
+ * Type alias for the validated input of the 'pubmed_article_connections' tool.
  */
-export type GetPubMedArticleConnectionsInput = z.infer<
-  typeof GetPubMedArticleConnectionsInputSchema
+export type PubMedArticleConnectionsInput = z.infer<
+  typeof PubMedArticleConnectionsInputSchema
 >;
 
 /**
- * Main handler for the 'get_pubmed_article_connections' tool.
- * @param {GetPubMedArticleConnectionsInput} input - Validated input parameters.
+ * Main handler for the 'pubmed_article_connections' tool.
+ * @param {PubMedArticleConnectionsInput} input - Validated input parameters.
  * @param {RequestContext} context - The request context for this tool invocation.
  * @returns {Promise<ToolOutputData>} The result of the tool call.
  */
-export async function handleGetPubMedArticleConnections(
-  input: GetPubMedArticleConnectionsInput,
+export async function handlePubMedArticleConnections(
+  input: PubMedArticleConnectionsInput,
   context: RequestContext,
 ): Promise<ToolOutputData> {
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: context.requestId,
-    operation: "handleGetPubMedArticleConnections",
-    toolName: "get_pubmed_article_connections",
+    operation: "handlePubMedArticleConnections",
+    toolName: "pubmed_article_connections",
     input: sanitizeInputForLogging(input),
   });
 
   logger.info(
-    "Executing get_pubmed_article_connections tool",
+    "Executing pubmed_article_connections tool",
     toolLogicContext,
   );
 
@@ -121,7 +121,7 @@ export async function handleGetPubMedArticleConnections(
     outputData.message = "No results found for the given parameters.";
   }
 
-  logger.notice("Successfully executed get_pubmed_article_connections tool.", {
+  logger.notice("Successfully executed pubmed_article_connections tool.", {
     ...toolLogicContext,
     relationshipType: input.relationshipType,
     retrievedCount: outputData.retrievedCount,

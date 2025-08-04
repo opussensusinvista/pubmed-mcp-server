@@ -1,7 +1,7 @@
 /**
- * @fileoverview Registers the 'generate_pubmed_chart' tool with the MCP server.
+ * @fileoverview Registers the 'pubmed_generate_chart' tool with the MCP server.
  * This tool now accepts parameterized input for generating charts.
- * @module src/mcp-server/tools/generatePubMedChart/registration
+ * @module src/mcp-server/tools/pubmedGenerateChart/registration
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
@@ -13,22 +13,18 @@ import {
   requestContextService,
 } from "../../../utils/index.js";
 import {
-  GeneratePubMedChartInput,
-  GeneratePubMedChartInputSchema,
-  generatePubMedChartLogic,
+  PubMedGenerateChartInput,
+  PubMedGenerateChartInputSchema,
+  pubmedGenerateChartLogic,
 } from "./logic.js";
 
-export async function registerGeneratePubMedChartTool(
+export async function registerPubMedGenerateChartTool(
   server: McpServer,
 ): Promise<void> {
-  const operation = "registerGeneratePubMedChartTool";
-  const toolName = "generate_pubmed_chart";
+  const operation = "registerPubMedGenerateChartTool";
+  const toolName = "pubmed_generate_chart";
   const toolDescription =
-    "Generates a customizable chart (PNG) from structured data. " +
-    "Supports 'bar', 'line', 'scatter', 'pie', 'doughnut', 'bubble', 'radar', and 'polarArea' plots. " +
-    "Requires data values and field mappings for axes. " +
-    "Optional parameters allow for titles and dimensions. " +
-    "Internally uses Chart.js and chartjs-node-canvas to produce a Base64-encoded PNG image.";
+    "Generates a customizable chart (PNG) from structured data. Supports various plot types and requires data values and field mappings for axes. Returns a Base64-encoded PNG image.";
   const context = requestContextService.createRequestContext({ operation });
 
   await ErrorHandler.tryCatch(
@@ -36,21 +32,21 @@ export async function registerGeneratePubMedChartTool(
       server.tool(
         toolName,
         toolDescription,
-        GeneratePubMedChartInputSchema.shape,
+        PubMedGenerateChartInputSchema.shape,
         async (
-          input: GeneratePubMedChartInput,
+          input: PubMedGenerateChartInput,
           mcpProvidedContext: any,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({
               parentRequestId: context.requestId,
-              operation: "generatePubMedChartToolHandler",
+              operation: "pubmedGenerateChartToolHandler",
               mcpToolContext: mcpProvidedContext,
               input,
             });
 
           try {
-            const result = await generatePubMedChartLogic(input, richContext);
+            const result = await pubmedGenerateChartLogic(input, richContext);
             return {
               content: [
                 {
@@ -63,7 +59,7 @@ export async function registerGeneratePubMedChartTool(
             };
           } catch (error) {
             const handledError = ErrorHandler.handleError(error, {
-              operation: "generatePubMedChartToolHandler",
+              operation: "pubmedGenerateChartToolHandler",
               context: richContext,
               input,
               rethrow: false,

@@ -1,10 +1,9 @@
 /**
- * @fileoverview Registers the 'get_pubmed_article_connections' tool with the MCP server.
- * This tool finds articles related to a source PMID or retrieves citation formats.
- * @module src/mcp-server/tools/getPubMedArticleConnections/registration
+ * @fileoverview Registration for the pubmed_search_articles MCP tool.
+ * @module src/mcp-server/tools/pubmedSearchArticles/registration
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
@@ -14,22 +13,22 @@ import {
   requestContextService,
 } from "../../../utils/index.js";
 import {
-  GetPubMedArticleConnectionsInput,
-  GetPubMedArticleConnectionsInputSchema,
-  handleGetPubMedArticleConnections,
-} from "./logic/index.js";
+  PubMedSearchArticlesInput,
+  PubMedSearchArticlesInputSchema,
+  pubmedSearchArticlesLogic,
+} from "./logic.js";
 
 /**
- * Registers the 'get_pubmed_article_connections' tool with the given MCP server instance.
- * @param {McpServer} server - The MCP server instance.
+ * Registers the pubmed_search_articles tool with the MCP server.
+ * @param server - The McpServer instance.
  */
-export async function registerGetPubMedArticleConnectionsTool(
+export async function registerPubMedSearchArticlesTool(
   server: McpServer,
 ): Promise<void> {
-  const operation = "registerGetPubMedArticleConnectionsTool";
-  const toolName = "get_pubmed_article_connections";
+  const operation = "registerPubMedSearchArticlesTool";
+  const toolName = "pubmed_search_articles";
   const toolDescription =
-    "Finds articles related to a source PubMed ID (PMID) or retrieves formatted citations for it. Supports finding similar articles, articles that cite the source, articles referenced by the source (via NCBI ELink), or fetching data to generate citations in various styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting). Returns a JSON object detailing the connections or formatted citations.";
+    "Searches PubMed for articles using a query term and optional filters (max results, sort, date range, publication types). Uses NCBI ESearch to find PMIDs and ESummary (optional) for brief summaries. Returns a JSON object with search parameters, ESearch term, result counts, PMIDs, optional summaries, and E-utility URLs.";
   const context = requestContextService.createRequestContext({ operation });
 
   await ErrorHandler.tryCatch(
@@ -37,24 +36,21 @@ export async function registerGetPubMedArticleConnectionsTool(
       server.tool(
         toolName,
         toolDescription,
-        GetPubMedArticleConnectionsInputSchema.shape,
+        PubMedSearchArticlesInputSchema.shape,
         async (
-          input: GetPubMedArticleConnectionsInput,
+          input: PubMedSearchArticlesInput,
           mcpProvidedContext: any,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({
               parentRequestId: context.requestId,
-              operation: "getPubMedArticleConnectionsToolHandler",
+              operation: "pubmedSearchArticlesToolHandler",
               mcpToolContext: mcpProvidedContext,
               input,
             });
 
           try {
-            const result = await handleGetPubMedArticleConnections(
-              input,
-              richContext,
-            );
+            const result = await pubmedSearchArticlesLogic(input, richContext);
             return {
               content: [
                 { type: "text", text: JSON.stringify(result, null, 2) },
@@ -63,7 +59,7 @@ export async function registerGetPubMedArticleConnectionsTool(
             };
           } catch (error) {
             const handledError = ErrorHandler.handleError(error, {
-              operation: "getPubMedArticleConnectionsToolHandler",
+              operation: "pubmedSearchArticlesToolHandler",
               context: richContext,
               input,
               rethrow: false,
@@ -74,7 +70,7 @@ export async function registerGetPubMedArticleConnectionsTool(
                 ? handledError
                 : new McpError(
                     BaseErrorCode.INTERNAL_ERROR,
-                    "An unexpected error occurred while getting PubMed article connections.",
+                    "An unexpected error occurred while searching PubMed articles.",
                     {
                       originalErrorName: handledError.name,
                       originalErrorMessage: handledError.message,

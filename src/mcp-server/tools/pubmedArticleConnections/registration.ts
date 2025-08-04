@@ -1,9 +1,10 @@
 /**
- * @fileoverview Registration for the fetch_pubmed_content MCP tool.
- * @module src/mcp-server/tools/fetchPubMedContent/registration
+ * @fileoverview Registers the 'pubmed_article_connections' tool with the MCP server.
+ * This tool finds articles related to a source PMID or retrieves citation formats.
+ * @module src/mcp-server/tools/pubmedArticleConnections/registration
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { BaseErrorCode, McpError } from "../../../types-global/errors.js";
 import {
@@ -13,23 +14,22 @@ import {
   requestContextService,
 } from "../../../utils/index.js";
 import {
-  FetchPubMedContentInput,
-  FetchPubMedContentInputSchema,
-  fetchPubMedContentLogic,
-} from "./logic.js";
+  PubMedArticleConnectionsInput,
+  PubMedArticleConnectionsInputSchema,
+  handlePubMedArticleConnections,
+} from "./logic/index.js";
 
 /**
- * Registers the fetch_pubmed_content tool with the MCP server.
- * @param server - The McpServer instance.
+ * Registers the 'pubmed_article_connections' tool with the given MCP server instance.
+ * @param {McpServer} server - The MCP server instance.
  */
-export async function registerFetchPubMedContentTool(
+export async function registerPubMedArticleConnectionsTool(
   server: McpServer,
 ): Promise<void> {
-  const operation = "registerFetchPubMedContentTool";
-  const toolName = "fetch_pubmed_content";
+  const operation = "registerPubMedArticleConnectionsTool";
+  const toolName = "pubmed_article_connections";
   const toolDescription =
-    "Fetches detailed information from PubMed using NCBI EFetch. Can be used with a direct list of PMIDs or with queryKey/webEnv from an ESearch history entry. Supports pagination (retstart, retmax) when using history. Available 'detailLevel' options: 'abstract_plus' (parsed title, abstract, authors, journal, keywords, DOI, optional MeSH/grant info), 'full_xml' (JSON representation of the PubMedArticle XML structure), 'medline_text' (MEDLINE format), or 'citation_data' (minimal data for citations). Returns a JSON object containing results, any PMIDs not found (if applicable), and EFetch details.";
-
+    "Finds articles related to a source PubMed ID (PMID) or retrieves formatted citations for it. Supports finding similar articles, articles that cite the source, articles referenced by the source (via NCBI ELink), or fetching data to generate citations in various styles (RIS, BibTeX, APA, MLA via NCBI EFetch and server-side formatting). Returns a JSON object detailing the connections or formatted citations.";
   const context = requestContextService.createRequestContext({ operation });
 
   await ErrorHandler.tryCatch(
@@ -37,28 +37,33 @@ export async function registerFetchPubMedContentTool(
       server.tool(
         toolName,
         toolDescription,
-        FetchPubMedContentInputSchema._def.schema.shape,
+        PubMedArticleConnectionsInputSchema.shape,
         async (
-          input: FetchPubMedContentInput,
-          toolContext: any,
+          input: PubMedArticleConnectionsInput,
+          mcpProvidedContext: any,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({
               parentRequestId: context.requestId,
-              operation: "fetchPubMedContentToolHandler",
-              mcpToolContext: toolContext,
+              operation: "pubMedArticleConnectionsToolHandler",
+              mcpToolContext: mcpProvidedContext,
               input,
             });
 
           try {
-            const result = await fetchPubMedContentLogic(input, richContext);
+            const result = await handlePubMedArticleConnections(
+              input,
+              richContext,
+            );
             return {
-              content: [{ type: "text", text: result.content }],
+              content: [
+                { type: "text", text: JSON.stringify(result, null, 2) },
+              ],
               isError: false,
             };
           } catch (error) {
             const handledError = ErrorHandler.handleError(error, {
-              operation: "fetchPubMedContentToolHandler",
+              operation: "pubMedArticleConnectionsToolHandler",
               context: richContext,
               input,
               rethrow: false,
@@ -69,7 +74,7 @@ export async function registerFetchPubMedContentTool(
                 ? handledError
                 : new McpError(
                     BaseErrorCode.INTERNAL_ERROR,
-                    "An unexpected error occurred while fetching PubMed content.",
+                    "An unexpected error occurred while getting PubMed article connections.",
                     {
                       originalErrorName: handledError.name,
                       originalErrorMessage: handledError.message,
@@ -94,7 +99,6 @@ export async function registerFetchPubMedContentTool(
           }
         },
       );
-
       logger.notice(`Tool '${toolName}' registered.`, context);
     },
     {

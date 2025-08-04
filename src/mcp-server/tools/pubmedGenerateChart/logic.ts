@@ -1,8 +1,8 @@
 /**
- * @fileoverview Core logic for the generate_pubmed_chart tool.
+ * @fileoverview Core logic for the pubmed_generate_chart tool.
  * Generates charts from parameterized input by creating Chart.js configurations
  * and rendering them on the server using chartjs-node-canvas.
- * @module src/mcp-server/tools/generatePubMedChart/logic
+ * @module src/mcp-server/tools/pubmedGenerateChart/logic
  */
 import { ChartConfiguration } from "chart.js";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
@@ -15,7 +15,7 @@ import {
   sanitizeInputForLogging,
 } from "../../../utils/index.js";
 
-export const GeneratePubMedChartInputSchema = z.object({
+export const PubMedGenerateChartInputSchema = z.object({
   chartType: z
     .enum([
       "bar",
@@ -27,74 +27,52 @@ export const GeneratePubMedChartInputSchema = z.object({
       "radar",
       "polarArea",
     ])
-    .describe(
-      "Required. Specifies the type of chart to generate. Options: 'bar', 'line', 'scatter', 'pie', 'doughnut', 'bubble', 'radar', 'polarArea'.",
-    ),
+    .describe("Specifies the type of chart to generate."),
   title: z
     .string()
     .optional()
-    .describe(
-      "Optional. The main title displayed above the chart. If omitted, no title is shown.",
-    ),
+    .describe("The main title displayed above the chart."),
   width: z
     .number()
     .int()
     .positive()
     .optional()
     .default(800)
-    .describe(
-      "Optional. The width of the chart canvas in pixels. Must be a positive integer. Default: 800.",
-    ),
+    .describe("The width of the chart canvas in pixels."),
   height: z
     .number()
     .int()
     .positive()
     .optional()
     .default(600)
-    .describe(
-      "Optional. The height of the chart canvas in pixels. Must be a positive integer. Default: 600.",
-    ),
+    .describe("The height of the chart canvas in pixels."),
   dataValues: z
     .array(z.record(z.string(), z.any()))
     .min(1)
     .describe(
-      "Required. An array of data objects used to plot the chart. Each object represents a data point or bar, structured as key-value pairs (e.g., [{ 'year': '2020', 'articles': 150 }, { 'year': '2021', 'articles': 180 }]). Must contain at least one data object.",
+      "An array of data objects to plot the chart (e.g., [{ 'year': '2020', 'articles': 150 }]).",
     ),
   outputFormat: z
     .enum(["png"])
     .default("png")
-    .describe(
-      "Specifies the output format for the chart. Currently, only 'png' (Portable Network Graphics) is supported and is the default.",
-    ),
-  xField: z
-    .string()
-    .describe(
-      "Required. The name of the field in `dataValues` to be used for the X-axis (horizontal). This field determines the categories or values along the bottom of the chart (e.g., 'year', 'geneName', 'publicationCount').",
-    ),
-  yField: z
-    .string()
-    .describe(
-      "Required. The name of the field in `dataValues` to be used for the Y-axis (vertical). This field determines the values plotted upwards on the chart (e.g., 'articles', 'expressionLevel', 'citationCount').",
-    ),
+    .describe("Specifies the output format for the chart."),
+  xField: z.string().describe("The field name from `dataValues` for the X-axis."),
+  yField: z.string().describe("The field name from `dataValues` for the Y-axis."),
   seriesField: z
     .string()
     .optional()
-    .describe(
-      "Optional. The name of the field in `dataValues` used to create multiple distinct lines or bar groups (series) on the same chart. Each unique value in this field will correspond to a separate dataset.",
-    ),
+    .describe("The field name for creating multiple data series on the same chart."),
   sizeField: z
     .string()
     .optional()
-    .describe(
-      "Optional. For bubble charts. The name of the field in `dataValues` to use for encoding the size of the bubbles. Larger values in this field will result in larger bubbles (e.g., 'sampleSize', 'effectMagnitude').",
-    ),
+    .describe("For bubble charts, the field name for encoding bubble size."),
 });
 
-export type GeneratePubMedChartInput = z.infer<
-  typeof GeneratePubMedChartInputSchema
+export type PubMedGenerateChartInput = z.infer<
+  typeof PubMedGenerateChartInputSchema
 >;
 
-export type GeneratePubMedChartOutput = {
+export type PubMedGenerateChartOutput = {
   base64Data: string;
   chartType: string;
   dataPoints: number;
@@ -118,18 +96,18 @@ function groupDataBySeries(
   return series;
 }
 
-export async function generatePubMedChartLogic(
-  input: GeneratePubMedChartInput,
+export async function pubmedGenerateChartLogic(
+  input: PubMedGenerateChartInput,
   parentRequestContext: RequestContext,
-): Promise<GeneratePubMedChartOutput> {
+): Promise<PubMedGenerateChartOutput> {
   const operationContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
-    operation: "generatePubMedChartLogicExecution",
+    operation: "pubmedGenerateChartLogicExecution",
     input: sanitizeInputForLogging(input),
   });
 
   logger.info(
-    `Executing 'generate_pubmed_chart' with Chart.js. Chart type: ${input.chartType}`,
+    `Executing 'pubmed_generate_chart' with Chart.js. Chart type: ${input.chartType}`,
     operationContext,
   );
 

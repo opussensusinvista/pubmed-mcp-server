@@ -1,9 +1,9 @@
 /**
- * @fileoverview Shared type definitions for the getPubMedArticleConnections tool logic.
- * @module src/mcp-server/tools/getPubMedArticleConnections/logic/types
+ * @fileoverview Shared type definitions for the pubmedArticleConnections tool logic.
+ * @module src/mcp-server/tools/pubmedArticleConnections/logic/types
  */
 
-import type { GetPubMedArticleConnectionsInput } from "./index.js";
+import type { PubMedArticleConnectionsInput } from "./index.js";
 
 // Helper type for enriched related articles
 export interface RelatedArticle {
@@ -23,7 +23,7 @@ export interface CitationOutput {
 
 export interface ToolOutputData {
   sourcePmid: string;
-  relationshipType: GetPubMedArticleConnectionsInput["relationshipType"];
+  relationshipType: PubMedArticleConnectionsInput["relationshipType"];
   relatedArticles: RelatedArticle[];
   citations: CitationOutput;
   retrievedCount: number;

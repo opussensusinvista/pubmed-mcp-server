@@ -1,7 +1,7 @@
 /**
- * @fileoverview Handles citation formatting for the getPubMedArticleConnections tool.
+ * @fileoverview Handles citation formatting for the pubmedArticleConnections tool.
  * Fetches article details using EFetch and formats them into various citation styles.
- * @module src/mcp-server/tools/getPubMedArticleConnections/logic/citationFormatter
+ * @module src/mcp-server/tools/pubmedArticleConnections/logic/citationFormatter
  */
 
 import Cite from "citation-js";
@@ -19,12 +19,12 @@ import {
   extractPmid,
   getText,
 } from "../../../../services/NCBI/parsing/index.js";
-import type { GetPubMedArticleConnectionsInput } from "./index.js";
+import type { PubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 
 // Main handler for citation formats
 export async function handleCitationFormats(
-  input: GetPubMedArticleConnectionsInput,
+  input: PubMedArticleConnectionsInput,
   outputData: ToolOutputData,
   context: RequestContext,
 ): Promise<void> {

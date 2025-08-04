@@ -1,9 +1,9 @@
 /**
- * @fileoverview Logic for the fetch_pubmed_content MCP tool.
+ * @fileoverview Logic for the pubmed_fetch_contents MCP tool.
  * Handles EFetch queries for specific PMIDs and formats the results.
  * This tool can fetch various details from PubMed including abstracts, full XML,
  * MEDLINE text, and citation data.
- * @module src/mcp-server/tools/fetchPubMedContent/logic
+ * @module src/mcp-server/tools/pubmedFetchContents/logic
  */
 
 import { z } from "zod";
@@ -35,26 +35,26 @@ import {
   getText,
 } from "../../../services/NCBI/parsing/index.js";
 
-export const FetchPubMedContentInputSchema = z
+export const PubMedFetchContentsInputSchema = z
   .object({
     pmids: z
       .array(z.string().regex(/^\d+$/))
       .max(200, "Max 200 PMIDs per call if not using history.")
       .optional()
       .describe(
-        "An array of PubMed Unique Identifiers (PMIDs) for which to fetch content. Use this OR queryKey/webEnv.",
+        "An array of PubMed Unique Identifiers (PMIDs) to fetch. Use this OR queryKey/webEnv.",
       ),
     queryKey: z
       .string()
       .optional()
       .describe(
-        "Query key from ESearch history server. If used, webEnv must also be provided. Use this OR pmids.",
+        "Query key from ESearch history. Requires webEnv. Use this OR pmids.",
       ),
     webEnv: z
       .string()
       .optional()
       .describe(
-        "Web environment from ESearch history server. If used, queryKey must also be provided. Use this OR pmids.",
+        "Web environment from ESearch history. Requires queryKey. Use this OR pmids.",
       ),
     retstart: z
       .number()
@@ -62,7 +62,7 @@ export const FetchPubMedContentInputSchema = z
       .min(0)
       .optional()
       .describe(
-        "Sequential index of the first record to retrieve (0-based). Used with queryKey/webEnv.",
+        "0-based index of the first record to retrieve. Used with queryKey/webEnv.",
       ),
     retmax: z
       .number()
@@ -77,26 +77,26 @@ export const FetchPubMedContentInputSchema = z
       .optional()
       .default("abstract_plus")
       .describe(
-        "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details including abstract, authors, journal, DOI, etc.), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal parsed data for citations). Defaults to 'abstract_plus'.",
+        "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal citation data). Defaults to 'abstract_plus'.",
       ),
     includeMeshTerms: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        "Applies to 'abstract_plus' and 'citation_data' if parsed from XML.",
+        "Include MeSH terms in 'abstract_plus' and 'citation_data' results. Default: true.",
       ),
     includeGrantInfo: z
       .boolean()
       .optional()
       .default(false)
-      .describe("Applies to 'abstract_plus' if parsed from XML."),
+      .describe("Include grant info in 'abstract_plus' results. Default: false."),
     outputFormat: z
       .enum(["json", "raw_text"])
       .optional()
       .default("json")
       .describe(
-        "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'.",
+        "Output format. 'json' (default) wraps data in a JSON object. 'raw_text' returns raw text for 'medline_text' or 'full_xml' detail levels.",
       ),
   })
   .superRefine((data, ctx) => {
@@ -145,11 +145,11 @@ export const FetchPubMedContentInputSchema = z
     }
   });
 
-export type FetchPubMedContentInput = z.infer<
-  typeof FetchPubMedContentInputSchema
+export type PubMedFetchContentsInput = z.infer<
+  typeof PubMedFetchContentsInputSchema
 >;
 
-export type FetchPubMedContentOutput = {
+export type PubMedFetchContentsOutput = {
   content: string;
   articlesReturned: number;
   eFetchUrl: string;
@@ -169,7 +169,7 @@ interface EFetchServiceParams {
 
 function parsePubMedArticleSet(
   xmlData: unknown,
-  input: FetchPubMedContentInput,
+  input: PubMedFetchContentsInput,
   parentContext: RequestContext,
 ): ParsedArticle[] {
   const articles: ParsedArticle[] = [];
@@ -263,17 +263,17 @@ function parsePubMedArticleSet(
   return articles;
 }
 
-export async function fetchPubMedContentLogic(
-  input: FetchPubMedContentInput,
+export async function pubMedFetchContentsLogic(
+  input: PubMedFetchContentsInput,
   parentRequestContext: RequestContext,
-): Promise<FetchPubMedContentOutput> {
+): Promise<PubMedFetchContentsOutput> {
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
-    operation: "fetchPubMedContentLogic",
+    operation: "pubMedFetchContentsLogic",
     input: sanitizeInputForLogging(input),
   });
 
-  const validationResult = FetchPubMedContentInputSchema.safeParse(input);
+  const validationResult = PubMedFetchContentsInputSchema.safeParse(input);
   if (!validationResult.success) {
     throw new McpError(
       BaseErrorCode.VALIDATION_ERROR,
@@ -283,7 +283,7 @@ export async function fetchPubMedContentLogic(
   }
 
   const ncbiService = getNcbiService();
-  logger.info("Executing fetch_pubmed_content tool", toolLogicContext);
+  logger.info("Executing pubmed_fetch_contents tool", toolLogicContext);
 
   const eFetchParams: EFetchServiceParams = { db: "pubmed" };
 
@@ -424,7 +424,7 @@ export async function fetchPubMedContentLogic(
     });
   }
 
-  logger.notice("Successfully executed fetch_pubmed_content tool.", {
+  logger.notice("Successfully executed pubmed_fetch_contents tool.", {
     ...toolLogicContext,
     articlesReturned: articlesCount,
   });
