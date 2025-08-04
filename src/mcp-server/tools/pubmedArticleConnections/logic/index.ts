@@ -35,7 +35,7 @@ export const PubMedArticleConnectionsInputSchema = z.object({
     ])
     .default("pubmed_similar_articles")
     .describe(
-      "Specifies the type of connection or action: 'pubmed_similar_articles' (finds similar articles), 'pubmed_citedin' (finds citing articles), 'pubmed_references' (finds referenced articles), or 'citation_formats' (retrieves formatted citations)."
+      "Specifies the type of connection or action: 'pubmed_similar_articles' (finds similar articles), 'pubmed_citedin' (finds citing articles), 'pubmed_references' (finds referenced articles), or 'citation_formats' (retrieves formatted citations).",
     ),
   maxRelatedResults: z
     .number()
@@ -45,14 +45,14 @@ export const PubMedArticleConnectionsInputSchema = z.object({
     .optional()
     .default(5)
     .describe(
-      "Maximum number of related articles to retrieve for relationship-based searches. Default is 5, max is 50."
+      "Maximum number of related articles to retrieve for relationship-based searches. Default is 5, max is 50.",
     ),
   citationStyles: z
     .array(z.enum(["ris", "bibtex", "apa_string", "mla_string"]))
     .optional()
     .default(["ris"])
     .describe(
-      "An array of citation styles to format the source article into when 'relationshipType' is 'citation_formats'. Supported styles: 'ris', 'bibtex', 'apa_string', 'mla_string'. Default is ['ris']."
+      "An array of citation styles to format the source article into when 'relationshipType' is 'citation_formats'. Supported styles: 'ris', 'bibtex', 'apa_string', 'mla_string'. Default is ['ris'].",
     ),
 });
 
@@ -80,10 +80,7 @@ export async function handlePubMedArticleConnections(
     input: sanitizeInputForLogging(input),
   });
 
-  logger.info(
-    "Executing pubmed_article_connections tool",
-    toolLogicContext,
-  );
+  logger.info("Executing pubmed_article_connections tool", toolLogicContext);
 
   const outputData: ToolOutputData = {
     sourcePmid: input.sourcePmid,

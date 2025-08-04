@@ -90,7 +90,9 @@ export const PubMedFetchContentsInputSchema = z
       .boolean()
       .optional()
       .default(false)
-      .describe("Include grant info in 'abstract_plus' results. Default: false."),
+      .describe(
+        "Include grant info in 'abstract_plus' results. Default: false.",
+      ),
     outputFormat: z
       .enum(["json", "raw_text"])
       .optional()

@@ -1,6 +1,6 @@
 {
   "name": "@cyanheads/pubmed-mcp-server",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Production-ready PubMed Model Context Protocol (MCP) server that empowers AI agents and research tools with comprehensive access to PubMed's article database. Enables advanced, automated LLM workflows for searching, retrieving, analyzing, and visualizing biomedical and scientific literature via NCBI E-utilities.",
   "main": "dist/index.js",
   "files": [
@@ -44,7 +44,7 @@
     "@opentelemetry/sdk-node": "^0.203.0",
     "@opentelemetry/sdk-trace-node": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.36.0",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.2.0",
     "@types/sanitize-html": "^2.16.0",
     "@types/validator": "13.15.2",
     "axios": "^1.11.0",
@@ -57,13 +57,14 @@
     "hono": "^4.8.4",
     "jose": "^6.0.12",
     "js-yaml": "^4.1.0",
+    "patch-package": "^8.0.0",
     "node-cron": "^4.2.1",
     "openai": "^5.11.0",
     "partial-json": "^0.1.7",
     "sanitize-html": "^2.17.0",
     "tiktoken": "^1.0.21",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.2",
     "validator": "13.15.15",
     "winston": "^3.17.0",
     "winston-transport": "^4.9.0",
@@ -116,7 +117,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node-cron": "^3.0.11",
     "prettier": "^3.6.2",
-    "typedoc": "^0.28.8"
+    "typedoc": "^0.28.9"
   },
   "publishConfig": {
     "access": "public"

@@ -77,9 +77,7 @@ export const PubMedSearchArticlesInputSchema = z.object({
         ),
     })
     .optional()
-    .describe(
-      "Defines an optional date range for the search.",
-    ),
+    .describe("Defines an optional date range for the search."),
   filterByPublicationTypes: z
     .array(z.string())
     .optional()

@@ -374,14 +374,20 @@ export class ErrorHandler {
       loggedErrorCode = error.code;
       finalError = errorMapper
         ? errorMapper(error)
-        : new McpError(error.code, error.message, { ...consolidatedDetails, cause });
+        : new McpError(error.code, error.message, {
+            ...consolidatedDetails,
+            cause,
+          });
     } else {
       loggedErrorCode =
         explicitErrorCode || ErrorHandler.determineErrorCode(error);
       const message = `Error in ${operation}: ${originalErrorMessage}`;
       finalError = errorMapper
         ? errorMapper(error)
-        : new McpError(loggedErrorCode, message, { ...consolidatedDetails, cause });
+        : new McpError(loggedErrorCode, message, {
+            ...consolidatedDetails,
+            cause,
+          });
     }
 
     if (

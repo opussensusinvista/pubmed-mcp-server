@@ -56,12 +56,18 @@ export const PubMedGenerateChartInputSchema = z.object({
     .enum(["png"])
     .default("png")
     .describe("Specifies the output format for the chart."),
-  xField: z.string().describe("The field name from `dataValues` for the X-axis."),
-  yField: z.string().describe("The field name from `dataValues` for the Y-axis."),
+  xField: z
+    .string()
+    .describe("The field name from `dataValues` for the X-axis."),
+  yField: z
+    .string()
+    .describe("The field name from `dataValues` for the Y-axis."),
   seriesField: z
     .string()
     .optional()
-    .describe("The field name for creating multiple data series on the same chart."),
+    .describe(
+      "The field name for creating multiple data series on the same chart.",
+    ),
   sizeField: z
     .string()
     .optional()

@@ -120,19 +120,19 @@ export const PubMedFetchContentsInputSchema = z
       .max(200, "Max 200 PMIDs per call if not using history.")
       .optional()
       .describe(
-        "An array of PubMed Unique Identifiers (PMIDs) for which to fetch content. Use this OR queryKey/webEnv."
+        "An array of PubMed Unique Identifiers (PMIDs) for which to fetch content. Use this OR queryKey/webEnv.",
       ),
     queryKey: z
       .string()
       .optional()
       .describe(
-        "Query key from ESearch history server. If used, webEnv must also be provided. Use this OR pmids."
+        "Query key from ESearch history server. If used, webEnv must also be provided. Use this OR pmids.",
       ),
     webEnv: z
       .string()
       .optional()
       .describe(
-        "Web environment from ESearch history server. If used, queryKey must also be provided. Use this OR pmids."
+        "Web environment from ESearch history server. If used, queryKey must also be provided. Use this OR pmids.",
       ),
     retstart: z
       .number()
@@ -140,7 +140,7 @@ export const PubMedFetchContentsInputSchema = z
       .min(0)
       .optional()
       .describe(
-        "Sequential index of the first record to retrieve (0-based). Used with queryKey/webEnv."
+        "Sequential index of the first record to retrieve (0-based). Used with queryKey/webEnv.",
       ),
     retmax: z
       .number()
@@ -148,21 +148,21 @@ export const PubMedFetchContentsInputSchema = z
       .min(1)
       .optional()
       .describe(
-        "Maximum number of records to retrieve. Used with queryKey/webEnv."
+        "Maximum number of records to retrieve. Used with queryKey/webEnv.",
       ),
     detailLevel: z
       .enum(["abstract_plus", "full_xml", "medline_text", "citation_data"])
       .optional()
       .default("abstract_plus")
       .describe(
-        "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details including abstract, authors, journal, DOI, etc.), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal parsed data for citations). Defaults to 'abstract_plus'."
+        "Specifies the level of detail for the fetched content. Options: 'abstract_plus' (parsed details including abstract, authors, journal, DOI, etc.), 'full_xml' (raw PubMedArticle XML), 'medline_text' (MEDLINE format), 'citation_data' (minimal parsed data for citations). Defaults to 'abstract_plus'.",
       ),
     includeMeshTerms: z
       .boolean()
       .optional()
       .default(true)
       .describe(
-        "Applies to 'abstract_plus' and 'citation_data' if parsed from XML."
+        "Applies to 'abstract_plus' and 'citation_data' if parsed from XML.",
       ),
     includeGrantInfo: z
       .boolean()
@@ -174,7 +174,7 @@ export const PubMedFetchContentsInputSchema = z
       .optional()
       .default("json")
       .describe(
-        "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'."
+        "Specifies the final output format of the tool. \n- 'json' (default): Wraps the data in a standard JSON object. \n- 'raw_text': Returns raw text for 'medline_text' or 'full_xml' detailLevels. For other detailLevels, 'outputFormat' defaults to 'json'.",
       ),
   })
   .superRefine((data, ctx) => {
@@ -248,7 +248,7 @@ interface EFetchServiceParams {
 function parsePubMedArticleSet(
   xmlData: unknown,
   input: PubMedFetchContentsInput,
-  parentContext: RequestContext
+  parentContext: RequestContext,
 ): ParsedArticle[] {
   const articles: ParsedArticle[] = [];
   const operationContext = requestContextService.createRequestContext({
@@ -268,9 +268,9 @@ function parsePubMedArticleSet(
         ...operationContext,
         xmlDataType: typeof xmlData,
         xmlDataPreview: sanitizeInputForLogging(
-          JSON.stringify(xmlData).substring(0, 200)
+          JSON.stringify(xmlData).substring(0, 200),
         ),
-      }
+      },
     );
   }
 
@@ -280,7 +280,7 @@ function parsePubMedArticleSet(
   if (!articleSet || !articleSet.PubmedArticle) {
     logger.warning(
       "PubmedArticleSet or PubmedArticle array not found in EFetch XML response.",
-      operationContext
+      operationContext,
     );
     return articles;
   }
@@ -343,7 +343,7 @@ function parsePubMedArticleSet(
 
 export async function pubMedFetchContentsLogic(
   input: PubMedFetchContentsInput,
-  parentRequestContext: RequestContext
+  parentRequestContext: RequestContext,
 ): Promise<PubMedFetchContentsOutput> {
   const toolLogicContext = requestContextService.createRequestContext({
     parentRequestId: parentRequestContext.requestId,
@@ -356,7 +356,7 @@ export async function pubMedFetchContentsLogic(
     throw new McpError(
       BaseErrorCode.VALIDATION_ERROR,
       validationResult.error.errors[0]?.message || "Invalid input",
-      { ...toolLogicContext, details: validationResult.error.flatten() }
+      { ...toolLogicContext, details: validationResult.error.flatten() },
     );
   }
 
@@ -397,7 +397,7 @@ export async function pubMedFetchContentsLogic(
   const eFetchBase =
     "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
   const eFetchQueryString = new URLSearchParams(
-    eFetchParams as Record<string, string>
+    eFetchParams as Record<string, string>,
   ).toString();
   const eFetchUrl = `${eFetchBase}?${eFetchQueryString}`;
 
@@ -407,7 +407,7 @@ export async function pubMedFetchContentsLogic(
   const eFetchResponseData = await ncbiService.eFetch(
     eFetchParams,
     toolLogicContext,
-    { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml }
+    { retmode: serviceRetmode, rettype, returnRawXml: shouldReturnRawXml },
   );
 
   let finalOutputText: string;
@@ -439,7 +439,7 @@ export async function pubMedFetchContentsLogic(
     }
   } else if (input.detailLevel === "full_xml") {
     const articlesXml = ensureArray(
-      (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || []
+      (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
     );
     articlesCount = articlesXml.length;
     if (input.outputFormat === "raw_text") {
@@ -466,7 +466,7 @@ export async function pubMedFetchContentsLogic(
     const parsedArticles = parsePubMedArticleSet(
       eFetchResponseData as XmlPubmedArticleSet,
       input,
-      toolLogicContext
+      toolLogicContext,
     );
     articlesCount = parsedArticles.length;
     const foundPmids = new Set(parsedArticles.map((p) => p.pmid));
@@ -544,7 +544,7 @@ import {
  * @param server - The McpServer instance.
  */
 export async function registerPubMedFetchContentsTool(
-  server: McpServer
+  server: McpServer,
 ): Promise<void> {
   const operation = "registerPubMedFetchContentsTool";
   const toolName = "pubmed_fetch_contents";
@@ -561,7 +561,7 @@ export async function registerPubMedFetchContentsTool(
         PubMedFetchContentsInputSchema._def.schema.shape,
         async (
           input: PubMedFetchContentsInput,
-          toolContext: any
+          toolContext: any,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({
@@ -594,7 +594,7 @@ export async function registerPubMedFetchContentsTool(
                     {
                       originalErrorName: handledError.name,
                       originalErrorMessage: handledError.message,
-                    }
+                    },
                   );
 
             return {
@@ -613,7 +613,7 @@ export async function registerPubMedFetchContentsTool(
               isError: true,
             };
           }
-        }
+        },
       );
 
       logger.notice(`Tool '${toolName}' registered.`, context);
@@ -623,7 +623,7 @@ export async function registerPubMedFetchContentsTool(
       context,
       errorCode: BaseErrorCode.INITIALIZATION_FAILED,
       critical: true,
-    }
+    },
   );
 }
 ```

@@ -226,23 +226,20 @@ const start = async (): Promise<void> => {
       await shutdown("uncaughtException");
     });
 
-    process.on(
-      "unhandledRejection",
-      async (reason: unknown) => {
-        const rejectionContext = {
-          ...startupContext,
-          triggerEvent: "unhandledRejection",
-          rejectionReason:
-            reason instanceof Error ? reason.message : String(reason),
-          rejectionStack: reason instanceof Error ? reason.stack : undefined,
-        };
-        logger.error(
-          "FATAL: Unhandled promise rejection detected. This indicates a bug or missing error handling in async code. Initiating shutdown...",
-          rejectionContext,
-        );
-        await shutdown("unhandledRejection");
-      },
-    );
+    process.on("unhandledRejection", async (reason: unknown) => {
+      const rejectionContext = {
+        ...startupContext,
+        triggerEvent: "unhandledRejection",
+        rejectionReason:
+          reason instanceof Error ? reason.message : String(reason),
+        rejectionStack: reason instanceof Error ? reason.stack : undefined,
+      };
+      logger.error(
+        "FATAL: Unhandled promise rejection detected. This indicates a bug or missing error handling in async code. Initiating shutdown...",
+        rejectionContext,
+      );
+      await shutdown("unhandledRejection");
+    });
   } catch (error) {
     logger.error(
       "CRITICAL ERROR DURING STARTUP: The application could not start. Exiting.",
