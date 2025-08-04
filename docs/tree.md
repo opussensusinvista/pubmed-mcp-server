@@ -1,9 +1,11 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-07-31 12:41:31
+Generated on: 2025-08-04 14:12:55
 
 ```
 pubmed-mcp-server
+├── .clinerules
+│   └── clinerules.md
 ├── .github
 │   ├── workflows
 │   │   └── publish.yml
@@ -22,11 +24,11 @@ pubmed-mcp-server
 │   │   ├── polar_chart.png
 │   │   ├── radar_chart.png
 │   │   └── scatter_plot.png
-│   ├── fetch_pubmed_content_example.md
-│   ├── get_pubmed_article_connections_1.md
-│   ├── get_pubmed_article_connections_2.md
+│   ├── pubmed_article_connections_1.md
+│   ├── pubmed_article_connections_2.md
+│   ├── pubmed_fetch_contents_example.md
 │   ├── pubmed_research_agent_example.md
-│   └── search_pubmed_articles_example.md
+│   └── pubmed_search_articles_example.md
 ├── scripts
 │   ├── clean.ts
 │   ├── fetch-openapi-spec.ts
@@ -36,22 +38,24 @@ pubmed-mcp-server
 │   ├── config
 │   │   └── index.ts
 │   ├── mcp-server
+│   │   ├── core
+│   │   │   └── managedMcpServer.ts
 │   │   ├── tools
-│   │   │   ├── fetchPubMedContent
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── logic.ts
-│   │   │   │   └── registration.ts
-│   │   │   ├── generatePubMedChart
-│   │   │   │   ├── index.ts
-│   │   │   │   ├── logic.ts
-│   │   │   │   └── registration.ts
-│   │   │   ├── getPubMedArticleConnections
+│   │   │   ├── pubmedArticleConnections
 │   │   │   │   ├── logic
 │   │   │   │   │   ├── citationFormatter.ts
 │   │   │   │   │   ├── elinkHandler.ts
 │   │   │   │   │   ├── index.ts
 │   │   │   │   │   └── types.ts
 │   │   │   │   ├── index.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── pubmedFetchContents
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
+│   │   │   │   └── registration.ts
+│   │   │   ├── pubmedGenerateChart
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts
 │   │   │   ├── pubmedResearchAgent
 │   │   │   │   ├── logic
@@ -62,7 +66,7 @@ pubmed-mcp-server
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── logic.ts
 │   │   │   │   └── registration.ts
-│   │   │   └── searchPubMedArticles
+│   │   │   └── pubmedSearchArticles
 │   │   │       ├── index.ts
 │   │   │       ├── logic.ts
 │   │   │       └── registration.ts
@@ -81,6 +85,7 @@ pubmed-mcp-server
 │   │   │   │   └── index.ts
 │   │   │   ├── core
 │   │   │   │   ├── baseTransportManager.ts
+│   │   │   │   ├── headerUtils.ts
 │   │   │   │   ├── honoNodeBridge.ts
 │   │   │   │   ├── statefulTransportManager.ts
 │   │   │   │   ├── statelessTransportManager.ts
@@ -117,6 +122,7 @@ pubmed-mcp-server
 │   │   │   ├── errorHandler.ts
 │   │   │   ├── index.ts
 │   │   │   ├── logger.ts
+│   │   │   ├── performance.ts
 │   │   │   └── requestContext.ts
 │   │   ├── metrics
 │   │   │   ├── index.ts
@@ -136,9 +142,11 @@ pubmed-mcp-server
 │   │   │   ├── index.ts
 │   │   │   ├── rateLimiter.ts
 │   │   │   └── sanitization.ts
+│   │   ├── telemetry
+│   │   │   ├── instrumentation.ts
+│   │   │   └── semconv.ts
 │   │   └── index.ts
 │   └── index.ts
-├── .clinerules
 ├── .dockerignore
 ├── .gitignore
 ├── .ncurc.json

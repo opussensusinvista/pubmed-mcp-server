@@ -61,7 +61,7 @@ export class JsonParser {
    * @returns The parsed JavaScript value.
    * @throws {McpError} If the string is empty after processing or if `partial-json` fails.
    */
-  parse<T = any>(
+  parse<T = unknown>(
     jsonString: string,
     allowPartial: number = Allow.ALL,
     context?: RequestContext,
@@ -69,9 +69,9 @@ export class JsonParser {
     let stringToParse = jsonString;
     const match = jsonString.match(thinkBlockRegex);
 
-    if (match && match[1] !== undefined && match[2] !== undefined) {
-      const thinkContent = match[1].trim();
-      const restOfString = match[2];
+    if (match) {
+      const thinkContent = match[1]?.trim() ?? "";
+      const restOfString = match[2] ?? "";
 
       const logContext =
         context ||
@@ -101,7 +101,8 @@ export class JsonParser {
 
     try {
       return parsePartialJson(stringToParse, allowPartial) as T;
-    } catch (error: any) {
+    } catch (e: unknown) {
+      const error = e as Error;
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({

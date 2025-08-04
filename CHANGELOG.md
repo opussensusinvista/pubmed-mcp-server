@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2025-08-04
+
+### Aligned
+- **mcp-ts-template Alignment**: Updated the server to align with the latest changes in the [`mcp-ts-template` v1.7.7](https://github.com/cyanheads/mcp-ts-template/blob/main/CHANGELOG.md#181---2025-08-01), including improvements to the project structure and configuration.
+
+### Added
+
+- **Observability**: Integrated **OpenTelemetry (OTel)** for comprehensive, end-to-end distributed tracing and metrics. The server now automatically instruments HTTP requests, DNS lookups, and Winston logging. All core operations, including tool executions and NCBI API calls, are traced.
+- **Managed MCP Server**: Introduced `ManagedMcpServer` (`src/mcp-server/core/managedMcpServer.ts`), a wrapper around the core `McpServer` that enables introspection of registered tools and server capabilities.
+- **Performance Monitoring**: Added a `measureToolExecution` utility (`src/utils/internal/performance.ts`) to automatically measure and log performance metrics (duration, success status, payload sizes) for every tool call.
+
+### Changed
+
+- **Major Architectural Refactor**:
+  - **Tool Renaming**: All tools have been renamed to be prefixed with `pubmed_` for clarity and consistency (e.g., `fetch_pubmed_content` is now `pubmed_fetch_contents`).
+  - **Tool Directory Structure**: Reorganized tool directories to match the new naming scheme (e.g., `fetchPubMedContent` is now `pubmedFetchContents`).
+- **Transport Layer Overhaul**:
+  - Refactored `StatefulTransportManager` and `StatelessTransportManager` for improved robustness, especially in resource cleanup and handling of concurrent requests.
+  - Implemented a high-fidelity `HonoStreamResponse` bridge to more accurately emulate Node.js `ServerResponse` behavior for streaming responses.
+  - Added `headerUtils.ts` to correctly handle multi-value headers when converting between Node.js and Web-standard Headers.
+- **Error Handling**: Enhanced the central `ErrorHandler` to automatically integrate with OpenTelemetry, recording exceptions on active spans and setting their status to `ERROR`.
+- **Configuration**:
+  - Added a comprehensive set of `OTEL_*` environment variables to `src/config/index.ts` for fine-grained control over the new observability features.
+  - Hardened the `package.json` loading logic to be more resilient in different runtime environments (e.g., Docker).
+- **Dependencies**:
+  - Added all necessary `@opentelemetry/*` packages.
+  - Removed `jsonwebtoken` as it was replaced by `jose`.
+  - Removed `patch-package` as it is no longer needed.
+  - Updated `@modelcontextprotocol/sdk` to `1.17.1` and `@hono/node-server` to `1.17.1`.
+
 ## [1.3.5] - 2025-07-31
 
 ### Changed

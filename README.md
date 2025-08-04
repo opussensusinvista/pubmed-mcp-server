@@ -5,15 +5,15 @@
 **Empower your AI agents and research tools with seamless PubMed integration!**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-^5.8.3-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
-[![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.17.0-green.svg?style=flat-square)](https://modelcontextprotocol.io/)
-[![Version](https://img.shields.io/badge/Version-1.3.5-blue.svg?style=flat-square)](./CHANGELOG.md)
+[![Model Context Protocol](https://img.shields.io/badge/MCP%20SDK-^1.17.1-green.svg?style=flat-square)](https://modelcontextprotocol.io/)
+[![Version](https://img.shields.io/badge/Version-1.4.0-blue.svg?style=flat-square)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![Status](https://img.shields.io/badge/Status-Stable-green.svg?style=flat-square)](https://github.com/cyanheads/pubmed-mcp-server/issues)
 [![GitHub](https://img.shields.io/github/stars/cyanheads/pubmed-mcp-server?style=social)](https://github.com/cyanheads/pubmed-mcp-server)
 
 </div>
 
-Model Context Protocol (MCP) Server providing comprehensive access to PubMed's biomedical literature database. Enables LLMs and AI agents to search, retrieve, analyze, and visualize scientific publications through NCBI's E-utilities API with advanced research workflow capabilities.
+A production-grade Model Context Protocol (MCP) server that empowers AI agents and research tools with comprehensive access to PubMed. Enables advanced, automated workflows for searching, retrieving, analyzing, and visualizing biomedical and scientific literature via NCBI E-utilities.
 
 Built on the [`cyanheads/mcp-ts-template`](https://github.com/cyanheads/mcp-ts-template), this server follows a modular architecture with robust error handling, logging, and security features.
 
@@ -21,13 +21,13 @@ Built on the [`cyanheads/mcp-ts-template`](https://github.com/cyanheads/mcp-ts-t
 
 This server equips your AI with specialized tools to interact with PubMed:
 
-| Tool Name                                                                               | Description                                                                             | Example                                                                                                          |
-| :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| [`search_pubmed_articles`](./src/mcp-server/tools/searchPubMedArticles/)                | Searches PubMed for articles based on your query.                                       | [View Example](./examples/search_pubmed_articles_example.md)                                                     |
-| [`fetch_pubmed_content`](./src/mcp-server/tools/fetchPubMedContent/)                    | Retrieves detailed information for PubMed articles.                                     | [View Example](./examples/fetch_pubmed_content_example.md)                                                       |
-| [`get_pubmed_article_connections`](./src/mcp-server/tools/getPubMedArticleConnections/) | Finds related articles (cited by, similar, references) or formats citations for a PMID. | [Ex. 1](./examples/get_pubmed_article_connections_1.md), [Ex. 2](./examples/get_pubmed_article_connections_2.md) |
-| [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                  | Generates a standardized JSON research plan outline from component details.             | [View Example](./examples/pubmed_research_agent_example.md)                                                      |
-| [`generate_pubmed_chart`](./src/mcp-server/tools/generatePubMedChart/)                  | Generates a chart image (PNG) from given input data.                                    | [View Examples](./examples/generate_pubmed_chart/)                                                               |
+| Tool Name                                                                                 | Description                                                                             | Example                                                                                                            |
+| :---------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| [`pubmed_search_articles`](./src/mcp-server/tools/pubmedSearchArticles/)                  | Searches PubMed for articles based on your query.                                       | [View Example](./examples/pubmed_search_articles_example.md)                                                       |
+| [`pubmed_fetch_contents`](./src/mcp-server/tools/pubmedFetchContents/)                    | Retrieves detailed information for PubMed articles.                                     | [View Example](./examples/pubmed_fetch_contents_example.md)                                                        |
+| [`pubmed_article_connections`](./src/mcp-server/tools/pubmedArticleConnections/)          | Finds related articles (cited by, similar, references) or formats citations for a PMID. | [Ex. 1](./examples/pubmed_article_connections_1.md), [Ex. 2](./examples/pubmed_article_connections_2.md)           |
+| [`pubmed_research_agent`](./src/mcp-server/tools/pubmedResearchAgent/)                    | Generates a standardized JSON research plan outline from component details.             | [View Example](./examples/pubmed_research_agent_example.md)                                                        |
+| [`pubmed_generate_chart`](./src/mcp-server/tools/pubmedGenerateChart/)                    | Generates a chart image (PNG) from given input data.                                    | [View Examples](./examples/generate_pubmed_chart/)                                                                 |
 
 ---
 
@@ -181,11 +181,11 @@ The PubMed MCP Server provides a comprehensive suite of tools for biomedical lit
 
 | Tool Name                        | Description                                                            | Key Arguments                                                                                             |
 | :------------------------------- | :--------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `search_pubmed_articles`         | Searches PubMed for articles using queries, filters, and date ranges.  | `queryTerm`, `maxResults?`, `sortBy?`, `dateRange?`, `filterByPublicationTypes?`, `fetchBriefSummaries?`  |
-| `fetch_pubmed_content`           | Fetches detailed article information using PMIDs or search history.    | `pmids?`, `queryKey?`, `webEnv?`, `detailLevel?`, `includeMeshTerms?`, `includeGrantInfo?`                |
-| `get_pubmed_article_connections` | Finds related articles, citations, and references for a given PMID.    | `sourcePmid`, `relationshipType?`, `maxRelatedResults?`, `citationStyles?`                                |
+| `pubmed_search_articles`         | Searches PubMed for articles using queries, filters, and date ranges.  | `queryTerm`, `maxResults?`, `sortBy?`, `dateRange?`, `filterByPublicationTypes?`, `fetchBriefSummaries?`  |
+| `pubmed_fetch_contents`           | Fetches detailed article information using PMIDs or search history.    | `pmids?`, `queryKey?`, `webEnv?`, `detailLevel?`, `includeMeshTerms?`, `includeGrantInfo?`                |
+| `pubmed_article_connections` | Finds related articles, citations, and references for a given PMID.    | `sourcePmid`, `relationshipType?`, `maxRelatedResults?`, `citationStyles?`                                |
 | `pubmed_research_agent`          | Generates structured research plans with literature search strategies. | `project_title_suggestion`, `primary_research_goal`, `research_keywords`, `organism_focus?`, `p1_*`, etc. |
-| `generate_pubmed_chart`          | Creates customizable PNG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `seriesField?`, `sizeField?`                     |
+| `pubmed_generate_chart`          | Creates customizable PNG charts from structured publication data.      | `chartType`, `dataValues`, `xField`, `yField`, `title?`, `seriesField?`, `sizeField?`                     |
 
 _Note: All tools support comprehensive error handling and return structured JSON responses._
 
@@ -193,11 +193,11 @@ _Note: All tools support comprehensive error handling and return structured JSON
 
 Comprehensive usage examples for each tool are available in the [`examples/`](examples/) directory.
 
-- **`search_pubmed_articles`**: [View Example](./examples/search_pubmed_articles_example.md)
-- **`fetch_pubmed_content`**: [View Example](./examples/fetch_pubmed_content_example.md)
-- **`get_pubmed_article_connections`**: [Ex. 1](./examples/get_pubmed_article_connections_1.md), [Ex. 2](./examples/get_pubmed_article_connections_2.md)
+- **`pubmed_search_articles`**: [View Example](./examples/pubmed_search_articles_example.md)
+- **`pubmed_fetch_contents`**: [View Example](./examples/pubmed_fetch_contents_example.md)
+- **`pubmed_article_connections`**: [Ex. 1](./examples/pubmed_article_connections_1.md), [Ex. 2](./examples/pubmed_article_connections_2.md)
 - **`pubmed_research_agent`**: [View Example](./examples/pubmed_research_agent_example.md)
-- **`generate_pubmed_chart`**: [View Examples](./examples/generate_pubmed_chart/)
+- **`pubmed_generate_chart`**: [View Examples](./examples/generate_pubmed_chart/)
 
 ## Development & Testing
 

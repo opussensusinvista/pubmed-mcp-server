@@ -18,7 +18,7 @@ import { ErrorHandler, logger, RequestContext } from "../index.js";
  * @throws {McpError} If an unexpected error occurs during parsing.
  * @private
  */
-async function parseDateString(
+export async function parseDateString(
   text: string,
   context: RequestContext,
   refDate?: Date,
@@ -61,7 +61,7 @@ async function parseDateString(
  * @throws {McpError} If an unexpected error occurs during parsing.
  * @private
  */
-async function parseDateStringDetailed(
+export async function parseDateStringDetailed(
   text: string,
   context: RequestContext,
   refDate?: Date,

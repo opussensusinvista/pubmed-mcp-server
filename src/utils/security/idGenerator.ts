@@ -118,7 +118,11 @@ export class IdGenerator {
       // If the byte is within the valid range (i.e., it won't introduce bias),
       // use it to select a character from the charset. Otherwise, discard and try again.
       if (byte !== undefined && byte < maxValidByteValue) {
-        result += charset[byte % charset.length];
+        const charIndex = byte % charset.length;
+        const char = charset[charIndex];
+        if (char) {
+          result += char;
+        }
       }
     }
     return result;
