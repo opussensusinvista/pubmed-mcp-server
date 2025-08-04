@@ -2,9 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2025-08-04
+
+### Changed
+
+- **Deployment**: Refactored the `Dockerfile` to use a more efficient and secure multi-stage build process. This results in a smaller final production image.
+- **Configuration**: Updated `smithery.yaml` for a simpler deployment process.
+- **Dependencies**: Updated several key dependencies, including `typescript`, `typedoc`, and various `@types` packages to their latest versions.
+
+### Fixed
+
+- **Formatting**: Corrected minor formatting inconsistencies in JSDoc comments and code blocks across several files to align with Prettier standards.
+
 ## [1.4.0] - 2025-08-04
 
 ### Aligned
+
 - **mcp-ts-template Alignment**: Updated the server to align with the latest changes in the [`mcp-ts-template` v1.7.7](https://github.com/cyanheads/mcp-ts-template/blob/main/CHANGELOG.md#181---2025-08-01), including improvements to the project structure and configuration.
 
 ### Added
