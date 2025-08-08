@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.3] - 2025-08-08
+
+### Changed
+
+- **Architectural Simplification**: Refactored the server's core architecture by removing the custom `ManagedMcpServer` wrapper. The server now uses introspection on the standard `McpServer` instance to gather metadata, simplifying the design and reducing internal complexity.
+- **Enhanced HTTP Status Endpoint**: The main HTTP endpoint (`/`) now provides a much richer status report, including the server's identity (name, version, description), capabilities, effective session mode, and a detailed list of all registered tools with their schemas.
+- **Dependencies**: Updated key dependencies, including `@types/node` to `^24.2.1`, `openai` to `^5.12.2`, and added `tmp` at `^0.2.4`.
+
+### Removed
+
+- **`ManagedMcpServer`**: Deleted the `ManagedMcpServer` class (`src/mcp-server/core/managedMcpServer.ts`) as its functionality is now achieved through more direct introspection, streamlining the codebase. I decided against wrapping the `McpServer` instance in a separate class.
+
 ## [1.4.2] - 2025-08-08
 
 ### Added

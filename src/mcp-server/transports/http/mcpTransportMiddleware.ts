@@ -6,13 +6,13 @@
  * @module src/mcp-server/transports/http/mcpTransportMiddleware
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import { IncomingHttpHeaders } from "http";
 import { config } from "../../../config/index.js";
 import { RequestContext, requestContextService } from "../../../utils/index.js";
+import { ServerInstanceInfo } from "../../server.js";
 import { StatefulTransportManager } from "../core/statefulTransportManager.js";
 import { StatelessTransportManager } from "../core/statelessTransportManager.js";
 import { TransportManager, TransportResponse } from "../core/transportTypes.js";
@@ -40,14 +40,13 @@ function toIncomingHttpHeaders(headers: Headers): IncomingHttpHeaders {
  * @returns A promise resolving with the transport response.
  */
 async function handleStatelessRequest(
-  createServerInstanceFn: () => Promise<McpServer>,
+  createServerInstanceFn: () => Promise<ServerInstanceInfo>,
   headers: Headers,
   body: unknown,
   context: RequestContext,
 ): Promise<TransportResponse> {
-  const statelessManager = new StatelessTransportManager(
-    createServerInstanceFn,
-  );
+  const getMcpServer = async () => (await createServerInstanceFn()).server;
+  const statelessManager = new StatelessTransportManager(getMcpServer);
   return statelessManager.handleRequest(
     toIncomingHttpHeaders(headers),
     body,
@@ -70,7 +69,7 @@ type McpMiddlewareEnv = {
 
 export const mcpTransportMiddleware = (
   transportManager: TransportManager,
-  createServerInstanceFn: () => Promise<McpServer>,
+  createServerInstanceFn: () => Promise<ServerInstanceInfo>,
 ): MiddlewareHandler<McpMiddlewareEnv & { Bindings: HonoNodeBindings }> => {
   return createMiddleware<McpMiddlewareEnv & { Bindings: HonoNodeBindings }>(
     async (c, next) => {

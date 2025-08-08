@@ -57,9 +57,17 @@ try {
  * @returns The parsed package.json object or a fallback default.
  * @private
  */
-const loadPackageJson = (): { name: string; version: string } => {
+const loadPackageJson = (): {
+  name: string;
+  version: string;
+  description: string;
+} => {
   const pkgPath = join(projectRoot, "package.json");
-  const fallback = { name: "pubmed-mcp-server", version: "0.0.0" };
+  const fallback = {
+    name: "pubmed-mcp-server",
+    version: "0.0.0",
+    description: "No description provided.",
+  };
 
   if (!existsSync(pkgPath)) {
     if (process.stdout.isTTY) {
@@ -77,6 +85,10 @@ const loadPackageJson = (): { name: string; version: string } => {
       name: typeof parsed.name === "string" ? parsed.name : fallback.name,
       version:
         typeof parsed.version === "string" ? parsed.version : fallback.version,
+      description:
+        typeof parsed.description === "string"
+          ? parsed.description
+          : fallback.description,
     };
   } catch (error) {
     if (process.stdout.isTTY) {
@@ -303,6 +315,7 @@ export const config = {
   pkg,
   mcpServerName: env.MCP_SERVER_NAME || pkg.name,
   mcpServerVersion: env.MCP_SERVER_VERSION || pkg.version,
+  mcpServerDescription: pkg.description,
   logLevel: env.MCP_LOG_LEVEL,
   logsPath: validatedLogsPath,
   environment: env.NODE_ENV,

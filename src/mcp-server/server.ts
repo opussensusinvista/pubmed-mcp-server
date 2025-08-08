@@ -14,7 +14,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import http from "http";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
-import { ManagedMcpServer } from "./core/managedMcpServer.js";
 import { registerPubMedArticleConnectionsTool } from "./tools/pubmedArticleConnections/index.js";
 import { registerPubMedFetchContentsTool } from "./tools/pubmedFetchContents/index.js";
 import { registerPubMedGenerateChartTool } from "./tools/pubmedGenerateChart/index.js";
@@ -23,14 +22,31 @@ import { registerPubMedSearchArticlesTool } from "./tools/pubmedSearchArticles/i
 import { startHttpTransport } from "./transports/http/index.js";
 import { startStdioTransport } from "./transports/stdio/index.js";
 
+type SdkToolSpec = Parameters<McpServer["registerTool"]>[1];
+type ServerIdentity = ConstructorParameters<typeof McpServer>[0];
+type McpServerOptions = NonNullable<
+  ConstructorParameters<typeof McpServer>[1]
+>;
+
+export interface DescribedTool extends SdkToolSpec {
+  title: string;
+}
+
+export interface ServerInstanceInfo {
+  server: McpServer;
+  tools: DescribedTool[];
+  identity: ServerIdentity;
+  options: McpServerOptions;
+}
+
 /**
  * Creates and configures a new instance of the `McpServer`.
  *
- * @returns A promise resolving with the configured `ManagedMcpServer` instance.
+ * @returns A promise resolving with the configured `McpServer` instance and its tool metadata.
  * @throws {McpError} If any resource or tool registration fails.
  * @private
  */
-async function createMcpServerInstance(): Promise<ManagedMcpServer> {
+async function createMcpServerInstance(): Promise<ServerInstanceInfo> {
   const context = requestContextService.createRequestContext({
     operation: "createMcpServerInstance",
   });
@@ -42,16 +58,34 @@ async function createMcpServerInstance(): Promise<ManagedMcpServer> {
     environment,
   });
 
-  const server = new ManagedMcpServer(
-    { name: config.mcpServerName, version: config.mcpServerVersion },
-    {
-      capabilities: {
-        logging: {},
-        resources: { listChanged: true },
-        tools: { listChanged: true },
-      },
+  const identity: ServerIdentity = {
+    name: config.mcpServerName,
+    version: config.mcpServerVersion,
+    description: config.mcpServerDescription,
+  };
+
+  const options: McpServerOptions = {
+    capabilities: {
+      logging: {},
+      resources: { listChanged: true },
+      tools: { listChanged: true },
     },
-  );
+  };
+
+  const server = new McpServer(identity, options);
+
+  const registeredTools: DescribedTool[] = [];
+  const originalRegisterTool = server.registerTool.bind(server);
+  server.registerTool = (name, spec, implementation) => {
+    registeredTools.push({
+      title: name,
+      description: spec.description,
+      inputSchema: spec.inputSchema,
+      outputSchema: spec.outputSchema,
+      annotations: spec.annotations,
+    });
+    return originalRegisterTool(name, spec, implementation);
+  };
 
   try {
     logger.debug("Registering resources and tools...", context);
@@ -71,7 +105,7 @@ async function createMcpServerInstance(): Promise<ManagedMcpServer> {
     throw err;
   }
 
-  return server;
+  return { server, tools: registeredTools, identity, options };
 }
 
 /**
@@ -98,7 +132,7 @@ async function startTransport(): Promise<McpServer | http.Server> {
   }
 
   if (transportType === "stdio") {
-    const server = await createMcpServerInstance();
+    const { server } = await createMcpServerInstance();
     await startStdioTransport(server, context);
     return server;
   }

@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-08-08 09:46:25
+Generated on: 2025-08-08 19:58:30
 
 ```
 pubmed-mcp-server
@@ -38,8 +38,6 @@ pubmed-mcp-server
 │   ├── config
 │   │   └── index.ts
 │   ├── mcp-server
-│   │   ├── core
-│   │   │   └── managedMcpServer.ts
 │   │   ├── tools
 │   │   │   ├── pubmedArticleConnections
 │   │   │   │   ├── logic
