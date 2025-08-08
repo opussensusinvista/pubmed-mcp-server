@@ -1,6 +1,6 @@
 {
   "name": "@cyanheads/pubmed-mcp-server",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Production-ready PubMed Model Context Protocol (MCP) server that empowers AI agents and research tools with comprehensive access to PubMed's article database. Enables advanced, automated LLM workflows for searching, retrieving, analyzing, and visualizing biomedical and scientific literature via NCBI E-utilities.",
   "main": "dist/index.js",
   "files": [
@@ -26,14 +26,19 @@
     "start:http": "MCP_LOG_LEVEL=debug MCP_TRANSPORT_TYPE=http node dist/index.js",
     "rebuild": "ts-node --esm scripts/clean.ts && npm run build",
     "docs:generate": "typedoc --tsconfig ./tsconfig.typedoc.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "tree": "ts-node --esm scripts/tree.ts",
     "fetch-spec": "ts-node --esm scripts/fetch-openapi-spec.ts",
     "format": "prettier --write \"**/*.{ts,js,json,md,html,css}\"",
-    "inspector": "mcp-inspector --config mcp.json --server pubmed-mcp-server"
+    "inspector": "mcp-inspector --config mcp.json --server pubmed-mcp-server",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hono/node-server": "^1.17.1",
-    "@modelcontextprotocol/sdk": "^1.17.1",
+    "@modelcontextprotocol/sdk": "^1.17.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.62.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
@@ -50,6 +55,7 @@
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
     "chartjs-node-canvas": "^5.0.0",
+    "typescript-eslint": "^8.39.0",
     "chrono-node": "^2.8.3",
     "citation-js": "^0.7.20",
     "dotenv": "^16.6.1",
@@ -59,7 +65,7 @@
     "js-yaml": "^4.1.0",
     "patch-package": "^8.0.0",
     "node-cron": "^4.2.1",
-    "openai": "^5.11.0",
+    "openai": "^5.12.1",
     "partial-json": "^0.1.7",
     "sanitize-html": "^2.17.0",
     "tiktoken": "^1.0.21",
@@ -98,7 +104,8 @@
     "research-agent",
     "generative-ai"
   ],
-  "author": "cyanheads <casey@caseyjhand.com> (https://github.com/cyanheads/pubmed-mcp-server#readme)",
+  "author": "Casey Hand @cyanheads",
+  "email": "casey@caseyjhand.com",
   "license": "Apache-2.0",
   "funding": [
     {
@@ -116,8 +123,11 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node-cron": "^3.0.11",
+    "eslint": "^9.32.0",
     "prettier": "^3.6.2",
-    "typedoc": "^0.28.9"
+    "typedoc": "^0.28.9",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   },
   "publishConfig": {
     "access": "public"
