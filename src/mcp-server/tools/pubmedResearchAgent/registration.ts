@@ -39,7 +39,7 @@ export async function registerPubMedResearchAgentTool(
         PubMedResearchAgentInputSchema.shape,
         async (
           input: PubMedResearchAgentInput,
-          mcpProvidedContext: any,
+          mcpProvidedContext: unknown,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({

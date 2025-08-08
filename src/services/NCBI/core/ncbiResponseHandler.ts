@@ -45,7 +45,9 @@ export class NcbiResponseHandler {
     });
   }
 
-  private extractNcbiErrorMessages(parsedXml: any): string[] {
+  private extractNcbiErrorMessages(
+    parsedXml: Record<string, unknown>,
+  ): string[] {
     const messages: string[] = [];
     // Order matters for specificity if multiple error types could exist
     const errorPaths = [
@@ -58,7 +60,7 @@ export class NcbiResponseHandler {
     ];
 
     for (const path of errorPaths) {
-      let errorSource = parsedXml;
+      let errorSource: unknown = parsedXml;
       const parts = path.split(".");
       for (const part of parts) {
         if (
@@ -66,7 +68,7 @@ export class NcbiResponseHandler {
           typeof errorSource === "object" &&
           part in errorSource
         ) {
-          errorSource = errorSource[part];
+          errorSource = (errorSource as Record<string, unknown>)[part];
         } else {
           errorSource = undefined;
           break;
@@ -86,13 +88,13 @@ export class NcbiResponseHandler {
     }
 
     // Handle warnings if no primary errors found
-    if (messages.length === 0 && parsedXml.eSearchResult?.WarningList) {
+    if (messages.length === 0) {
       const warningPaths = [
         "eSearchResult.WarningList.QuotedPhraseNotFound",
         "eSearchResult.WarningList.OutputMessage",
       ];
       for (const path of warningPaths) {
-        let warningSource = parsedXml;
+        let warningSource: unknown = parsedXml;
         const parts = path.split(".");
         for (const part of parts) {
           if (
@@ -100,7 +102,7 @@ export class NcbiResponseHandler {
             typeof warningSource === "object" &&
             part in warningSource
           ) {
-            warningSource = warningSource[part];
+            warningSource = (warningSource as Record<string, unknown>)[part];
           } else {
             warningSource = undefined;
             break;
@@ -134,7 +136,7 @@ export class NcbiResponseHandler {
    * @returns The parsed data (object for XML/JSON, string for text).
    * @throws {McpError} If parsing fails or NCBI reports an error in the response body.
    */
-  public parseAndHandleResponse<T = any>(
+  public parseAndHandleResponse<T>(
     response: AxiosResponse,
     endpoint: string,
     context: RequestContext,

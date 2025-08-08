@@ -241,7 +241,7 @@ export function extractAbstractText(
         return at;
       }
       // If it's an object, it should have #text or Label
-      let sectionText = getText(at); // Handles at["#text"]
+      const sectionText = getText(at); // Handles at["#text"]
       const label = getAttribute(at, "Label");
       if (label && sectionText) {
         return `${label.trim()}: ${sectionText.trim()}`;

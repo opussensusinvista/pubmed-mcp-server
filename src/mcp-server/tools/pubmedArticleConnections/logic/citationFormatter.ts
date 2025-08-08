@@ -6,7 +6,10 @@
 
 import Cite from "citation-js";
 import { getNcbiService } from "../../../../services/NCBI/core/ncbiService.js";
-import type { XmlPubmedArticle } from "../../../../types-global/pubmedXml.js";
+import type {
+  XmlPubmedArticle,
+  XmlPubmedArticleSet,
+} from "../../../../types-global/pubmedXml.js";
 import {
   logger,
   RequestContext,
@@ -19,6 +22,7 @@ import {
   extractPmid,
   getText,
 } from "../../../../services/NCBI/parsing/index.js";
+import { ensureArray } from "../../../../services/NCBI/parsing/index.js";
 import type { PubMedArticleConnectionsInput } from "./index.js";
 import type { ToolOutputData } from "./types.js";
 
@@ -42,17 +46,26 @@ export async function handleCitationFormats(
   outputData.eUtilityUrl = `${eFetchBaseUrl}?${searchParamsString}`;
 
   const ncbiService = getNcbiService();
-  const eFetchResult: any = await ncbiService.eFetch(eFetchParams, context);
+  const eFetchResult: { PubmedArticleSet?: XmlPubmedArticleSet } =
+    (await ncbiService.eFetch(eFetchParams, context)) as {
+      PubmedArticleSet?: XmlPubmedArticleSet;
+    };
 
-  if (!eFetchResult?.PubmedArticleSet?.PubmedArticle?.[0]) {
+  const pubmedArticles = ensureArray<XmlPubmedArticle>(
+    eFetchResult?.PubmedArticleSet?.PubmedArticle as
+      | XmlPubmedArticle
+      | XmlPubmedArticle[]
+      | undefined,
+  );
+
+  if (pubmedArticles.length === 0) {
     outputData.message =
       "Could not retrieve article details for citation formatting.";
     logger.warning(outputData.message, context);
     return;
   }
 
-  const article: XmlPubmedArticle =
-    eFetchResult.PubmedArticleSet.PubmedArticle[0];
+  const article: XmlPubmedArticle = pubmedArticles[0]!;
   const csl = pubmedArticleToCsl(article, context);
   const cite = new Cite(csl);
 
@@ -86,7 +99,7 @@ export async function handleCitationFormats(
 function pubmedArticleToCsl(
   article: XmlPubmedArticle,
   context: RequestContext,
-): any {
+): Record<string, unknown> {
   const medlineCitation = article.MedlineCitation;
   const articleDetails = medlineCitation?.Article;
   const pmid = extractPmid(medlineCitation);
@@ -133,7 +146,7 @@ function pubmedArticleToCsl(
     }
   }
 
-  const cslData: any = {
+  const cslData: Record<string, unknown> = {
     id: pmid,
     type: "article-journal",
     title: title,
@@ -151,9 +164,9 @@ function pubmedArticleToCsl(
   };
 
   // Clean up any undefined/null properties
-  for (const key in cslData) {
-    if (cslData[key] === undefined || cslData[key] === null) {
-      delete cslData[key];
+  for (const [key, value] of Object.entries(cslData)) {
+    if (value === undefined || value === null) {
+      delete (cslData as Record<string, unknown>)[key];
     }
   }
 

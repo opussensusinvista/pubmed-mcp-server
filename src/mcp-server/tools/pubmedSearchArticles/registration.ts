@@ -39,7 +39,7 @@ export async function registerPubMedSearchArticlesTool(
         PubMedSearchArticlesInputSchema.shape,
         async (
           input: PubMedSearchArticlesInput,
-          mcpProvidedContext: any,
+          mcpProvidedContext: unknown,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({

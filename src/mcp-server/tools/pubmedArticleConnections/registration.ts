@@ -40,7 +40,7 @@ export async function registerPubMedArticleConnectionsTool(
         PubMedArticleConnectionsInputSchema.shape,
         async (
           input: PubMedArticleConnectionsInput,
-          mcpProvidedContext: any,
+          mcpProvidedContext: unknown,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({

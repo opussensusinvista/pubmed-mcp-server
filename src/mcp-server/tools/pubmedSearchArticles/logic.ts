@@ -246,17 +246,24 @@ export async function pubmedSearchArticlesLogic(
     eSummaryUrl = `${eSummaryBase}?${eSummaryQueryString}`;
 
     const eSummaryResponseXml: ESummaryResponseContainer =
-      await ncbiService.eSummary(eSummaryParams, toolLogicContext);
+      (await ncbiService.eSummary(
+        eSummaryParams,
+        toolLogicContext,
+      )) as ESummaryResponseContainer;
 
     if (eSummaryResponseXml && eSummaryResponseXml.eSummaryResult) {
       briefSummaries = await extractBriefSummaries(
         eSummaryResponseXml.eSummaryResult,
         toolLogicContext,
       );
-    } else if (eSummaryResponseXml && (eSummaryResponseXml as any).ERROR) {
+    } else if (
+      eSummaryResponseXml &&
+      (eSummaryResponseXml as ESummaryResponseContainer).eSummaryResult?.ERROR
+    ) {
       logger.warning("ESummary returned a top-level error", {
         ...toolLogicContext,
-        errorDetails: (eSummaryResponseXml as any).ERROR,
+        errorDetails: (eSummaryResponseXml as ESummaryResponseContainer)
+          .eSummaryResult?.ERROR,
       });
     }
   }

@@ -363,7 +363,8 @@ export async function pubMedFetchContentsLogic(
     }
   } else if (input.detailLevel === "full_xml") {
     const articlesXml = ensureArray(
-      (eFetchResponseData as any)?.PubmedArticleSet?.PubmedArticle || [],
+      (eFetchResponseData as { PubmedArticleSet?: XmlPubmedArticleSet })
+        ?.PubmedArticleSet?.PubmedArticle || [],
     );
     articlesCount = articlesXml.length;
     if (input.outputFormat === "raw_text") {
@@ -397,7 +398,8 @@ export async function pubMedFetchContentsLogic(
     const notFoundPmids =
       input.pmids?.filter((pmid) => !foundPmids.has(pmid)) || [];
 
-    let articlesToReturn: any = parsedArticles;
+    let articlesToReturn: ParsedArticle[] | Record<string, unknown>[] =
+      parsedArticles;
     if (input.detailLevel === "citation_data") {
       articlesToReturn = parsedArticles.map((article) => ({
         pmid: article.pmid,

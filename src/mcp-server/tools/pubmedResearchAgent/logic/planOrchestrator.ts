@@ -52,12 +52,14 @@ function G(notes: string[], includePrompts?: boolean): string[] | undefined {
 }
 
 // Helper to check if all properties of an object are undefined
-function allPropertiesUndefined(obj: Record<string, any>): boolean {
-  return Object.values(obj).every((value) => value === undefined);
+function allPropertiesUndefined<T extends object>(obj: T): boolean {
+  return Object.values(obj as Record<string, unknown>).every(
+    (value) => value === undefined,
+  );
 }
 
 // Helper function to recursively remove keys with empty object or empty array values
-function removeEmptyObjectsRecursively(obj: any): any {
+function removeEmptyObjectsRecursively(obj: unknown): unknown {
   // Base cases for recursion
   if (typeof obj !== "object" || obj === null) {
     return obj; // Not an object or array, return as is
@@ -65,26 +67,29 @@ function removeEmptyObjectsRecursively(obj: any): any {
 
   if (Array.isArray(obj)) {
     // If it's an array, recurse on each element and filter out empty objects/arrays
-    const newArr = obj.map(removeEmptyObjectsRecursively).filter((item) => {
-      if (item === null || item === undefined) return false;
-      if (Array.isArray(item) && item.length === 0) return false; // Filter out empty arrays
-      if (
-        typeof item === "object" &&
-        !Array.isArray(item) &&
-        Object.keys(item).length === 0
-      ) {
-        return false; // Filter out empty objects
-      }
-      return true;
-    });
+    const newArr = obj
+      .map(removeEmptyObjectsRecursively)
+      .filter((item: unknown) => {
+        if (item === null || item === undefined) return false;
+        if (Array.isArray(item) && item.length === 0) return false; // Filter out empty arrays
+        if (
+          typeof item === "object" &&
+          !Array.isArray(item) &&
+          Object.keys(item).length === 0
+        ) {
+          return false; // Filter out empty objects
+        }
+        return true;
+      });
     return newArr;
   }
 
   // If it's an object, create a new object with non-empty properties
-  const newObj: Record<string, any> = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = removeEmptyObjectsRecursively(obj[key]);
+  const newObj: Record<string, unknown> = {};
+  const objAsRecord = obj as Record<string, unknown>;
+  for (const key in objAsRecord) {
+    if (Object.prototype.hasOwnProperty.call(objAsRecord, key)) {
+      const value = removeEmptyObjectsRecursively(objAsRecord[key]);
 
       // Skip null or undefined values
       if (value === null || value === undefined) {
@@ -459,5 +464,7 @@ Key responsibilities:
     },
   };
 
-  return removeEmptyObjectsRecursively(plan);
+  return removeEmptyObjectsRecursively(
+    plan,
+  ) as PubMedResearchPlanGeneratedOutput;
 }

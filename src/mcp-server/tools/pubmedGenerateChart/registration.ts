@@ -35,7 +35,7 @@ export async function registerPubMedGenerateChartTool(
         PubMedGenerateChartInputSchema.shape,
         async (
           input: PubMedGenerateChartInput,
-          mcpProvidedContext: any,
+          mcpProvidedContext: unknown,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({

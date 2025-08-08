@@ -12,7 +12,7 @@ export const NCBI_EUTILS_BASE_URL =
  */
 export interface NcbiRequestParams {
   db?: string; // Target database (e.g., "pubmed", "pmc"). Optional for EInfo to list all databases.
-  [key: string]: any; // Allows for other E-utility specific parameters
+  [key: string]: string | number | undefined; // Allows for other E-utility specific parameters
 }
 
 /**

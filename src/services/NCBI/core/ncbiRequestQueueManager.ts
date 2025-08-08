@@ -15,10 +15,10 @@ import { NcbiRequestParams } from "./ncbiConstants.js";
 /**
  * Interface for a queued NCBI request.
  */
-export interface QueuedRequest {
-  resolve: (value: any) => void;
-  reject: (reason?: any) => void;
-  task: () => Promise<any>; // The actual function that makes the API call
+export interface QueuedRequest<T = unknown> {
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: unknown) => void;
+  task: () => Promise<T>; // The actual function that makes the API call
   context: RequestContext;
   endpoint: string; // For logging purposes
   params: NcbiRequestParams; // For logging purposes
@@ -80,19 +80,20 @@ export class NcbiRequestQueueManager {
       );
       const result = await task();
       resolve(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       logger.error(
         "Error processing NCBI request from queue",
-        error instanceof Error ? error : new Error(String(error)),
+        err,
         requestContextService.createRequestContext({
           ...context,
           operation: "NCBI_QueueError",
           endpoint,
           params: sanitizeInputForLogging(params),
-          errorMessage: error?.message,
+          errorMessage: err?.message,
         }),
       );
-      reject(error);
+      reject(err);
     } finally {
       this.isProcessingQueue = false;
       if (this.requestQueue.length > 0) {
@@ -118,8 +119,8 @@ export class NcbiRequestQueueManager {
   ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.requestQueue.push({
-        resolve,
-        reject,
+        resolve: (value: unknown) => resolve(value as T),
+        reject: (reason?: unknown) => reject(reason),
         task,
         context,
         endpoint,

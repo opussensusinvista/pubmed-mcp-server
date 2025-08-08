@@ -25,7 +25,7 @@ export function ensureArray<T>(item: T | T[] | undefined | null): T[] {
  * @param defaultValue - The value to return if text cannot be extracted. Defaults to an empty string.
  * @returns The text content or the default value.
  */
-export function getText(element: any, defaultValue = ""): string {
+export function getText(element: unknown, defaultValue = ""): string {
   if (element === undefined || element === null) {
     return defaultValue;
   }
@@ -35,17 +35,13 @@ export function getText(element: any, defaultValue = ""): string {
   if (typeof element === "number" || typeof element === "boolean") {
     return String(element); // Handle direct number/boolean elements
   }
-  if (typeof element === "object" && element["#text"] !== undefined) {
-    // Check if #text exists and convert to string
-    if (typeof element["#text"] === "string") {
-      return element["#text"];
-    }
-    // Also handle #text being a number or boolean
-    if (
-      typeof element["#text"] === "number" ||
-      typeof element["#text"] === "boolean"
-    ) {
-      return String(element["#text"]);
+  if (typeof element === "object") {
+    const obj = element as Record<string, unknown>;
+    if (obj["#text"] !== undefined) {
+      const val = obj["#text"];
+      if (typeof val === "string") return val;
+      if (typeof val === "number" || typeof val === "boolean")
+        return String(val);
     }
   }
   return defaultValue;
@@ -60,31 +56,17 @@ export function getText(element: any, defaultValue = ""): string {
  * @returns The attribute value or the default value.
  */
 export function getAttribute(
-  element: any,
+  element: unknown,
   attributeName: string, // e.g., "UI", "MajorTopicYN"
   defaultValue = "",
 ): string {
   const fullAttributeName = `@_${attributeName}`; // As per fast-xml-parser config
-  if (
-    element &&
-    typeof element === "object" &&
-    typeof element[fullAttributeName] === "string"
-  ) {
-    return element[fullAttributeName];
-  }
-  if (
-    element &&
-    typeof element === "object" &&
-    typeof element[fullAttributeName] === "boolean"
-  ) {
-    return String(element[fullAttributeName]); // Convert boolean attributes to string
-  }
-  if (
-    element &&
-    typeof element === "object" &&
-    typeof element[fullAttributeName] === "number"
-  ) {
-    return String(element[fullAttributeName]); // Convert number attributes to string
+  if (element && typeof element === "object") {
+    const obj = element as Record<string, unknown>;
+    const val = obj[fullAttributeName];
+    if (typeof val === "string") return val;
+    if (typeof val === "boolean") return String(val); // Convert boolean attributes to string
+    if (typeof val === "number") return String(val); // Convert number attributes to string
   }
   return defaultValue;
 }

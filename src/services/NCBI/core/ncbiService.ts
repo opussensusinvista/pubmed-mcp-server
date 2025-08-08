@@ -34,7 +34,7 @@ export class NcbiService {
     this.responseHandler = new NcbiResponseHandler();
   }
 
-  private async performNcbiRequest<T = any>(
+  private async performNcbiRequest<T>(
     endpoint: string,
     params: NcbiRequestParams,
     context: RequestContext,
@@ -88,7 +88,7 @@ export class NcbiService {
   public async eSummary(
     params: NcbiRequestParams,
     context: RequestContext,
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Determine retmode based on params, default to xml
     const retmode =
       params.version === "2.0" && params.retmode === "json" ? "json" : "xml";
@@ -116,7 +116,7 @@ export class NcbiService {
   public async eLink(
     params: NcbiRequestParams,
     context: RequestContext,
-  ): Promise<any> {
+  ): Promise<unknown> {
     return this.performNcbiRequest("elink", params, context, {
       retmode: "xml",
     });
@@ -125,7 +125,7 @@ export class NcbiService {
   public async eInfo(
     params: NcbiRequestParams,
     context: RequestContext,
-  ): Promise<any> {
+  ): Promise<unknown> {
     return this.performNcbiRequest("einfo", params, context, {
       retmode: "xml",
     });

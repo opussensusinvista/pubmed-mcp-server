@@ -8,7 +8,7 @@
 // Basic type for elements that primarily contain text but might have attributes
 export interface XmlTextElement {
   "#text"?: string;
-  [key: string]: any; // For attributes like _UI, _MajorTopicYN, _EIdType, _ValidYN, _IdType, Label, NlmCategory, _DateType
+  [key: string]: unknown; // For attributes like _UI, _MajorTopicYN, _EIdType, _ValidYN, _IdType, Label, NlmCategory, _DateType
 }
 
 // Specific XML element types based on PubMed DTD (simplified)
@@ -177,7 +177,7 @@ export interface XmlPubmedArticle {
     };
     PublicationStatus?: XmlTextElement;
     ArticleIdList?: XmlArticleIdList; // ArticleIdList can also be under PubmedData
-    ReferenceList?: any; // Complex structure for references
+    ReferenceList?: unknown; // Complex structure for references
   };
 }
 
@@ -274,7 +274,7 @@ export interface XmlESummaryAuthorRaw {
   "#text"?: string; // If the author is represented as a simple text node
 
   // Allow other properties as NCBI XML can be unpredictable
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -291,7 +291,7 @@ export interface ESummaryArticleId {
   idtype: string; // e.g., "pubmed", "doi", "pmc"
   idtypen: number;
   value: string;
-  [key: string]: any; // For other attributes like _IdType (if parsed differently)
+  [key: string]: unknown; // For other attributes like _IdType (if parsed differently)
 }
 
 export interface ESummaryHistory {
@@ -312,7 +312,7 @@ export interface ESummaryItem {
     | "Structure"
     | "Unknown"
     | "ERROR";
-  [key: string]: any; // Other attributes like idtype for ArticleIds
+  [key: string]: unknown; // Other attributes like idtype for ArticleIds
 }
 
 export interface ESummaryDocSumOldXml {
@@ -348,12 +348,12 @@ export interface ESummaryDocumentSummary {
   History?:
     | ESummaryHistory[]
     | { PubMedPubDate: ESummaryHistory[] | ESummaryHistory };
-  References?: any[]; // Usually empty or complex
+  References?: unknown[]; // Usually empty or complex
   Attributes?: string[];
   DOI?: string; // Sometimes directly available
   FullJournalName?: string;
   SO?: string; // Source Abbreviation
-  [key: string]: any; // For other dynamic fields
+  [key: string]: unknown; // For other dynamic fields
 }
 
 export interface ESummaryDocumentSummarySet {
@@ -364,12 +364,12 @@ export interface ESummaryResult {
   DocSum?: ESummaryDocSumOldXml[] | ESummaryDocSumOldXml; // Older XML format
   DocumentSummarySet?: ESummaryDocumentSummarySet; // Newer XML format
   ERROR?: string; // Error message if present
-  [key: string]: any; // For other potential top-level elements like 'dbinfo'
+  [key: string]: unknown; // For other potential top-level elements like 'dbinfo'
 }
 
 export interface ESummaryResponseContainer {
   eSummaryResult: ESummaryResult;
-  // header?: any; // If there's a header part in the response
+  // header?: unknown; // If there's a header part in the response
 }
 
 // Parsed brief summary (application-level)
@@ -416,7 +416,7 @@ export interface ESearchResultContent {
   WebEnv?: string;
   IdList?: ESearchResultIdList;
   TranslationSet?: ESearchTranslationSet;
-  TranslationStack?: any; // Usually complex, define if needed
+  TranslationStack?: unknown; // Usually complex, define if needed
   QueryTranslation: string;
   ErrorList?: ESearchErrorList;
   WarningList?: ESearchWarningList;
@@ -424,7 +424,7 @@ export interface ESearchResultContent {
 
 export interface ESearchResponseContainer {
   eSearchResult: ESearchResultContent;
-  // header?: any;
+  // header?: unknown;
 }
 
 // Fully parsed and typed result for ESearch

@@ -45,7 +45,7 @@ export class NcbiCoreApiClient {
     context: RequestContext,
     options: NcbiRequestOptions = {},
   ): Promise<AxiosResponse> {
-    const rawParams: Record<string, any> = {
+    const rawParams: Record<string, string | number | undefined> = {
       tool: config.ncbiToolIdentifier,
       email: config.ncbiAdminEmail,
       api_key: config.ncbiApiKey,
@@ -91,7 +91,8 @@ export class NcbiCoreApiClient {
         );
         const response: AxiosResponse = await this.axiosInstance(requestConfig);
         return response;
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const err = error as Error;
         if (attempt < config.ncbiMaxRetries) {
           const retryDelay = Math.pow(2, attempt) * 200;
           logger.warning(
@@ -100,7 +101,7 @@ export class NcbiCoreApiClient {
               ...context,
               operation: "NCBI_HttpRequestRetry",
               endpoint,
-              error: error.message,
+              error: err.message,
               retryCount: attempt + 1,
               maxRetries: config.ncbiMaxRetries,
               delay: retryDelay,
@@ -139,17 +140,17 @@ export class NcbiCoreApiClient {
 
         logger.error(
           `Unexpected error during NCBI request to ${endpoint} after ${attempt} retries`,
-          error,
+          err,
           requestContextService.createRequestContext({
             ...context,
             operation: "NCBI_UnexpectedError",
             endpoint,
-            errorMessage: error.message,
+            errorMessage: err.message,
           }),
         );
         throw new McpError(
           BaseErrorCode.INTERNAL_ERROR,
-          `Unexpected error communicating with NCBI: ${error.message}`,
+          `Unexpected error communicating with NCBI: ${err.message}`,
           { endpoint },
         );
       }

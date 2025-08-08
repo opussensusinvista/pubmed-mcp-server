@@ -21,12 +21,28 @@ interface XmlELinkItem {
   Score?: string | number | { "#text"?: string | number }; // Allow number for Score
 }
 
+interface ELinkResult {
+  eLinkResult?: {
+    LinkSet?: {
+      LinkSetDb?: {
+        LinkName?: string;
+        Link?: XmlELinkItem[];
+      }[];
+      LinkSetDbHistory?: {
+        QueryKey?: string;
+      }[];
+      WebEnv?: string;
+    };
+    ERROR?: string;
+  }[];
+}
+
 export async function handleELinkRelationships(
   input: PubMedArticleConnectionsInput,
   outputData: ToolOutputData,
   context: RequestContext,
 ): Promise<void> {
-  const eLinkParams: any = {
+  const eLinkParams: Record<string, string> = {
     dbfrom: "pubmed",
     db: "pubmed",
     id: input.sourcePmid,
@@ -59,7 +75,10 @@ export async function handleELinkRelationships(
   outputData.eUtilityUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?${tempUrl.search.substring(1)}`;
 
   const ncbiService = getNcbiService();
-  const eLinkResult: any = await ncbiService.eLink(eLinkParams, context);
+  const eLinkResult: ELinkResult = (await ncbiService.eLink(
+    eLinkParams,
+    context,
+  )) as ELinkResult;
 
   // Log the full eLinkResult for debugging
   logger.debug("Raw eLinkResult from ncbiService:", {
@@ -69,11 +88,11 @@ export async function handleELinkRelationships(
 
   // Use ensureArray for robust handling of potentially single or array eLinkResult
   const eLinkResultsArray = ensureArray(eLinkResult?.eLinkResult);
-  const firstELinkResult = eLinkResultsArray[0]; // Get the first (or only) eLinkResult object
+  const firstELinkResult = eLinkResultsArray[0];
 
   // Use ensureArray for LinkSet as well
   const linkSetsArray = ensureArray(firstELinkResult?.LinkSet);
-  const linkSet = linkSetsArray[0]; // Get the first (or only) LinkSet object
+  const linkSet = linkSetsArray[0];
 
   let foundPmids: { pmid: string; score?: number }[] = [];
 
@@ -94,18 +113,18 @@ export async function handleELinkRelationships(
       ? linkSet.LinkSetDbHistory[0]
       : linkSet.LinkSetDbHistory;
 
-    if (history?.QueryKey && linkSet.WebEnv) {
+    if (history?.QueryKey && firstELinkResult?.LinkSet?.WebEnv) {
       const eSearchParams = {
         db: "pubmed",
         query_key: history.QueryKey,
-        WebEnv: linkSet.WebEnv,
+        WebEnv: firstELinkResult.LinkSet.WebEnv,
         retmode: "xml",
         retmax: input.maxRelatedResults * 2, // Fetch a bit more to allow filtering sourcePmid
       };
-      const eSearchResult: any = await ncbiService.eSearch(
-        eSearchParams,
-        context,
-      );
+      const eSearchResult: { eSearchResult?: { IdList?: { Id?: unknown } } } =
+        (await ncbiService.eSearch(eSearchParams, context)) as {
+          eSearchResult?: { IdList?: { Id?: unknown } };
+        };
       if (eSearchResult?.eSearchResult?.IdList?.Id) {
         const ids = ensureArray(eSearchResult.eSearchResult.IdList.Id);
         foundPmids = ids
@@ -135,7 +154,7 @@ export async function handleELinkRelationships(
       : [linkSet.LinkSetDb];
 
     const targetLinkSetDbEntry = linkSetDbArray.find(
-      (db: any) => db.LinkName === "pubmed_pubmed", // For similar articles, this is the one
+      (db) => db.LinkName === "pubmed_pubmed",
     );
 
     if (targetLinkSetDbEntry?.Link) {
@@ -217,10 +236,13 @@ export async function handleELinkRelationships(
         version: "2.0",
         retmode: "xml",
       };
-      const summaryResultContainer: any = await ncbiService.eSummary(
-        summaryParams,
-        context,
-      );
+      const summaryResultContainer: {
+        eSummaryResult?: ESummaryResult;
+        result?: ESummaryResult;
+      } = (await ncbiService.eSummary(summaryParams, context)) as {
+        eSummaryResult?: ESummaryResult;
+        result?: ESummaryResult;
+      };
       const summaryResult: ESummaryResult | undefined =
         summaryResultContainer?.eSummaryResult ||
         summaryResultContainer?.result ||
@@ -258,7 +280,7 @@ export async function handleELinkRelationships(
             linkUrl: `https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/`,
           }));
       }
-    } catch (summaryError: any) {
+    } catch (summaryError: unknown) {
       logger.error(
         "Failed to enrich related articles with summaries",
         summaryError instanceof Error

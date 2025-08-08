@@ -40,7 +40,7 @@ export async function registerPubMedFetchContentsTool(
         PubMedFetchContentsInputSchema._def.schema.shape,
         async (
           input: PubMedFetchContentsInput,
-          toolContext: any,
+          toolContext: unknown,
         ): Promise<CallToolResult> => {
           const richContext: RequestContext =
             requestContextService.createRequestContext({

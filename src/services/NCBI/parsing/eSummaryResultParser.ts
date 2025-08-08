@@ -137,9 +137,9 @@ function parseESummaryAuthorsFromDocumentSummary(
         if (
           keys.length === 1 &&
           keys[0] &&
-          typeof (authorObj as any)[keys[0]] === "string"
+          typeof (authorObj as Record<string, unknown>)[keys[0]] === "string"
         ) {
-          name = (authorObj as any)[keys[0]];
+          name = (authorObj as Record<string, unknown>)[keys[0]] as string;
         } else if (authInputString.length < 100) {
           // Avoid overly long stringified objects
           name = authInputString; // Not ideal, but better than empty for debugging
@@ -177,15 +177,16 @@ function parseESummaryAuthorsFromDocumentSummary(
     try {
       // Attempt to parse if it looks like a JSON array string
       if (authorsProp.startsWith("[") && authorsProp.endsWith("]")) {
-        const parsedJsonAuthors = JSON.parse(authorsProp);
+        const parsedJsonAuthors = JSON.parse(authorsProp) as unknown[];
         if (Array.isArray(parsedJsonAuthors)) {
-          parsedJsonAuthors.forEach((authItem: any) => {
+          parsedJsonAuthors.forEach((authItem: unknown) => {
             if (typeof authItem === "string") {
               parsedAuthors.push({ name: authItem.trim() });
             } else if (
               typeof authItem === "object" &&
               authItem !== null &&
-              (authItem.name || authItem.Name)
+              ((authItem as XmlESummaryAuthorRaw).name ||
+                (authItem as XmlESummaryAuthorRaw).Name)
             ) {
               // If it's an object with a name property, treat as XmlESummaryAuthorRaw
               processRawAuthor(authItem as XmlESummaryAuthorRaw);

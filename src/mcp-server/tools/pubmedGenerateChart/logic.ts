@@ -86,14 +86,14 @@ export type PubMedGenerateChartOutput = {
 
 // Helper to group data by a series field
 function groupDataBySeries(
-  data: any[],
+  data: Record<string, unknown>[],
   xField: string,
   yField: string,
   seriesField: string,
 ) {
-  const series = new Map<string, { x: any; y: any }[]>();
+  const series = new Map<string, { x: unknown; y: unknown }[]>();
   for (const item of data) {
-    const seriesName = item[seriesField];
+    const seriesName = item[seriesField] as string;
     if (!series.has(seriesName)) {
       series.set(seriesName, []);
     }
@@ -138,8 +138,10 @@ export async function pubmedGenerateChartLogic(
     },
   });
 
-  const labels = [...new Set(dataValues.map((item) => item[xField]))];
-  let datasets: any[];
+  const labels = [
+    ...new Set(dataValues.map((item) => item[xField])),
+  ] as string[];
+  let datasets: ChartConfiguration["data"]["datasets"];
 
   if (seriesField) {
     const groupedData = groupDataBySeries(
@@ -152,9 +154,8 @@ export async function pubmedGenerateChartLogic(
       label: seriesName,
       data: labels.map((label) => {
         const point = data.find((p) => p.x === label);
-        return point ? point.y : null;
+        return point ? (point.y as number) : null;
       }),
-      // You can add backgroundColor, borderColor etc. here for styling
     }));
   } else {
     datasets = [
@@ -162,7 +163,7 @@ export async function pubmedGenerateChartLogic(
         label: yField,
         data: labels.map((label) => {
           const item = dataValues.find((d) => d[xField] === label);
-          return item ? item[yField] : null;
+          return item ? (item[yField] as number) : null;
         }),
       },
     ];
@@ -181,11 +182,13 @@ export async function pubmedGenerateChartLogic(
         ([seriesName, data]) => ({
           label: seriesName,
           data: data.map((point) => ({
-            x: point.x,
-            y: point.y,
+            x: point.x as number,
+            y: point.y as number,
             r:
               chartType === "bubble" && sizeField
-                ? dataValues.find((d) => d[xField] === point.x)![sizeField]
+                ? (dataValues.find((d) => d[xField] === point.x)![
+                    sizeField
+                  ] as number)
                 : undefined,
           })),
         }),
@@ -195,10 +198,12 @@ export async function pubmedGenerateChartLogic(
         {
           label: yField,
           data: dataValues.map((item) => ({
-            x: item[xField],
-            y: item[yField],
+            x: item[xField] as number,
+            y: item[yField] as number,
             r:
-              chartType === "bubble" && sizeField ? item[sizeField] : undefined,
+              chartType === "bubble" && sizeField
+                ? (item[sizeField] as number)
+                : undefined,
           })),
         },
       ];
@@ -256,14 +261,15 @@ export async function pubmedGenerateChartLogic(
       chartType: input.chartType,
       dataPoints: input.dataValues.length,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     throw new McpError(
       BaseErrorCode.INTERNAL_ERROR,
-      `Chart generation failed: ${error.message || "Internal server error during chart generation."}`,
+      `Chart generation failed: ${err.message || "Internal server error during chart generation."}`,
       {
         ...operationContext,
-        originalErrorName: error.name,
-        originalErrorMessage: error.message,
+        originalErrorName: err.name,
+        originalErrorMessage: err.message,
       },
     );
   }
