@@ -1,6 +1,6 @@
 # pubmed-mcp-server - Directory Structure
 
-Generated on: 2025-08-04 15:19:56
+Generated on: 2025-08-08 09:46:25
 
 ```
 pubmed-mcp-server
@@ -152,6 +152,7 @@ pubmed-mcp-server
 ├── .ncurc.json
 ├── CHANGELOG.md
 ├── Dockerfile
+├── eslint.config.js
 ├── LICENSE
 ├── mcp.json
 ├── package-lock.json

@@ -19,6 +19,7 @@
 
 import fs from "fs/promises";
 import path from "path";
+import type { Dirent } from "fs";
 
 const projectRoot = process.cwd();
 let outputPathArg = "docs/tree.md"; // Default output path
@@ -109,13 +110,16 @@ async function loadGitignorePatterns(): Promise<GitignorePattern[]> {
           regex: regexString,
         };
       });
-  } catch (error: any) {
-    if (error.code === "ENOENT") {
+  } catch (error: unknown) {
+    const err = error as NodeJS.ErrnoException | undefined;
+    if (err?.code === "ENOENT") {
       console.warn(
         "Info: No .gitignore file found at project root. Using default ignore patterns only.",
       );
     } else {
-      console.error(`Error reading .gitignore: ${error.message}`);
+      console.error(
+        `Error reading .gitignore: ${err?.message ?? String(error)}`,
+      );
     }
     return [];
   }
@@ -190,11 +194,16 @@ async function generateTree(
     return "";
   }
 
-  let entries;
+  let entries: Dirent[];
   try {
-    entries = await fs.readdir(resolvedDir, { withFileTypes: true });
-  } catch (error: any) {
-    console.error(`Error reading directory ${resolvedDir}: ${error.message}`);
+    entries = (await fs.readdir(resolvedDir, {
+      withFileTypes: true,
+    })) as unknown as Dirent[];
+  } catch (error: unknown) {
+    const err = error as NodeJS.ErrnoException | undefined;
+    console.error(
+      `Error reading directory ${resolvedDir}: ${err?.message ?? String(error)}`,
+    );
     return "";
   }
 
