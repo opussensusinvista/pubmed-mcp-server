@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2025-08-08
+
+### Added
+
+- **Linting & Testing**: Integrated ESLint for code quality and Vitest for unit testing. Added `lint`, `lint:fix`, `test`, `test:watch`, and `test:coverage` scripts to `package.json`.
+- **Configuration**: Added `eslint.config.js` for the new linting setup.
+
+### Changed
+
+- **Dependencies**: Upgraded several key dependencies, including `@modelcontextprotocol/sdk` to `^1.17.2`, `openai` to `^5.12.1`, and `typescript-eslint` to `^8.39.0`.
+- **Typing**: Improved type safety across the codebase by replacing `any` with more specific types, particularly in the NCBI service and tool registration files.
+- **Dockerfile**: Updated the `Dockerfile` to use `node:23-alpine` and added steps to install build-time dependencies for native modules.
+- **Scripts**: Refactored `clean.ts` and `fetch-openapi-spec.ts` for better error handling and clarity.
+
 ## [1.4.1] - 2025-08-04
 
 ### Changed
