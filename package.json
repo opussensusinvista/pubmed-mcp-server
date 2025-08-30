@@ -34,7 +34,8 @@
     "inspector": "mcp-inspector --config mcp.json --server pubmed-mcp-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "build:worker": "wrangler build"
   },
   "dependencies": {
     "@hono/node-server": "^1.17.1",
@@ -128,7 +129,8 @@
     "prettier": "^3.6.2",
     "typedoc": "^0.28.9",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.33.1"
   },
   "publishConfig": {
     "access": "public"

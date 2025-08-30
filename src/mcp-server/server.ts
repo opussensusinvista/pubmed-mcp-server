@@ -11,7 +11,7 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import http from "http";
+import type { Server as HttpServer } from "http";
 import { config, environment } from "../config/index.js";
 import { ErrorHandler, logger, requestContextService } from "../utils/index.js";
 import { registerPubMedArticleConnectionsTool } from "./tools/pubmedArticleConnections/index.js";
@@ -46,7 +46,7 @@ export interface ServerInstanceInfo {
  * @throws {McpError} If any resource or tool registration fails.
  * @private
  */
-async function createMcpServerInstance(): Promise<ServerInstanceInfo> {
+export async function createMcpServerInstance(): Promise<ServerInstanceInfo> {
   const context = requestContextService.createRequestContext({
     operation: "createMcpServerInstance",
   });
@@ -111,11 +111,11 @@ async function createMcpServerInstance(): Promise<ServerInstanceInfo> {
 /**
  * Selects, sets up, and starts the appropriate MCP transport layer based on configuration.
  *
- * @returns Resolves with `McpServer` for 'stdio' or `http.Server` for 'http'.
+ * @returns Resolves with `McpServer` for 'stdio' or `HttpServer` for 'http'.
  * @throws {Error} If transport type is unsupported or setup fails.
  * @private
  */
-async function startTransport(): Promise<McpServer | http.Server> {
+async function startTransport(): Promise<McpServer | HttpServer> {
   const transportType = config.mcpTransportType;
   const context = requestContextService.createRequestContext({
     operation: "startTransport",
@@ -128,7 +128,7 @@ async function startTransport(): Promise<McpServer | http.Server> {
       createMcpServerInstance,
       context,
     );
-    return server as http.Server;
+    return server as HttpServer;
   }
 
   if (transportType === "stdio") {
@@ -150,7 +150,7 @@ async function startTransport(): Promise<McpServer | http.Server> {
  * Main application entry point. Initializes and starts the MCP server.
  */
 export async function initializeAndStartServer(): Promise<
-  McpServer | http.Server
+  McpServer | HttpServer
 > {
   const context = requestContextService.createRequestContext({
     operation: "initializeAndStartServer",
