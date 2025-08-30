@@ -9,7 +9,7 @@
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
-import { IncomingHttpHeaders } from "http";
+import type { IncomingHttpHeaders } from "http";
 import { config } from "../../../config/index.js";
 import { RequestContext, requestContextService } from "../../../utils/index.js";
 import { ServerInstanceInfo } from "../../server.js";
